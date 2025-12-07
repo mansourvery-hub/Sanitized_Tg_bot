@@ -5,6 +5,10 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
 ![Telegram](https://img.shields.io/badge/telegram-bot-blue)
+![GitHub Stars](https://img.shields.io/github/stars/PastKing/tgbot-verify?style=social)
+![GitHub Forks](https://img.shields.io/github/forks/PastKing/tgbot-verify?style=social)
+![GitHub Issues](https://img.shields.io/github/issues/PastKing/tgbot-verify)
+![GitHub Watchers](https://img.shields.io/github/watchers/PastKing/tgbot-verify?style=social)
 
 **一个自动化的 Telegram 机器人，用于完成 SheerID 学生/教师身份认证**
 
@@ -365,6 +369,16 @@ _base_concurrency = 20  # 基础并发数（自动根据系统资源计算）
 
 ### v1.0.0
 - 🎉 初始版本发布
+
+---
+
+## 📈 项目统计
+
+<div align="center">
+
+![Star History](https://starchart.cc/PastKing/tgbot-verify.svg)
+
+</div>
 
 ---
 
