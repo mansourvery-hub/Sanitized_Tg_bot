@@ -360,13 +360,6 @@ This project is open sourced under **MIT License**, see [LICENSE](LICENSE) file 
 
 ## 📊 Changelog
 
-### v2.0.0 (Current Version)
-- ✨ Migrated to MySQL database
-- ✨ Support high concurrency
-- ✨ Bolt.new fully automated verification
-- ✨ Performance optimization (3-90x improvement)
-- ❌ Removed Spotify verification module
-
 ### v1.0.0
 - 🎉 Initial release
 
