@@ -378,8 +378,7 @@ _base_concurrency = 20  # 基础并发数（自动根据系统资源计算）
 ## 📞 联系方式
 
 - **GitHub**: [提交 Issue](https://github.com/PastKing/tgbot-verify/issues)
-- **Telegram**: [@pk_oa](https://t.me/pk_oa)
-- **群组**: [我们来交流](https://t.me/pastking_server)
+- **Telegram频道**: [@pk_oa](https://t.me/pk_oa)
 
 ---
 
