@@ -5,7 +5,7 @@ from functools import partial
 from telegram.ext import Application, CommandHandler
 
 from config import BOT_TOKEN
-from database_mysql import Database
+from database import Database
 from handlers.user_commands import (
     start_command,
     about_command,
@@ -18,6 +18,7 @@ from handlers.user_commands import (
 from handlers.verify_commands import (
     verify_command,
     verify2_command,
+    verify3_command,
     verify4_command,
     getV4Code_command,
 )
@@ -69,6 +70,7 @@ def main():
     # 注册验证命令
     application.add_handler(CommandHandler("verify", partial(verify_command, db=db)))
     application.add_handler(CommandHandler("verify2", partial(verify2_command, db=db)))
+    application.add_handler(CommandHandler("verify3", partial(verify3_command, db=db)))
     application.add_handler(CommandHandler("verify4", partial(verify4_command, db=db)))
     application.add_handler(CommandHandler("getV4Code", partial(getV4Code_command, db=db)))
 
