@@ -20,7 +20,7 @@
 
 ## 📢 重要声明
 
-> 本项目为 [@auto_sheerid_bot](https://t.me/auto_sheerid_bot) (GGBond) 的**早期版本代码**  
+> 本项目为 [@auto_sheerid_bot](https://t.me/auto_sheerid_bot) (GGBond) 的**早期版本代码** （可以使用）
 > **个人使用足够，商业使用请自行优化**  
 > 仅供学习交流使用，请勿用于非法用途
 
