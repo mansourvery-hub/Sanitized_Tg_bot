@@ -1,7 +1,7 @@
 # SheerID 验证配置文件
 
 # SheerID API 配置
-PROGRAM_ID = '68cc6a2e64f55220de204448'
+PROGRAM_ID = '67c8c14f5f17a83b745e3f82'
 SHEERID_BASE_URL = 'https://services.sheerid.com'
 MY_SHEERID_URL = 'https://my.sheerid.com'
 
@@ -135,10 +135,3 @@ SCHOOLS = {
 # 默认学校
 DEFAULT_SCHOOL_ID = '2565'
 
-# UTM 参数（营销追踪参数）
-# 如果 URL 中没有这些参数，会自动添加
-DEFAULT_UTM_PARAMS = {
-    'utm_source': 'gemini',
-    'utm_medium': 'paid_media',
-    'utm_campaign': 'students_pmax_bts-slap'
-}

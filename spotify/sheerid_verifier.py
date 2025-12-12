@@ -6,8 +6,8 @@ import httpx
 from typing import Dict, Optional, Tuple
 
 from . import config
-from .name_generator import NameGenerator, generate_birth_date
-from .img_generator import generate_image, generate_psu_email
+from .name_generator import NameGenerator, generate_email, generate_birth_date
+from .img_generator import generate_psu_email, generate_image
 
 # 配置日志
 logging.basicConfig(
@@ -88,7 +88,7 @@ class SheerIDVerifier:
         birth_date: str = None,
         school_id: str = None,
     ) -> Dict:
-        """执行验证流程"""
+        """执行验证流程，移除状态轮询以减少耗时"""
         try:
             current_step = "initial"
 

@@ -19,8 +19,6 @@ except ImportError:
 PROGRAM_ID = config.PROGRAM_ID
 SHEERID_BASE_URL = config.SHEERID_BASE_URL
 MY_SHEERID_URL = config.MY_SHEERID_URL
-HCAPTCHA_SECRET = config.HCAPTCHA_SECRET
-TURNSTILE_SECRET = config.TURNSTILE_SECRET
 SCHOOLS = config.SCHOOLS
 DEFAULT_SCHOOL_ID = config.DEFAULT_SCHOOL_ID
 
@@ -71,45 +69,6 @@ class SheerIDVerifier:
         if match:
             return match.group(1)
         return None
-
-    def verify_hcaptcha(self, token: str) -> bool:
-        """验证 hCaptcha token"""
-        if not HCAPTCHA_SECRET or not token:
-            return not HCAPTCHA_SECRET
-
-        try:
-            response = self.http_client.post(
-                'https://hcaptcha.com/siteverify',
-                data={
-                    'response': token,
-                    'secret': HCAPTCHA_SECRET
-                },
-                headers=headers
-            )
-            result = response.json()
-            return result.get('success', False)
-        except Exception as e:
-            logger.error(f"hCaptcha 验证失败: {e}")
-            return False
-
-    def verify_turnstile(self, token: str) -> bool:
-        """验证 Turnstile token"""
-        if not TURNSTILE_SECRET or not token:
-            return not TURNSTILE_SECRET
-
-        try:
-            response = self.http_client.post(
-                'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                data={
-                    'secret': TURNSTILE_SECRET,
-                    'response': token
-                }
-            )
-            result = response.json()
-            return result.get('success', False)
-        except Exception as e:
-            logger.error(f"Turnstile 验证失败: {e}")
-            return False
 
     def _sheerid_request(self, method: str, url: str,
                          body: Optional[Dict] = None) -> Tuple[Dict, int]:
@@ -166,19 +125,6 @@ class SheerIDVerifier:
         """
         try:
             current_step = 'initial'
-
-            # 验证码检查（如果启用）
-            if HCAPTCHA_SECRET:
-                logger.info("验证 hCaptcha...")
-                if not self.verify_hcaptcha(hcaptcha_token):
-                    raise Exception("hCaptcha 验证失败")
-                logger.info("✓ hCaptcha 验证成功")
-
-            if TURNSTILE_SECRET:
-                logger.info("验证 Turnstile...")
-                if not self.verify_turnstile(turnstile_token):
-                    raise Exception("Turnstile 验证失败")
-                logger.info("✓ Turnstile 验证成功")
 
             # 生成教师信息
             if not first_name or not last_name:

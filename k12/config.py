@@ -5,10 +5,6 @@ PROGRAM_ID = '68d47554aa292d20b9bec8f7'
 SHEERID_BASE_URL = 'https://services.sheerid.com'
 MY_SHEERID_URL = 'https://my.sheerid.com'
 
-# 验证码配置（留空关闭）
-HCAPTCHA_SECRET = ''  # 留空关闭 hCaptcha 验证
-TURNSTILE_SECRET = ''  # 留空关闭 Turnstile 验证
-
 # 文件大小限制
 MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB
 

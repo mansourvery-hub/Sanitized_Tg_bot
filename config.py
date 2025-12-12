@@ -1,5 +1,9 @@
 """全局配置文件"""
 import os
+from dotenv import load_dotenv
+
+# 加载 .env 文件
+load_dotenv()
 
 # Telegram Bot 配置
 BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")

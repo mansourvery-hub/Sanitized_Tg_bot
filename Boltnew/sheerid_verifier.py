@@ -72,34 +72,6 @@ class SheerIDVerifier:
         logger.info(f"✅ 获取 verificationId: {self.verification_id}")
         return self.verification_id
 
-    def verify_hcaptcha(self, token: str) -> bool:
-        if not config.HCAPTCHA_SECRET or not token:
-            return not config.HCAPTCHA_SECRET
-        try:
-            response = self.http_client.post(
-                "https://hcaptcha.com/siteverify",
-                data={"response": token, "secret": config.HCAPTCHA_SECRET},
-            )
-            result = response.json()
-            return result.get("success", False)
-        except Exception as e:
-            logger.error(f"hCaptcha 验证失败: {e}")
-            return False
-
-    def verify_turnstile(self, token: str) -> bool:
-        if not config.TURNSTILE_SECRET or not token:
-            return not config.TURNSTILE_SECRET
-        try:
-            response = self.http_client.post(
-                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-                data={"secret": config.TURNSTILE_SECRET, "response": token},
-            )
-            result = response.json()
-            return result.get("success", False)
-        except Exception as e:
-            logger.error(f"Turnstile 验证失败: {e}")
-            return False
-
     def _sheerid_request(
         self, method: str, url: str, body: Optional[Dict] = None
     ) -> Tuple[Dict, int]:
@@ -136,24 +108,10 @@ class SheerIDVerifier:
         email: str = None,
         birth_date: str = None,
         school_id: str = None,
-        hcaptcha_token: str = None,
-        turnstile_token: str = None,
     ) -> Dict:
         """执行教师验证流程"""
         try:
             current_step = "initial"
-
-            if config.HCAPTCHA_SECRET:
-                logger.info("验证 hCaptcha...")
-                if not self.verify_hcaptcha(hcaptcha_token):
-                    raise Exception("hCaptcha 验证失败")
-                logger.info("✅ hCaptcha 验证成功")
-
-            if config.TURNSTILE_SECRET:
-                logger.info("验证 Turnstile...")
-                if not self.verify_turnstile(turnstile_token):
-                    raise Exception("Turnstile 验证失败")
-                logger.info("✅ Turnstile 验证成功")
 
             if not first_name or not last_name:
                 name = NameGenerator.generate()

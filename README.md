@@ -1,81 +1,74 @@
-# SheerID 自动认证机器人
+# SheerID 自动认证 Telegram 机器人
 
-<div align="center">
+![Stars](https://img.shields.io/github/stars/PastKing/tgbot-verify?style=social)
+![Forks](https://img.shields.io/github/forks/PastKing/tgbot-verify?style=social)
+![Issues](https://img.shields.io/github/issues/PastKing/tgbot-verify)
+![License](https://img.shields.io/github/license/PastKing/tgbot-verify)
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue)
-![Telegram](https://img.shields.io/badge/telegram-bot-blue)
-![GitHub Stars](https://img.shields.io/github/stars/PastKing/tgbot-verify?style=social)
-![GitHub Forks](https://img.shields.io/github/forks/PastKing/tgbot-verify?style=social)
-![GitHub Issues](https://img.shields.io/github/issues/PastKing/tgbot-verify)
-![GitHub Watchers](https://img.shields.io/github/watchers/PastKing/tgbot-verify?style=social)
-
-**一个自动化的 Telegram 机器人，用于完成 SheerID 学生/教师身份认证**
-
-[English](./README_EN.md) | 简体中文
-
-</div>
+> 🤖 自动完成 SheerID 学生/教师认证的 Telegram 机器人
+> 
+> 基于 [@auto_sheerid_bot](https://t.me/auto_sheerid_bot) GGBond 的旧版代码改进
 
 ---
 
-## 📢 重要声明
+## 📋 项目简介
 
-> 本项目为 [@auto_sheerid_bot](https://t.me/auto_sheerid_bot) (GGBond) 的**早期版本代码** （可以使用）
-> **个人使用足够，商业使用请自行优化**  
-> 仅供学习交流使用，请勿用于非法用途
-
----
-
-## ✨ 项目简介
-
-这是一个基于 Python Telegram Bot 的自动化认证工具，能够自动完成 SheerID 平台的学生/教师身份验证流程。通过模拟真实用户操作，自动生成并提交认证文档，大大简化了认证过程。
+这是一个基于 Python 的 Telegram 机器人，可以自动完成多个平台的 SheerID 学生/教师身份认证。机器人自动生成身份信息、创建认证文档并提交到 SheerID 平台，大大简化了认证流程。
 
 ### 🎯 支持的认证服务
 
-| 服务 | 命令 | 说明 |
-|------|------|------|
-| ✅ Gemini One Pro | `/verify` | Google Gemini 学生认证 |
-| ✅ ChatGPT Teacher K12 | `/verify2` | OpenAI 教师认证 |
-| ✅ Bolt.new Teacher | `/verify4` | Bolt.new 教师认证（全自动） |
-| ❌ ~~Spotify Student~~ | ~~`/verify3`~~ | **已移除** |
+| 命令 | 服务 | 类型 | 状态 | 说明 |
+|------|------|------|------|------|
+| `/verify` | Gemini One Pro | 教师认证 | ✅ 完整 | Google AI Studio 教育优惠 |
+| `/verify2` | ChatGPT Teacher K12 | 教师认证 | ✅ 完整 | OpenAI ChatGPT 教育优惠 |
+| `/verify3` | Spotify Student | 学生认证 | ✅ 完整 | Spotify 学生订阅优惠 |
+| `/verify4` | Bolt.new Teacher | 教师认证 | ✅ 完整 | Bolt.new 教育优惠（自动获取 code）|
+| `/verify5` | YouTube Premium Student | 学生认证 | ⚠️ 半成品 | YouTube Premium 学生优惠（见下方说明）|
 
-> **注意**: Spotify 认证模块已从本版本中移除
+> **⚠️ YouTube 认证特别说明**：
+> 
+> YouTube 认证功能目前为半成品状态，使用前请仔细阅读 [`youtube/HELP.MD`](youtube/HELP.MD) 文档。
+> 
+> **主要区别**：
+> - YouTube 的原始链接格式与其他服务不同
+> - 需要手动从浏览器网络日志中提取 `programId` 和 `verificationId`
+> - 然后手动组成标准的 SheerID 链接格式
+> 
+> **使用步骤**：
+> 1. 访问 YouTube Premium 学生认证页面
+> 2. 打开浏览器开发者工具（F12）→ 网络（Network）标签
+> 3. 开始认证流程，搜索 `https://services.sheerid.com/rest/v2/verification/`
+> 4. 从请求载荷中获取 `programId`，从响应中获取 `verificationId`
+> 5. 手动组成链接：`https://services.sheerid.com/verify/{programId}/?verificationId={verificationId}`
+> 6. 使用 `/verify5` 命令提交该链接
 
----
+### ✨ 核心功能
 
-## 🚀 核心特性
-
-- 🤖 **全自动流程**: 一键提交，自动生成文档并完成认证
-- ⚡ **高并发支持**: 支持多用户同时使用，互不干扰
-- 💾 **MySQL 数据库**: 企业级数据存储，支持大规模用户
-- 🎨 **智能文档生成**: 使用 Playwright 渲染高质量认证文档
-- 🔐 **积分系统**: 签到、邀请好友获取积分
-- 📊 **管理后台**: 完善的管理员功能（黑名单、卡密、广播等）
-- 🐳 **Docker 部署**: 一键部署，开箱即用
+- 🚀 **自动化流程**：一键完成信息生成、文档创建、认证提交
+- 🎨 **智能生成**：自动生成学生证/教师证 PNG 图片
+- 🏫 **多学校支持**：支持 Pennsylvania State University 多个校区
+- 💰 **积分系统**：签到、邀请、卡密兑换等多种获取方式
+- 🔐 **安全可靠**：使用 MySQL 数据库，支持环境变量配置
+- ⚡ **并发控制**：智能管理并发请求，确保稳定性
+- 👥 **管理功能**：完善的用户管理和积分管理系统
 
 ---
 
 ## 🛠️ 技术栈
 
-- **语言**: Python 3.8+
-- **框架**: python-telegram-bot 20.0+
-- **数据库**: MySQL 5.7+
-- **浏览器自动化**: Playwright 1.48.0
-- **HTTP 客户端**: httpx (异步)
-- **图片处理**: Pillow, reportlab
-- **容器化**: Docker + Docker Compose
+- **语言**：Python 3.11+
+- **Bot框架**：python-telegram-bot 20.0+
+- **数据库**：MySQL 5.7+
+- **浏览器自动化**：Playwright
+- **HTTP客户端**：httpx
+- **图像处理**：Pillow, reportlab, xhtml2pdf
+- **环境管理**：python-dotenv
 
 ---
 
-## 📦 快速开始
+## 🚀 快速开始
 
-### 前置要求
-
-- Python 3.8 或更高版本
-- MySQL 5.7+ （推荐）或 SQLite（开发测试）
-- Telegram Bot Token
-
-### 1. 克隆仓库
+### 1. 克隆项目
 
 ```bash
 git clone https://github.com/PastKing/tgbot-verify.git
@@ -86,90 +79,50 @@ cd tgbot-verify
 
 ```bash
 pip install -r requirements.txt
-
-# 安装 Playwright 浏览器
 playwright install chromium
 ```
 
-### 3. 配置环境
+### 3. 配置环境变量
 
 复制 `env.example` 为 `.env` 并填写配置：
 
-```bash
-cp env.example .env
-```
-
-编辑 `.env` 文件：
-
-```bash
+```env
 # Telegram Bot 配置
 BOT_TOKEN=your_bot_token_here
 CHANNEL_USERNAME=your_channel
 CHANNEL_URL=https://t.me/your_channel
-ADMIN_USER_ID=123456789
+ADMIN_USER_ID=your_admin_id
 
 # MySQL 数据库配置
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
-MYSQL_USER=tgbot_user
-MYSQL_PASSWORD=your_password_here
+MYSQL_USER=root
+MYSQL_PASSWORD=your_password
 MYSQL_DATABASE=tgbot_verify
 ```
 
-**或者直接修改 `config.py`** (不推荐，容易泄露敏感信息)
-
-### 4. 初始化数据库
-
-程序首次运行时会自动创建数据库表结构。
-
-### 5. 启动机器人
+### 4. 启动机器人
 
 ```bash
-# 直接运行
-python bot.py
-
-# 或使用虚拟环境
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
 python bot.py
 ```
 
 ---
 
-## 🐳 Docker 部署 (推荐)
+## 🐳 Docker 部署
 
-### 使用 Docker Compose
-
-1. **配置环境变量**
-
-编辑 `docker-compose.yml`:
-
-```yaml
-environment:
-  - MYSQL_HOST=your_mysql_host
-  - MYSQL_PORT=3306
-  - MYSQL_USER=your_user
-  - MYSQL_PASSWORD=your_password
-  - MYSQL_DATABASE=tgbot_verify
-```
-
-2. **启动服务**
+### 使用 Docker Compose（推荐）
 
 ```bash
+# 1. 修改 .env 文件配置
+cp env.example .env
+nano .env
+
+# 2. 启动服务
 docker-compose up -d
-```
 
-3. **查看日志**
-
-```bash
+# 3. 查看日志
 docker-compose logs -f
-```
-
-4. **停止服务**
-
-```bash
-docker-compose down
 ```
 
 ### 手动 Docker 部署
@@ -181,213 +134,263 @@ docker build -t tgbot-verify .
 # 运行容器
 docker run -d \
   --name tgbot-verify \
-  -e MYSQL_HOST=your_host \
-  -e MYSQL_USER=your_user \
-  -e MYSQL_PASSWORD=your_password \
-  -e MYSQL_DATABASE=tgbot_verify \
-  --restart unless-stopped \
+  --env-file .env \
+  -v $(pwd)/logs:/app/logs \
   tgbot-verify
 ```
 
 ---
 
-## 📖 使用指南
+## 📖 使用说明
 
 ### 用户命令
 
-```
-/start          - 注册账号（赠送 1 积分）
-/help           - 查看帮助
-/balance        - 查看积分余额
-/qd             - 每日签到（+1 积分）
-/invite         - 邀请好友（+2 积分/人）
-/use <卡密>     - 使用卡密兑换积分
-
-/verify <链接>  - Gemini One Pro 认证
-/verify2 <链接> - ChatGPT Teacher K12 认证
-/verify4 <链接> - Bolt.new Teacher 认证（全自动）
-/getV4Code <id> - 获取 Bolt.new 认证码
+```bash
+/start              # 开始使用（注册）
+/about              # 了解机器人功能
+/balance            # 查看积分余额
+/qd                 # 每日签到（+1积分）
+/invite             # 生成邀请链接（+2积分/人）
+/use <卡密>         # 使用卡密兑换积分
+/verify <链接>      # Gemini One Pro 认证
+/verify2 <链接>     # ChatGPT Teacher K12 认证
+/verify3 <链接>     # Spotify Student 认证
+/verify4 <链接>     # Bolt.new Teacher 认证
+/verify5 <链接>     # YouTube Premium Student 认证
+/getV4Code <id>     # 获取 Bolt.new 认证码
+/help               # 查看帮助信息
 ```
 
 ### 管理员命令
 
+```bash
+/addbalance <用户ID> <积分>     # 增加用户积分
+/block <用户ID>                 # 拉黑用户
+/white <用户ID>                 # 取消拉黑
+/blacklist                      # 查看黑名单
+/genkey <卡密> <积分> [次数] [天数]  # 生成卡密
+/listkeys                       # 查看卡密列表
+/broadcast <文本>               # 群发通知
 ```
-/addbalance <用户ID> <积分>  - 增加用户积分
-/block <用户ID>              - 拉黑用户
-/white <用户ID>              - 取消拉黑
-/blacklist                   - 查看黑名单
-/genkey <卡密> <积分> [次数] [天数] - 生成卡密
-/listkeys                    - 查看卡密列表
-/broadcast <文本>            - 群发消息
-```
 
-### 使用示例
+### 使用流程
 
-```
-# 1. 注册账号
-/start
+1. **获取认证链接**
+   - 访问对应服务的认证页面
+   - 开始认证流程
+   - 复制浏览器地址栏中的完整 URL（包含 `verificationId`）
 
-# 2. 签到获取积分
-/qd
+2. **提交认证请求**
+   ```
+   /verify3 https://services.sheerid.com/verify/xxx/?verificationId=yyy
+   ```
 
-# 3. 开始认证（以 Bolt.new 为例）
-/verify4 https://services.sheerid.com/verify/xxx/?verificationId=xxx
+3. **等待处理**
+   - 机器人自动生成身份信息
+   - 创建学生证/教师证图片
+   - 提交到 SheerID 平台
 
-# 4. 等待自动处理，机器人会返回认证码
-```
+4. **获取结果**
+   - 审核通常在几分钟内完成
+   - 成功后会返回跳转链接
 
 ---
 
-## 🏗️ 项目结构
+## 📁 项目结构
 
 ```
 tgbot-verify/
-├── bot.py                  # 主程序入口
+├── bot.py                  # 机器人主程序
 ├── config.py               # 全局配置
-├── database_mysql.py       # MySQL 数据库实现
+├── database_mysql.py       # MySQL 数据库管理
+├── .env                    # 环境变量配置（需自行创建）
+├── env.example             # 环境变量模板
 ├── requirements.txt        # Python 依赖
-├── Dockerfile              # Docker 镜像配置
+├── Dockerfile              # Docker 镜像构建
 ├── docker-compose.yml      # Docker Compose 配置
-│
 ├── handlers/               # 命令处理器
 │   ├── user_commands.py    # 用户命令
-│   ├── verify_commands.py  # 认证命令
-│   └── admin_commands.py   # 管理员命令
-│
-├── utils/                  # 工具模块
-│   ├── checks.py           # 权限检查
-│   ├── concurrency.py      # 并发控制
-│   └── messages.py         # 消息模板
-│
-├── one/                    # Gemini One 认证模块
-│   ├── sheerid_verifier.py
-│   ├── img_generator.py
-│   └── name_generator.py
-│
-├── k12/                    # K12 教师认证模块
-│   ├── sheerid_verifier.py
-│   ├── img_generator.py
-│   └── name_generator.py
-│
-└── Boltnew/                # Bolt.new 认证模块
-    ├── sheerid_verifier.py
-    ├── img_generator.py
-    └── name_generator.py
+│   ├── admin_commands.py   # 管理员命令
+│   └── verify_commands.py  # 认证命令
+├── one/                    # Gemini One Pro 认证模块
+├── k12/                    # ChatGPT K12 认证模块
+├── spotify/                # Spotify Student 认证模块
+├── youtube/                # YouTube Premium 认证模块
+├── Boltnew/                # Bolt.new 认证模块
+└── utils/                  # 工具函数
+    ├── messages.py         # 消息模板
+    ├── concurrency.py      # 并发控制
+    └── checks.py           # 权限检查
 ```
 
 ---
 
 ## ⚙️ 配置说明
 
-### 积分系统配置
+### 环境变量
 
-编辑 `config.py`:
+| 变量名 | 必填 | 说明 | 默认值 |
+|--------|------|------|--------|
+| `BOT_TOKEN` | ✅ | Telegram Bot Token | - |
+| `CHANNEL_USERNAME` | ❌ | 频道用户名 | pk_oa |
+| `CHANNEL_URL` | ❌ | 频道链接 | https://t.me/pk_oa |
+| `ADMIN_USER_ID` | ✅ | 管理员 Telegram ID | - |
+| `MYSQL_HOST` | ✅ | MySQL 主机地址 | localhost |
+| `MYSQL_PORT` | ❌ | MySQL 端口 | 3306 |
+| `MYSQL_USER` | ✅ | MySQL 用户名 | - |
+| `MYSQL_PASSWORD` | ✅ | MySQL 密码 | - |
+| `MYSQL_DATABASE` | ✅ | 数据库名称 | tgbot_verify |
+
+### 积分配置
+
+在 `config.py` 中可以自定义积分规则：
 
 ```python
-VERIFY_COST = 1         # 每次认证消耗积分
-CHECKIN_REWARD = 1      # 签到奖励积分
-INVITE_REWARD = 2       # 邀请奖励积分
-REGISTER_REWARD = 1     # 注册奖励积分
-```
-
-### 并发控制
-
-编辑 `utils/concurrency.py` 调整并发数量：
-
-```python
-_base_concurrency = 20  # 基础并发数（自动根据系统资源计算）
+VERIFY_COST = 1        # 验证消耗的积分
+CHECKIN_REWARD = 1     # 签到奖励积分
+INVITE_REWARD = 2      # 邀请奖励积分
+REGISTER_REWARD = 1    # 注册奖励积分
 ```
 
 ---
 
-## ⚠️ 注意事项
+## ⚠️ 重要说明
 
-1. **合规使用**: 本工具仅供学习研究，请遵守相关平台的服务条款
-2. **个人使用**: 代码为早期版本，适合个人使用，商业场景需自行优化
-3. **数据安全**: 请妥善保管 Bot Token 和数据库密码
-4. **频率限制**: 建议设置合理的并发限制，避免被平台封禁
-5. **定期更新**: SheerID 平台可能更新验证流程，需要及时调整代码
+### 🔴 使用前必读
 
----
+**在使用机器人之前，请务必检查并更新各模块的验证配置！**
 
-## 🤝 社区与支持
+由于 SheerID 平台的 `programId` 可能会定期更新，使用前请确认以下配置文件中的 `PROGRAM_ID` 是否为最新：
 
-- **Telegram 频道**: [PK个人频道](https://t.me/pk_oa) - 项目更新、教程分享
-- **Telegram 群组**: [我们来交流](https://t.me/pastking_server) - 技术交流、问题反馈
+- `one/config.py` - Gemini One Pro 认证
+- `k12/config.py` - ChatGPT Teacher K12 认证
+- `spotify/config.py` - Spotify Student 认证
+- `youtube/config.py` - YouTube Premium Student 认证
+- `Boltnew/config.py` - Bolt.new Teacher 认证
 
----
+**如何获取最新的 programId**：
+1. 访问对应服务的认证页面
+2. 打开浏览器开发者工具（F12）→ 网络（Network）标签
+3. 开始认证流程
+4. 查找 `https://services.sheerid.com/rest/v2/verification/` 请求
+5. 从 URL 或请求载荷中提取 `programId`
+6. 更新对应模块的 `config.py` 文件
 
-## 🔧 二次开发
-
-欢迎基于本项目进行二次开发，但请遵守以下规则：
-
-1. ✅ **保留原仓库链接**: 在您的项目中保留本仓库地址
-2. ✅ **开源精神**: 建议您的修改也保持开源
-3. ✅ **署名说明**: 说明项目基于本仓库开发
-
-### 贡献代码
-
-如果您有改进建议：
-
-1. Fork 本仓库
-2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交您的改动 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启一个 Pull Request
+> **提示**：如果认证一直失败，很可能是 `programId` 已过期，请按上述步骤更新。
 
 ---
 
-## 📄 开源协议
+### 其他注意事项
 
-本项目基于 **MIT License** 开源，详见 [LICENSE](LICENSE) 文件。
+1. **数据库安全**
+   - 生产环境请使用强密码
+   - 定期备份数据库
+   - 限制数据库访问权限
 
-**简要说明**:
-- ✅ 可以自由使用、修改、分发
-- ✅ 可以用于商业用途（但请自行优化）
-- ⚠️ 需保留版权声明和许可声明
-- ⚠️ 软件按"原样"提供，不提供任何保证
+2. **Bot Token 安全**
+   - ✅ `.env` 文件已被 `.gitignore` 忽略，不会提交到 Git
+   - 切勿手动将 `.env` 添加到 Git
+   - 定期更换 Bot Token
+   - 使用环境变量管理敏感信息
+
+3. **使用限制**
+   - 每个认证消耗 1 积分
+   - 建议设置合理的并发限制
+   - 避免频繁请求导致 IP 被封
+
+4. **认证成功率**
+   - Spotify/YouTube：使用学生身份，审核通常几分钟
+   - Gemini/ChatGPT/Bolt：使用教师身份，审核可能需要更长时间
+   - 认证失败会自动退回积分
+   - 如果持续失败，请检查 `programId` 是否最新
+
+---
+
+## 🔗 相关链接
+
+- 📺 **Telegram 频道**：https://t.me/pk_oa
+- 🐛 **问题反馈**：[GitHub Issues](https://github.com/PastKing/tgbot-verify/issues)
+- 📖 **部署文档**：[DEPLOY.md](DEPLOY.md)
+
+---
+
+## 🤝 二次开发
+
+欢迎进行二次开发！但请遵守以下规则：
+
+1. **保留原作者信息**
+   - 在代码和文档中保留原仓库地址
+   - 注明基于本项目进行的二次开发
+
+2. **开源协议**
+   - 本项目采用 MIT 开源协议
+   - 二次开发的项目也必须开源
+
+3. **商业使用**
+   - 个人使用免费
+   - 商业使用请自行优化并承担责任
+   - 不提供任何技术支持和担保
+
+---
+
+## 📜 开源协议
+
+本项目采用 [MIT License](LICENSE) 开源协议。
+
+```
+MIT License
+
+Copyright (c) 2025 PastKing
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction...
+```
 
 ---
 
 ## 🙏 致谢
 
-- 原始机器人: [@auto_sheerid_bot](https://t.me/auto_sheerid_bot) (GGBond)
-- [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) - Telegram Bot 框架
-- [Playwright](https://playwright.dev/) - 浏览器自动化工具
-- [SheerID](https://www.sheerid.com/) - 身份验证平台
+- 感谢 [@auto_sheerid_bot](https://t.me/auto_sheerid_bot) GGBond 提供的旧版代码基础
+- 感谢所有为本项目做出贡献的开发者
+- 感谢 SheerID 平台提供的认证服务
 
 ---
 
-## 📊 更新日志
+## 📊 项目统计
+
+[![Star History Chart](https://api.star-history.com/svg?repos=PastKing/tgbot-verify&type=Date)](https://star-history.com/#PastKing/tgbot-verify&Date)
+
+---
+
+## 📝 更新日志
+
+### v2.0.0 (2025-01-12)
+
+- ✨ 新增 Spotify Student 和 YouTube Premium Student 认证（YouTube 为半成品，需参考 youtube/HELP.MD 使用）
+- 🔧 重构数据库为 MySQL
+- 🚀 优化并发控制和性能
+- 📝 完善文档和部署指南
+- 🔒 移除 hCaptcha 和 Turnstile 验证码功能
+- 🧹 清理不必要的代码和文件
+- 🐛 修复已知 BUG：
+  - 修复 `one/img_generator.py` 缩进错误
+  - 修复数据库导入错误（统一使用 `database_mysql`）
+  - 修复 `.env` 文件编码问题
+  - 修复 Git 分支冲突（统一使用 `main` 分支）
+- ⚠️ 重要提醒：使用前请检查并更新各模块 `config.py` 中的 `PROGRAM_ID`
 
 ### v1.0.0
+
 - 🎉 初始版本发布
+- ✅ 支持 Gemini、ChatGPT、Bolt.new 认证
 
 ---
 
-## 📈 项目统计
+<p align="center">
+  <strong>⭐ 如果这个项目对你有帮助，请给个 Star 支持一下！</strong>
+</p>
 
-<div align="center">
-
-![Star History](https://starchart.cc/PastKing/tgbot-verify.svg)
-
-</div>
-
----
-
-## 📞 联系方式
-
-- **GitHub**: [提交 Issue](https://github.com/PastKing/tgbot-verify/issues)
-- **Telegram频道**: [@pk_oa](https://t.me/pk_oa)
-
----
-
-<div align="center">
-
-**⭐ 如果这个项目对您有帮助，请给个 Star！**
-
-Made with ❤️ by PK
-
-[⬆ 回到顶部](#sheerid-自动认证机器人)
-
-</div>
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/PastKing">PastKing</a>
+</p>

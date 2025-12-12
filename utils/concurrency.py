@@ -47,9 +47,11 @@ _base_concurrency = _calculate_max_concurrency()
 # 为不同类型的验证创建独立的信号量
 # 这样可以避免一个类型的验证阻塞其他类型
 _verification_semaphores: Dict[str, asyncio.Semaphore] = {
-    "gemini_one_pro": asyncio.Semaphore(_base_concurrency // 3),
-    "chatgpt_teacher_k12": asyncio.Semaphore(_base_concurrency // 3),
-    "bolt_teacher": asyncio.Semaphore(_base_concurrency // 3),
+    "gemini_one_pro": asyncio.Semaphore(_base_concurrency // 5),
+    "chatgpt_teacher_k12": asyncio.Semaphore(_base_concurrency // 5),
+    "spotify_student": asyncio.Semaphore(_base_concurrency // 5),
+    "youtube_student": asyncio.Semaphore(_base_concurrency // 5),
+    "bolt_teacher": asyncio.Semaphore(_base_concurrency // 5),
 }
 
 

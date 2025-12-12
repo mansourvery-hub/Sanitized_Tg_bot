@@ -16,9 +16,9 @@ def is_group_chat(update: Update) -> bool:
 
 
 async def reject_group_command(update: Update) -> bool:
-    """群聊限制：仅允许 /verify /verify2 /verify4 /qd"""
+    """群聊限制：仅允许 /verify /verify2 /verify3 /verify4 /verify5 /qd"""
     if is_group_chat(update):
-        await update.message.reply_text("群聊仅支持 /verify /verify2 /verify4 /qd，请私聊使用其他命令。")
+        await update.message.reply_text("群聊仅支持 /verify /verify2 /verify3 /verify4 /verify5 /qd，请私聊使用其他命令。")
         return True
     return False
 
