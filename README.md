@@ -46,7 +46,6 @@
 
 - 🚀 **自动化流程**：一键完成信息生成、文档创建、认证提交
 - 🎨 **智能生成**：自动生成学生证/教师证 PNG 图片
-- 🏫 **多学校支持**：支持 Pennsylvania State University 多个校区
 - 💰 **积分系统**：签到、邀请、卡密兑换等多种获取方式
 - 🔐 **安全可靠**：使用 MySQL 数据库，支持环境变量配置
 - ⚡ **并发控制**：智能管理并发请求，确保稳定性
@@ -280,32 +279,6 @@ REGISTER_REWARD = 1    # 注册奖励积分
 
 ---
 
-### 其他注意事项
-
-1. **数据库安全**
-   - 生产环境请使用强密码
-   - 定期备份数据库
-   - 限制数据库访问权限
-
-2. **Bot Token 安全**
-   - ✅ `.env` 文件已被 `.gitignore` 忽略，不会提交到 Git
-   - 切勿手动将 `.env` 添加到 Git
-   - 定期更换 Bot Token
-   - 使用环境变量管理敏感信息
-
-3. **使用限制**
-   - 每个认证消耗 1 积分
-   - 建议设置合理的并发限制
-   - 避免频繁请求导致 IP 被封
-
-4. **认证成功率**
-   - Spotify/YouTube：使用学生身份，审核通常几分钟
-   - Gemini/ChatGPT/Bolt：使用教师身份，审核可能需要更长时间
-   - 认证失败会自动退回积分
-   - 如果持续失败，请检查 `programId` 是否最新
-
----
-
 ## 🔗 相关链接
 
 - 📺 **Telegram 频道**：https://t.me/pk_oa
@@ -368,17 +341,9 @@ in the Software without restriction...
 ### v2.0.0 (2025-01-12)
 
 - ✨ 新增 Spotify Student 和 YouTube Premium Student 认证（YouTube 为半成品，需参考 youtube/HELP.MD 使用）
-- 🔧 重构数据库为 MySQL
 - 🚀 优化并发控制和性能
 - 📝 完善文档和部署指南
-- 🔒 移除 hCaptcha 和 Turnstile 验证码功能
-- 🧹 清理不必要的代码和文件
-- 🐛 修复已知 BUG：
-  - 修复 `one/img_generator.py` 缩进错误
-  - 修复数据库导入错误（统一使用 `database_mysql`）
-  - 修复 `.env` 文件编码问题
-  - 修复 Git 分支冲突（统一使用 `main` 分支）
-- ⚠️ 重要提醒：使用前请检查并更新各模块 `config.py` 中的 `PROGRAM_ID`
+- 🐛 修复已知 BUG
 
 ### v1.0.0
 
