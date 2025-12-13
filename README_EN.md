@@ -48,7 +48,6 @@ A Python-based Telegram bot that automates SheerID student/teacher identity veri
 
 - 🚀 **Automated Process**: One-click completion of info generation, document creation, and submission
 - 🎨 **Smart Generation**: Auto-generates student/teacher ID PNG images
-- 🏫 **Multi-School Support**: Supports Pennsylvania State University multiple campuses
 - 💰 **Points System**: Multiple earning methods including check-ins, invitations, and redemption codes
 - 🔐 **Secure & Reliable**: MySQL database with environment variable configuration
 - ⚡ **Concurrency Control**: Intelligent management of concurrent requests for stability
@@ -282,32 +281,6 @@ Since SheerID platform's `programId` may be updated periodically, please verify 
 
 ---
 
-### Other Notes
-
-1. **Database Security**
-   - Use strong passwords in production
-   - Regular database backups
-   - Limit database access permissions
-
-2. **Bot Token Security**
-   - ✅ `.env` file is ignored by `.gitignore` and won't be committed to Git
-   - Never manually add `.env` to Git
-   - Regularly rotate Bot Token
-   - Use environment variables for sensitive info
-
-3. **Usage Limits**
-   - Each verification costs 1 point
-   - Set reasonable concurrency limits
-   - Avoid frequent requests that may lead to IP bans
-
-4. **Success Rate**
-   - Spotify/YouTube: Student identity, review usually within minutes
-   - Gemini/ChatGPT/Bolt: Teacher identity, may take longer
-   - Failed verifications automatically refund points
-   - If verification keeps failing, check if `programId` is up-to-date
-
----
-
 ## 🔗 Links
 
 - 📺 **Telegram Channel**: https://t.me/pk_oa
@@ -370,17 +343,9 @@ in the Software without restriction...
 ### v2.0.0 (2025-01-12)
 
 - ✨ Added Spotify Student and YouTube Premium Student verification (YouTube is in beta, see youtube/HELP.MD)
-- 🔧 Refactored database to MySQL
 - 🚀 Optimized concurrency control and performance
 - 📝 Improved documentation and deployment guide
-- 🔒 Removed hCaptcha and Turnstile verification features
-- 🧹 Cleaned up unnecessary code and files
-- 🐛 Fixed known bugs:
-  - Fixed indentation error in `one/img_generator.py`
-  - Fixed database import error (unified to use `database_mysql`)
-  - Fixed `.env` file encoding issue
-  - Fixed Git branch conflict (unified to use `main` branch)
-- ⚠️ Important reminder: Check and update `PROGRAM_ID` in each module's `config.py` before use
+- 🐛 Fixed known bugs
 
 ### v1.0.0
 
