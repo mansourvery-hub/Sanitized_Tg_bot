@@ -15,6 +15,11 @@
 
 这是一个基于 Python 的 Telegram 机器人，可以自动完成多个平台的 SheerID 学生/教师身份认证。机器人自动生成身份信息、创建认证文档并提交到 SheerID 平台，大大简化了认证流程。
 
+> **⚠️ 重要提示**：
+> 
+> - **Gemini One Pro**、**ChatGPT Teacher K12**、**Spotify Student**、**YouTube Premium Student** 等服务在使用前需要更新各模块配置文件中的 `programId` 等验证资料，具体请参考下方"使用前必读"章节。
+> - 本项目还提供了 **ChatGPT 军人认证**的实现思路和接口文档，详细内容请查看 [`military/README.md`](military/README.md)，用户可根据文档自行集成。
+
 ### 🎯 支持的认证服务
 
 | 命令 | 服务 | 类型 | 状态 | 说明 |
@@ -41,6 +46,10 @@
 > 4. 从请求载荷中获取 `programId`，从响应中获取 `verificationId`
 > 5. 手动组成链接：`https://services.sheerid.com/verify/{programId}/?verificationId={verificationId}`
 > 6. 使用 `/verify5` 命令提交该链接
+
+> **💡 ChatGPT 军人认证思路**：
+> 
+> 本项目提供了 ChatGPT 军人 SheerID 认证的实现思路和接口文档。军人认证流程与普通学生/教师认证不同，需要先执行 `collectMilitaryStatus` 接口设置军人状态，然后再提交个人信息表单。详细实现思路和接口说明请查看 [`military/README.md`](military/README.md) 文档。用户可根据该文档自行集成到机器人中。
 
 ### ✨ 核心功能
 
@@ -216,6 +225,7 @@ tgbot-verify/
 ├── spotify/                # Spotify Student 认证模块
 ├── youtube/                # YouTube Premium 认证模块
 ├── Boltnew/                # Bolt.new 认证模块
+├── military/               # ChatGPT 军人认证思路文档
 └── utils/                  # 工具函数
     ├── messages.py         # 消息模板
     ├── concurrency.py      # 并发控制
@@ -259,13 +269,13 @@ REGISTER_REWARD = 1    # 注册奖励积分
 
 **在使用机器人之前，请务必检查并更新各模块的验证配置！**
 
-由于 SheerID 平台的 `programId` 可能会定期更新，使用前请确认以下配置文件中的 `PROGRAM_ID` 是否为最新：
+由于 SheerID 平台的 `programId` 可能会定期更新，以下服务在使用前**必须**更新配置文件中的验证资料：
 
-- `one/config.py` - Gemini One Pro 认证
-- `k12/config.py` - ChatGPT Teacher K12 认证
-- `spotify/config.py` - Spotify Student 认证
-- `youtube/config.py` - YouTube Premium Student 认证
-- `Boltnew/config.py` - Bolt.new Teacher 认证
+- `one/config.py` - **Gemini One Pro** 认证（需更新 `PROGRAM_ID`）
+- `k12/config.py` - **ChatGPT Teacher K12** 认证（需更新 `PROGRAM_ID`）
+- `spotify/config.py` - **Spotify Student** 认证（需更新 `PROGRAM_ID`）
+- `youtube/config.py` - **YouTube Premium Student** 认证（需更新 `PROGRAM_ID`）
+- `Boltnew/config.py` - Bolt.new Teacher 认证（建议检查 `PROGRAM_ID`）
 
 **如何获取最新的 programId**：
 1. 访问对应服务的认证页面

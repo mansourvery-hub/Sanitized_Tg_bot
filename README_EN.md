@@ -17,6 +17,11 @@
 
 A Python-based Telegram bot that automates SheerID student/teacher identity verification for multiple platforms. The bot automatically generates identity information, creates verification documents, and submits them to the SheerID platform, significantly simplifying the verification process.
 
+> **⚠️ Important Notice**:
+> 
+> - Services such as **Gemini One Pro**, **ChatGPT Teacher K12**, **Spotify Student**, and **YouTube Premium Student** require updating verification data (e.g., `programId`) in each module's configuration file before use. Please refer to the "Must Read Before Use" section below for details.
+> - This project also provides implementation approach and API documentation for **ChatGPT Military verification**. For detailed information, please refer to [`military/README.md`](military/README.md). Users can integrate this based on the documentation.
+
 ### 🎯 Supported Services
 
 | Command | Service | Type | Status | Description |
@@ -43,6 +48,10 @@ A Python-based Telegram bot that automates SheerID student/teacher identity veri
 > 4. Extract `programId` from request payload and `verificationId` from response
 > 5. Manually construct link: `https://services.sheerid.com/verify/{programId}/?verificationId={verificationId}`
 > 6. Submit the link using `/verify5` command
+
+> **💡 ChatGPT Military Verification Approach**:
+> 
+> This project provides implementation approach and API documentation for ChatGPT Military SheerID verification. The military verification process differs from regular student/teacher verification, requiring an initial `collectMilitaryStatus` API call to set military status before submitting personal information. For detailed implementation approach and API documentation, please refer to [`military/README.md`](military/README.md). Users can integrate this into the bot based on the documentation.
 
 ### ✨ Key Features
 
@@ -218,6 +227,7 @@ tgbot-verify/
 ├── spotify/                # Spotify Student verification module
 ├── youtube/                # YouTube Premium verification module
 ├── Boltnew/                # Bolt.new verification module
+├── military/               # ChatGPT Military verification approach documentation
 └── utils/                  # Utility functions
     ├── messages.py         # Message templates
     ├── concurrency.py      # Concurrency control
@@ -261,13 +271,13 @@ REGISTER_REWARD = 1    # Registration reward points
 
 **Before using the bot, please check and update verification configurations in each module!**
 
-Since SheerID platform's `programId` may be updated periodically, please verify that the `PROGRAM_ID` in the following config files is up-to-date:
+Since SheerID platform's `programId` may be updated periodically, the following services **must** update verification data in their configuration files before use:
 
-- `one/config.py` - Gemini One Pro verification
-- `k12/config.py` - ChatGPT Teacher K12 verification
-- `spotify/config.py` - Spotify Student verification
-- `youtube/config.py` - YouTube Premium Student verification
-- `Boltnew/config.py` - Bolt.new Teacher verification
+- `one/config.py` - **Gemini One Pro** verification (update `PROGRAM_ID`)
+- `k12/config.py` - **ChatGPT Teacher K12** verification (update `PROGRAM_ID`)
+- `spotify/config.py` - **Spotify Student** verification (update `PROGRAM_ID`)
+- `youtube/config.py` - **YouTube Premium Student** verification (update `PROGRAM_ID`)
+- `Boltnew/config.py` - Bolt.new Teacher verification (recommended to check `PROGRAM_ID`)
 
 **How to get the latest programId**:
 1. Visit the corresponding service's verification page
