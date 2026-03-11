@@ -9,7 +9,7 @@
 >
 > 基于 [@auto_sheerid_bot](https://t.me/auto_sheerid_bot) GGBond 的旧版代码改进
 
-[English](README_EN.md) | 中文
+[English](README_EN.md) | [繁體中文](README_TW.md) | 简体中文
 
 ---
 
