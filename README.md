@@ -171,7 +171,6 @@ tgbot-verify/
 ├── spotify/                # Spotify Student 模块
 ├── youtube/                # YouTube Premium 模块
 ├── Boltnew/                # Bolt.new 模块
-├── military/               # ChatGPT 军人认证文档
 └── utils/                  # 工具函数
     ├── messages.py
     ├── concurrency.py

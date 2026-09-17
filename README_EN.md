@@ -171,7 +171,6 @@ tgbot-verify/
 ├── spotify/                # Spotify Student module
 ├── youtube/                # YouTube Premium module
 ├── Boltnew/                # Bolt.new module
-├── military/               # ChatGPT Military verification docs
 └── utils/                  # Utility functions
     ├── messages.py
     ├── concurrency.py

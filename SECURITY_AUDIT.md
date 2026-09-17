@@ -79,9 +79,9 @@ The goal of this audit is a full static code analysis and security inventory of 
 
 ## 4. Action Plan for Sanitization
 
-### Files Recommended for Removal (Stage 2)
-1. `oaiteam/` — Unrelated auxiliary ChatGPT invite script containing embedded credentials.
-2. `military/` — Unrelated auxiliary markdown documentation for military verification flows not integrated into `bot.py`.
+### Files Recommended for Removal (Stage 2 - COMPLETED)
+1. `oaiteam/` — Unrelated auxiliary ChatGPT invite script containing embedded credentials. Removed in Stage 2.
+2. `military/` — Unrelated auxiliary markdown documentation for military verification flows not integrated into `bot.py`. Removed in Stage 2.
 
 ### Files Requiring Additional Review / Hardening
 1. `requirements.txt` -> Create `requirements.lock.txt` with locked exact package versions.
