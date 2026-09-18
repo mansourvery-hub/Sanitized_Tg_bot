@@ -236,6 +236,29 @@ Welcome to fork and build upon this project. Please:
 
 ---
 
+## 🛡️ Sanitization & Security Hardening (Sanitized_Tg_bot Fork)
+
+This repository is a security-conscious, sanitized hard fork of [`PastKing/tgbot-verify`](https://github.com/PastKing/tgbot-verify).
+
+### Sanitization Overview
+- **Removed High-Risk Auxiliary Modules**:
+  - `oaiteam/` (`invite.py`): Removed script containing hardcoded ChatGPT authorization bearer tokens and account IDs.
+  - `military/`: Removed non-functional auxiliary military verification research notes.
+- **Reproducible Dependency Specification**:
+  - Pinned exact dependency versions in `requirements.lock.txt`.
+- **Application Security Hardening**:
+  - Removed dummy fallback credentials (`BOT_TOKEN` placeholder, `MYSQL_PASSWORD` fallback).
+  - Explicit configuration validation on startup.
+- **Container Hardening**:
+  - Runs as unprivileged non-root user `appuser` (UID 10001).
+  - Browser binaries isolated in `/ms-playwright`.
+  - Zero sensitive host mounts or Docker socket exposures.
+- **Safe Local Execution Workflow**:
+  - See [`SAFE_LOCAL_RUN.md`](SAFE_LOCAL_RUN.md) for isolated local testing using Firejail.
+  - Full audit reports in [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md) and [`FINAL_SECURITY_REVIEW.md`](FINAL_SECURITY_REVIEW.md).
+
+---
+
 ## 📜 License
 
 This project is licensed under the [MIT License](LICENSE).

@@ -236,6 +236,19 @@ REGISTER_REWARD = 1    # 注册奖励
 
 ---
 
+## 🛡️ 安全审计与净化说明 (Sanitization & Security Hardening)
+
+本项目是基于 upstream [`PastKing/tgbot-verify`](https://github.com/PastKing/tgbot-verify) 进行安全净化的分支版本（Hard Fork），旨在保留核心 Telegram 验证机器人功能的同时消除高风险辅助组件与执行风险：
+
+- **移除无关的高风险辅助组件**：彻底删除了包含未授权 ChatGPT 邀请与硬编码凭据的 `oaiteam/` 模块，以及未接入机器人的 `military/` 辅助文档。
+- **确定性依赖锁定**：引入 `requirements.lock.txt`，将所有运行时与直接/间接依赖锁定到确定版本。
+- **运行时默认安全加固**：清理了 `config.py` 和 `database_mysql.py` 中的占位凭据默认值，加入环境变量缺失校验。
+- **容器安全加固**：`Dockerfile` 配置了独立的非 root 用户 (`appuser:appgroup`)，消除了对特权及 Docker Socket 访问的依赖。
+- **低风险本地工作流**：新增 [`SAFE_LOCAL_RUN.md`](SAFE_LOCAL_RUN.md)，推荐使用虚拟环境与 Firejail 沙箱隔离进行本地调试。
+- **完整审计报告**：详见 [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md) 与 [`FINAL_SECURITY_REVIEW.md`](FINAL_SECURITY_REVIEW.md)。
+
+---
+
 ## 📜 开源协议
 
 本项目采用 [MIT License](LICENSE) 开源协议。
