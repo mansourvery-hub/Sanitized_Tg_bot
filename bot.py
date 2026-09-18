@@ -47,6 +47,10 @@ async def error_handler(update: object, context) -> None:
 
 def main():
     """主函数"""
+    if not BOT_TOKEN:
+        logger.error("BOT_TOKEN is missing in environment variables. Please set BOT_TOKEN in .env file.")
+        raise ValueError("BOT_TOKEN is required to run the bot.")
+
     # 初始化数据库
     db = Database()
 
