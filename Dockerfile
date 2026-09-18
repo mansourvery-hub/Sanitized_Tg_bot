@@ -46,7 +46,7 @@ RUN groupadd -g 10001 appgroup && \
 COPY requirements.lock.txt requirements.txt /app/
 
 # 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.lock.txt
 
 # 以 appuser 身份安装 Playwright 浏览器
 USER appuser
