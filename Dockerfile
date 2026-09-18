@@ -4,6 +4,11 @@ FROM python:3.11-slim
 # 设置工作目录
 WORKDIR /app
 
+# 设置环境变量
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
 # 安装系统依赖（Playwright需要）
 RUN apt-get update && apt-get install -y \
     wget \
@@ -31,30 +36,30 @@ RUN apt-get update && apt-get install -y \
     build-essential gcc pkg-config libcairo2-dev libpango1.0-dev libgdk-pixbuf-2.0-dev libffi-dev python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 复制依赖文件
-COPY requirements.txt .
+# 创建非 root 账号与日志目录
+RUN groupadd -g 10001 appgroup && \
+    useradd -u 10001 -g appgroup -s /bin/bash -m appuser && \
+    mkdir -p /app/logs /ms-playwright && \
+    chown -R appuser:appgroup /app /ms-playwright
 
-# 安装Python依赖（不使用缓存）
+# 复制依赖文件
+COPY requirements.lock.txt requirements.txt /app/
+
+# 安装 Python 依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 安装Playwright浏览器
+# 以 appuser 身份安装 Playwright 浏览器
+USER appuser
 RUN playwright install chromium
 
-# 复制项目文件（.dockerignore会自动排除缓存）
-COPY . .
+# 复制项目代码
+COPY --chown=appuser:appgroup . /app/
 
-# 清理所有Python缓存（确保使用最新代码）
-RUN find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-RUN find . -type f -name "*.pyc" -delete 2>/dev/null || true
+# 清理 Python 缓存
+RUN find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true && \
+    find . -type f -name "*.pyc" -delete 2>/dev/null || true
 
-# 设置Python不生成字节码（避免缓存问题）
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# MySQL配置（通过 docker-compose.yml 或命令行传入）
-# 不在这里硬编码，使用环境变量
-
-# 健康检查（检查机器人进程）
+# 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD pgrep -f "python.*bot.py" || exit 1
 
