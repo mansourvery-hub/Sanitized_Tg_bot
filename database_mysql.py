@@ -32,7 +32,7 @@ class MySQLDatabase:
             'charset': 'utf8mb4',
             'autocommit': False,
         }
-        logger.info(f"MySQL 数据库初始化: {self.config['user']}@{self.config['host']}/{self.config['database']}")
+        logger.info("MySQL 数据库初始化完成")
         self.init_database()
 
     def get_connection(self):

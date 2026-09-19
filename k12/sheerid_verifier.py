@@ -141,11 +141,7 @@ class SheerIDVerifier:
             if not birth_date:
                 birth_date = generate_birth_date()
 
-            logger.info(f"教师信息: {first_name} {last_name}")
-            logger.info(f"邮箱: {email}")
-            logger.info(f"学校: {school['name']}")
-            logger.info(f"生日: {birth_date}")
-            logger.info(f"验证 ID: {self.verification_id}")
+            logger.info(f"K12 验证开始, 验证 ID: {self.verification_id}")
 
             # 生成教师证明 PDF + PNG
             logger.info("步骤 1/4: 生成教师证明 PDF 和 PNG...")

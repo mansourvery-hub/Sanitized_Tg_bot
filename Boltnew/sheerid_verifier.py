@@ -132,11 +132,7 @@ class SheerIDVerifier:
                 logger.info("申请新的 verificationId ...")
                 self.create_verification()
 
-            logger.info(f"教师信息: {first_name} {last_name}")
-            logger.info(f"邮箱: {email}")
-            logger.info(f"学校: {school['name']}")
-            logger.info(f"生日: {birth_date}")
-            logger.info(f"验证 ID: {self.verification_id}")
+            logger.info(f"开始验证流程 | 验证 ID: {self.verification_id} | 模块: boltnew")
 
             # 生成教师 PNG
             logger.info("步骤 1/5: 生成教师 PNG 文档...")

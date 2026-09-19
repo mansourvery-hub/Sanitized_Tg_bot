@@ -99,7 +99,7 @@ async def verify_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db:
         logger.error("验证过程出错: %s", e)
         db.add_balance(user_id, VERIFY_COST)
         await processing_msg.edit_text(
-            f"❌ 处理过程中出现错误：{str(e)}\n\n"
+            f"❌ 处理过程中出现错误，请稍后重试。\n\n"
             f"已退回 {VERIFY_COST} 积分"
         )
 
@@ -175,7 +175,7 @@ async def verify2_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
         logger.error("验证过程出错: %s", e)
         db.add_balance(user_id, VERIFY_COST)
         await processing_msg.edit_text(
-            f"❌ 处理过程中出现错误：{str(e)}\n\n"
+            f"❌ 处理过程中出现错误，请稍后重试。\n\n"
             f"已退回 {VERIFY_COST} 积分"
         )
 
@@ -255,10 +255,10 @@ async def verify3_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
                 f"已退回 {VERIFY_COST} 积分"
             )
     except Exception as e:
-        logger.error("Spotify 验证过程出错: %s", e)
+        logger.error("验证过程出错: %s", e)
         db.add_balance(user_id, VERIFY_COST)
         await processing_msg.edit_text(
-            f"❌ 处理过程中出现错误：{str(e)}\n\n"
+            f"❌ 处理过程中出现错误，请稍后重试。\n\n"
             f"已退回 {VERIFY_COST} 积分"
         )
 
@@ -393,7 +393,7 @@ async def verify4_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
         logger.error("Bolt.new 验证过程出错: %s", e)
         db.add_balance(user_id, VERIFY_COST)
         await processing_msg.edit_text(
-            f"❌ 处理过程中出现错误：{str(e)}\n\n"
+            f"❌ 处理过程中出现错误，请稍后重试。\n\n"
             f"已退回 {VERIFY_COST} 积分"
         )
 
@@ -537,7 +537,7 @@ async def verify5_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
         logger.error("YouTube 验证过程出错: %s", e)
         db.add_balance(user_id, VERIFY_COST)
         await processing_msg.edit_text(
-            f"❌ 处理过程中出现错误：{str(e)}\n\n"
+            f"❌ 处理过程中出现错误，请稍后重试。\n\n"
             f"已退回 {VERIFY_COST} 积分"
         )
 
@@ -614,6 +614,6 @@ async def getV4Code_command(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     except Exception as e:
         logger.error("获取 Bolt.new 认证码失败: %s", e)
         await processing_msg.edit_text(
-            f"❌ 查询过程中出现错误：{str(e)}\n\n"
+            "❌ 查询过程中出现错误，请稍后重试。\n\n"
             "请稍后重试或联系管理员。"
         )
