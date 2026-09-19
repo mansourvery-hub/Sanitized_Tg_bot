@@ -61,7 +61,7 @@ RUN find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true && \
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD pgrep -f "python.*bot.py" || exit 1
+    CMD python3 -c "import os, sys; sys.exit(0 if os.path.exists('/proc/1/cmdline') else 1)"
 
 # 启动机器人
 CMD ["python", "-u", "bot.py"]
