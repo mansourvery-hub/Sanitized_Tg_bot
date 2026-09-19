@@ -285,21 +285,20 @@ class MySQLDatabase:
             conn.close()
 
     def deduct_balance(self, user_id: int, amount: int) -> bool:
-        """扣除用户积分"""
-        user = self.get_user(user_id)
-        if not user or user["balance"] < amount:
+        """扣除用户积分（原子操作，防止并发竞态）"""
+        if amount <= 0:
             return False
 
         conn = self.get_connection()
         cursor = conn.cursor()
 
         try:
-            cursor.execute(
-                "UPDATE users SET balance = balance - %s WHERE user_id = %s",
-                (amount, user_id),
+            affected_rows = cursor.execute(
+                "UPDATE users SET balance = balance - %s WHERE user_id = %s AND balance >= %s",
+                (amount, user_id, amount),
             )
             conn.commit()
-            return True
+            return affected_rows > 0
         except Exception as e:
             logger.error(f"扣除积分失败: {e}")
             conn.rollback()
