@@ -1,0 +1,51 @@
+# Git
+.git
+.git/**
+
+# Environment Variables & Secrets
+.env
+.env.*
+config_local.py
+
+# Virtual Environments
+.venv
+venv
+env
+ENV
+
+# Python Cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+*.log
+logs
+
+# Testing & Coverage
+.pytest_cache
+.coverage
+htmlcov
+.tox
+
+# IDE & Editor
+.vscode
+.idea
+.claude
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary / Test Output Files
+*.tmp
+*.bak
+test_*.png
+test_*.pdf
