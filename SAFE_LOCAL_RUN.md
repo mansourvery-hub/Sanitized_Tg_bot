@@ -7,13 +7,15 @@ This guide describes how to run and test `Sanitized_Tg_bot` locally with minimal
 ## 1. Minimal-Risk Local Architecture
 
 ```text
-Git working copy
+working copy
     ↓
-AI agent edits / audits
+AI-agent code audit/editing
     ↓
-Python virtual environment (.venv)
+.venv
     ↓
-Firejail execution isolation (sandbox)
+Firejail
+    ↓
+bot.py
 ```
 
 ---
@@ -53,18 +55,24 @@ To protect host credentials (SSH keys, cloud configs, browser profiles, personal
 firejail --private --net=default .venv/bin/python bot.py
 ```
 
-### Security Guarantees Explained
+### Security Guarantees & Network Boundary Explained
 
-- **`--private`**: Mounts temporary `tmpfs` directories over `$HOME`. The running Python process cannot access host SSH keys (`~/.ssh`), browser profiles (`~/.config/google-chrome`, `~/.mozilla`), or cloud credentials (`~/.aws`, `~/.gcp`).
-- **`--net=default`**: Permits normal outbound HTTP/HTTPS connections to Telegram API (`api.telegram.org`) and SheerID (`services.sheerid.com`) while keeping local file access restricted.
-- **No Docker Socket**: The bot process is given no access to `/var/run/docker.sock`.
-- **No Host Root Access**: Firejail runs in user mode without elevated host privileges.
+- **`--private`**: Isolates the process's home and filesystem view by mounting a temporary `tmpfs` over `$HOME`. The process cannot view or access host home directory files.
+- **`--net=default`**: Permits ordinary outbound networking required for Telegram API (`api.telegram.org`) and SheerID (`services.sheerid.com`). **Note:** Firejail with `--net=default` does NOT provide a strict outbound network allowlist. Outbound traffic is permitted through the default host network interface.
+- **Explicit Exposure Warnings**: Never mount or expose the following host resources into the process sandbox or container:
+  - `~/.ssh` (SSH private keys and known hosts)
+  - `~/.aws` (AWS credentials and configuration)
+  - `~/.config/gcloud` (Google Cloud SDK credentials)
+  - browser profiles (e.g. `~/.config/google-chrome`, `~/.mozilla`)
+  - `/` (host system root)
+  - `docker.sock` (`/var/run/docker.sock`)
+- **No Elevated Privileges**: Firejail executes as an unprivileged user process without elevated host capabilities.
 
 ---
 
 ## 4. Security Rules for Local Experimentation
 
 1. **Dedicated Bot Token**: Never test with production Telegram bot tokens.
-2. **Dedicated Database**: Use a local test MySQL database instance.
-3. **Environment Isolation**: Keep secrets in `.env` outside version control. `.env` is listed in `.gitignore`.
-4. **No Sensitive Volume Mounts**: Avoid mounting your host home directory or system root (`/`) into containers or sandbox processes.
+2. **Dedicated Database**: Use a local or isolated test MySQL database instance.
+3. **Environment Isolation**: Keep secrets in `.env` outside version control (`.env` is ignored by `.gitignore`).
+4. **No Sensitive Volume Mounts**: Strictly adhere to the warnings above; do not expose host directories or sockets.
