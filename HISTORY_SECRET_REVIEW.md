@@ -58,13 +58,16 @@ The Git blob remains reachable and unpacked/packed in git storage.
 
 ---
 
-## 4. History Rewriting Recommendation
+## 4. History Rewriting Recommendation & Execution
 
-- **Recommendation:** Proceed with Stage 3 history rewriting to scrub `oaiteam/` from historical commits in `Sanitized_Tg_bot`.
-- **Tooling:** Use `git-filter-repo` (or equivalent established history rewriting tool).
-- **Safety Pre-conditions:**
-  1. Create a full local backup branch/tag (`backup-pre-scrub-stage2`).
-  2. Record the pre-rewrite commit SHA and tree SHA.
-  3. Confirm the current working tree is clean.
-  4. Ensure all legitimate application history and upstream commits are preserved intact, only excising `oaiteam/` from tree objects.
-  5. Use `--force-with-lease` when updating the remote `origin/main`.
+- **Recommendation:** History rewriting was recommended and executed in Stage 3.
+- **Execution Date:** September 18, 2026
+- **Tooling:** `git-filter-repo` (isolated Python virtualenv).
+- **Paths Removed:** `oaiteam/`
+- **Result:**
+  - `oaiteam/` was permanently expunged across all 32 historical commits.
+  - Useful upstream history, commit timestamps, and author attributions were preserved.
+  - The working tree content SHA remains completely unchanged (`6a00085713bdb2ae6565a643ca2c395b02a1ee9f`).
+  - Pre-rewrite HEAD: `71810875850670826eeb36d5f932a23be570ec2d`
+  - Post-rewrite HEAD (before docs update): `ecb62b28fcd4fdb3ced50ac136d3cd849da5271a`
+  - Verification: `git log --all -- oaiteam/invite.py` returns 0 commits. Historical secret blobs are no longer reachable.
