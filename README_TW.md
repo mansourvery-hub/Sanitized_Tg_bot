@@ -42,7 +42,7 @@
 
 ## 🛠️ 技術堆疊
 
-- **語言**：Python 3.11+
+- **語言**：Python 3.14+
 - **Bot 框架**：python-telegram-bot 20.0+
 - **資料庫**：MySQL 5.7+
 - **瀏覽器自動化**：Playwright

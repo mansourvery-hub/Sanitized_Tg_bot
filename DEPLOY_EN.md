@@ -23,7 +23,7 @@ This document provides detailed instructions on how to deploy the SheerID Auto-V
 ### Minimum
 
 - **OS**: Linux (Ubuntu 20.04+ recommended) / Windows 10+ / macOS 10.15+
-- **Python**: 3.11 or higher
+- **Python**: 3.14 or higher (Python 3.11+ supported)
 - **MySQL**: 5.7 or higher
 - **Memory**: 512 MB RAM (1 GB+ recommended)
 - **Disk**: 2 GB+
@@ -31,8 +31,8 @@ This document provides detailed instructions on how to deploy the SheerID Auto-V
 
 ### Recommended
 
-- **OS**: Ubuntu 22.04 LTS
-- **Python**: 3.11
+- **OS**: Ubuntu 24.04 LTS / Arch Linux
+- **Python**: 3.14
 - **MySQL**: 8.0
 - **Memory**: 2 GB+ RAM
 - **Disk**: 5 GB+
@@ -164,17 +164,17 @@ docker rm tgbot-verify
 ```bash
 # Ubuntu/Debian
 sudo apt update
-sudo apt install -y python3.11 python3.11-pip python3.11-venv mysql-server
+sudo apt install -y python3 python3-pip python3-venv mysql-server
 
 # macOS (using Homebrew)
-brew install python@3.11 mysql
+brew install python mysql
 ```
 
 #### 2. Create a Virtual Environment
 
 ```bash
-python3.11 -m venv venv
-source venv/bin/activate  # Linux/macOS
+python3 -m venv .venv
+source .venv/bin/activate  # Linux/macOS
 ```
 
 #### 3. Install Python Packages

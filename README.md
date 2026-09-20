@@ -42,7 +42,7 @@
 
 ## 🛠️ 技术栈
 
-- **语言**：Python 3.11+
+- **语言**：Python 3.14+ (支持 Python 3.11 - 3.14)
 - **Bot框架**：python-telegram-bot 20.0+
 - **数据库**：MySQL 5.7+
 - **浏览器自动化**：Playwright

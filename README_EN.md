@@ -42,7 +42,7 @@ A Python-based Telegram bot that automates SheerID student/teacher identity veri
 
 ## 🛠️ Tech Stack
 
-- **Language**: Python 3.11+
+- **Language**: Python 3.14+ (3.11+ compatible)
 - **Bot Framework**: python-telegram-bot 20.0+
 - **Database**: MySQL 5.7+
 - **Browser Automation**: Playwright
