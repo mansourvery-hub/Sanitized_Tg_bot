@@ -57,14 +57,16 @@ A Python-based Telegram bot that automates SheerID student/teacher identity veri
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/PastKing/tgbot-verify.git
-cd tgbot-verify
+git clone https://github.com/mansourvery-hub/Sanitized_Tg_bot.git
+cd Sanitized_Tg_bot
 ```
 
 ### 2. Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.lock.txt
 playwright install chromium
 ```
 

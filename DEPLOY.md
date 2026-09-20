@@ -46,8 +46,8 @@
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/PastKing/tgbot-verify.git
-cd tgbot-verify
+git clone https://github.com/mansourvery-hub/Sanitized_Tg_bot.git
+cd Sanitized_Tg_bot
 
 # 2. 配置环境变量
 cp env.example .env
@@ -181,7 +181,7 @@ source venv/bin/activate  # Linux/macOS
 
 ```bash
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements.lock.txt
 playwright install chromium
 ```
 
@@ -240,7 +240,7 @@ venv\Scripts\activate
 
 ```cmd
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements.lock.txt
 playwright install chromium
 ```
 
@@ -442,8 +442,8 @@ docker-compose down
 docker-compose up -d --build
 
 # 手动部署
-source venv/bin/activate
-pip install -r requirements.txt
+source .venv/bin/activate
+pip install -r requirements.lock.txt
 python bot.py
 ```
 
@@ -536,7 +536,7 @@ sudo supervisorctl start tgbot-verify
 4. **定期更新**
    ```bash
    sudo apt update && sudo apt upgrade
-   pip install --upgrade -r requirements.txt
+   pip install --upgrade -r requirements.lock.txt
    ```
 
 5. **备份策略**
