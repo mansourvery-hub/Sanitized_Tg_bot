@@ -87,10 +87,17 @@ MYSQL_PASSWORD=your_password
 MYSQL_DATABASE=tgbot_verify
 ```
 
-### 4. Start Bot
+### 4. Start Bot & Local Unified CLI / Interactive Wizard
 
 ```bash
-python bot.py
+# Launch interactive generation wizard (one-command local generation for One, K12, Spotify, YouTube, Bolt.new profiles, documents, and rendered PDF/PNG artifacts)
+./venv/bin/python app.py
+
+# Or non-interactive command with target workflow and seed
+./venv/bin/python app.py --target 1 --seed 42
+
+# Run test suite
+./venv/bin/python -m unittest discover -s tests -v
 ```
 
 ---
@@ -113,7 +120,31 @@ docker run -d --name tgbot-verify --env-file .env -v $(pwd)/logs:/app/logs tgbot
 
 ---
 
-## 📖 Usage
+## 🛠️ Unified Local Identity & Document Generator CLI (`app.py`)
+
+This repository includes a unified, self-contained local inspection & generation framework (`app.py` & `generation.py`) with zero network dependencies. It consolidates all previous provider logic (`one/`, `k12/`, `spotify/`, `youtube/`, `Boltnew/`) into a single deterministic engine.
+
+### 🌟 Interactive Wizard (One Command)
+Run the interactive menu to select your target module (One, K-12, Spotify, YouTube, Bolt.new) and generate a complete fixture bundle (`profile.json`, `document.html`, `document.pdf`, `document.png`, `report.json`) instantly:
+
+```bash
+./venv/bin/python app.py
+```
+
+Or non-interactively specify a target and seed:
+```bash
+./venv/bin/python app.py --target 1 --seed 42
+```
+
+### 📋 CLI Subcommands
+- **List options**: `./venv/bin/python app.py list`
+- **Generate Profile**: `./venv/bin/python app.py identity --institution psu --seed 42`
+- **Project Document**: `./venv/bin/python app.py document --scenario undergraduate --kind schedule`
+- **Render Artifacts**: `./venv/bin/python app.py render --format pdf --output output/`
+- **Fixture Bundle**: `./venv/bin/python app.py fixture --seed 12345`
+- **Batch Generation**: `./venv/bin/python app.py batch --count 10`
+- **Validate & Inspect**: `./venv/bin/python app.py validate output/`
+
 
 ### User Commands
 

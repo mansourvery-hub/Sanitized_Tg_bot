@@ -87,10 +87,17 @@ MYSQL_PASSWORD=your_password
 MYSQL_DATABASE=tgbot_verify
 ```
 
-### 4. 启动机器人
+### 4. 启动机器人与本地统一生成工具 CLI / 交互向导
 
 ```bash
-python bot.py
+# 启动交互式生成向导（一键生成 One, K12, Spotify, YouTube, Bolt.new 身份、文档及 PDF/PNG 渲染图）
+./venv/bin/python app.py
+
+# 或指定目标与随机种子非交互式生成
+./venv/bin/python app.py --target 1 --seed 42
+
+# 运行单元测试验证
+./venv/bin/python -m unittest discover -s tests -v
 ```
 
 ---
