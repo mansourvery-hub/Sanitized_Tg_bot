@@ -19,8 +19,8 @@
         "description": "Penn State University - LionPATH Class Schedule Portal View"
       },
       "file_name": "psu_portal_schedule.png",
-      "sha256": "864b3b79ba95e8580c21fdf6071f9a5d07c324c51c46f2dcfe320ef784b01e98",
-      "size_bytes": 277289
+      "sha256": "c41cbaec270eb2d81c928ff4ea05d55652550b84fa60ca305bd637298e10dadf",
+      "size_bytes": 272813
     },
     "ucla_registrar_letter": {
       "spec": {
@@ -40,8 +40,8 @@
         "description": "UCLA - Office of the Registrar Enrollment Verification Letter"
       },
       "file_name": "ucla_registrar_letter.png",
-      "sha256": "4e83f69fdf62de7782097c56014b5d30ac4572a31e745c71904e4edd5123ea2a",
-      "size_bytes": 184803
+      "sha256": "3d9005d9492daf84b0bca6f1af50f16b18eb16995d887a3d478122b7f0177825",
+      "size_bytes": 181218
     },
     "nyu_albert_schedule": {
       "spec": {
@@ -61,8 +61,8 @@
         "description": "New York University - Albert Student Center Class Schedule"
       },
       "file_name": "nyu_albert_schedule.png",
-      "sha256": "25496da97f2cab39b58b2b2dd6a65a71ef3977ffefc03daabcee4201779cf4d7",
-      "size_bytes": 277245
+      "sha256": "b4532b8c97091724941081a5c75d524f8bec0a411d7b217e832d475472115d95",
+      "size_bytes": 271772
     },
     "umich_wolverine_schedule": {
       "spec": {
@@ -82,8 +82,8 @@
         "description": "University of Michigan - Wolverine Access Class Schedule"
       },
       "file_name": "umich_wolverine_schedule.png",
-      "sha256": "a8a028d76bcc00f6992ea901f6de154829d49e97765594e6e51a4e4ddb14c3e8",
-      "size_bytes": 275362
+      "sha256": "6a83cc3f3eac1dd45b7de5596b5b15fd177a5a5d0b949f74e8278d3e5779a2d5",
+      "size_bytes": 270231
     },
     "ut_austin_enrollment_letter": {
       "spec": {
@@ -103,8 +103,8 @@
         "description": "UT Austin - Texas One Stop Enrollment Certification Letter"
       },
       "file_name": "ut_austin_enrollment_letter.png",
-      "sha256": "9f7ab3653c7e3b31fb7fd95deb532eed3a2f18018ac06dd5227dcae7209fb1e2",
-      "size_bytes": 154425
+      "sha256": "1cff5a568397492ade80a6827053d1c0effbe5823a807e68879d14d346258baa",
+      "size_bytes": 147565
     },
     "springfield_faculty_summary": {
       "spec": {
@@ -123,8 +123,8 @@
         "description": "Springfield K-12 - Employee Access Faculty Verification Summary"
       },
       "file_name": "springfield_faculty_summary.png",
-      "sha256": "ad51e8027155daaa976dddd4b1f878804a87121b370cd66494fdf09a301f245b",
-      "size_bytes": 163126
+      "sha256": "ab13105ef366ee3f010edf856c34fc410e500eab5e7684c22f1d5f5c45c1685c",
+      "size_bytes": 155914
     },
     "nittany_tech_id_card": {
       "spec": {
@@ -143,8 +143,8 @@
         "description": "Nittany Tech - Official Campus ID Card Visual"
       },
       "file_name": "nittany_tech_id_card.png",
-      "sha256": "7b753e4ffe608f6a20a0ff64cffae03c0b3e705c5586a391a37b41cd5867c324",
-      "size_bytes": 78371
+      "sha256": "e7e999b11e9f750c06504eb7095ad4325b4c9bec58b0480dfa0a30406016ada4",
+      "size_bytes": 68482
     },
     "up_diliman_form5": {
       "spec": {
@@ -164,8 +164,8 @@
         "description": "University of the Philippines Diliman - Form 5 Enrollment Certificate / Schedule"
       },
       "file_name": "up_diliman_form5.png",
-      "sha256": "7cc6d9730a4185c73d69c58bd386910de286040071dff88e1596b59ea06bfd10",
-      "size_bytes": 206133
+      "sha256": "3b395f0ced7e93bb78eefcb5ae74704435044d05c5ba691685e128167278df3a",
+      "size_bytes": 199190
     },
     "usp_atestado_matricula": {
       "spec": {
@@ -185,8 +185,8 @@
         "description": "Universidade de S\u00e3o Paulo - Atestado de Matr\u00edcula"
       },
       "file_name": "usp_atestado_matricula.png",
-      "sha256": "b1a89a6cbeef6504bf3cc15aea1c9d285227968a0d0f9d2db15efa1ccb4bed19",
-      "size_bytes": 216050
+      "sha256": "be3b777cec46cc103fa7ac9d48592f99c3efefdf8d767113899f978c60466d65",
+      "size_bytes": 212064
     },
     "universiti_malaya_surat_pengesahan": {
       "spec": {
@@ -206,8 +206,8 @@
         "description": "Universiti Malaya - Surat Pengesahan Pendaftaran Pelajar"
       },
       "file_name": "universiti_malaya_surat_pengesahan.png",
-      "sha256": "033858007ba011bea7888d4631a2a16700bdde08b9fd984847e8587f856f0b25",
-      "size_bytes": 188403
+      "sha256": "6acf7f974c9472180124a539063022997be4e86d8a95edf59e48c2a6fd56743d",
+      "size_bytes": 182385
     },
     "makerere_enrollment_letter": {
       "spec": {
@@ -227,8 +227,8 @@
         "description": "Makerere University - Official Letter of Enrollment"
       },
       "file_name": "makerere_enrollment_letter.png",
-      "sha256": "22ca3e39a8cf481f392fc373d43278b4bb0b6de40f9758a8477ef6aed2e36f0f",
-      "size_bytes": 208743
+      "sha256": "c911840b46edfd4dbe3c6598ccb54d001c5fde1252a577381696495edd543e73",
+      "size_bytes": 205530
     },
     "unilag_enrollment_letter": {
       "spec": {
@@ -248,8 +248,8 @@
         "description": "University of Lagos - Letter of Student Enrollment"
       },
       "file_name": "unilag_enrollment_letter.png",
-      "sha256": "5808282c7d0f7688004663a014e80e783aa13cc939da550936bdb4e0ea1aae3f",
-      "size_bytes": 208079
+      "sha256": "d07ea583c0ccbba2e914d31044f2b4667bbb2e513b772ea4f4924192a52fbd68",
+      "size_bytes": 204505
     }
   }
 }

@@ -15,6 +15,8 @@ import pypdf
 from PIL import Image
 
 from generation import (
+    CURRICULA,
+    DEFAULT_COURSES,
     GENERATOR_VERSION,
     INSTITUTIONS,
     SERVICE_DEFINITIONS,
@@ -187,6 +189,77 @@ class TestGenerationSystem(unittest.TestCase):
         png_bytes = render_png(html, width=800, height=600, require_high_fidelity=True)
         self.assertTrue(png_bytes.startswith(b"\x89PNG\r\n\x1a\n"))
         self.assertGreater(len(png_bytes), 1000)
+
+    def test_render_png_crops_to_content_height(self):
+        """PNG must be cropped to content; no large trailing blank band."""
+        html = (
+            "<html><body style='margin:0;padding:0'>"
+            "<div style='height:300px;background:#1E407C'></div>"
+            "</body></html>"
+        )
+        png_bytes = render_png(html, width=1280, height=900)
+        img = Image.open(BytesIO(png_bytes))
+        css_height = img.size[1] / 2  # device_scale_factor=2.0
+        self.assertLess(css_height, 500, f"expected content crop, got {css_height}px")
+
+    def test_curricula_have_no_famous_instructor_names(self):
+        """Instructor names must be plausible academics, not famous figures."""
+        forbidden = (
+            "Turing",
+            "Hopper",
+            "Feynman",
+            "Shannon",
+            "Austen",
+            "Liskov",
+            "Brooks",
+            "Backus",
+            "Twain",
+            "Buffet",
+            "Drucker",
+            "Kotler",
+            "Goldratt",
+            "Friedman",
+            "Tesla",
+            "Timoshenko",
+            "Euler",
+            "Maxwell",
+            "Nightingale",
+            "Barton",
+            "Henderson",
+            "Vesalius",
+        )
+        rendered: list[tuple[str, str]] = []
+        for program in CURRICULA:
+            for course in CURRICULA[program]:
+                rendered.append((program, course.instructor))
+        for course in DEFAULT_COURSES:
+            rendered.append(("DEFAULT_COURSES", course.instructor))
+        for program, instructor in rendered:
+            for name in forbidden:
+                self.assertNotIn(
+                    name,
+                    instructor,
+                    f"famous-person instructor '{instructor}' found for {program}",
+                )
+
+    def test_psu_document_has_standalone_css_and_logo(self):
+        """Saved/generated HTML must have no raw var() and include a logo mark."""
+        profile = generate_profile(
+            scenario_name="undergraduate", institution_id="psu", seed=42
+        )
+        doc = generate_document(profile, doc_kind=DocumentKind.SCHEDULE)
+        self.assertNotIn("var(--", doc.html_content)
+        self.assertIn("<svg", doc.html_content)
+        self.assertIn("Penn State", doc.html_content)
+        self.assertIn("#1E407C", doc.html_content)
+
+    def test_psu_schedule_has_enrolled_badge(self):
+        profile = generate_profile(
+            scenario_name="undergraduate", institution_id="psu", seed=42
+        )
+        doc = generate_document(profile, doc_kind=DocumentKind.SCHEDULE)
+        self.assertIn("ENROLLED", doc.html_content.upper())
+        self.assertIn("#d1e7dd", doc.html_content)
 
     def test_teacher_scenario_constraints(self):
         profile = generate_profile(scenario_name="teacher", seed=77)

@@ -14,7 +14,7 @@ import logging
 import random
 import re
 import uuid
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import asdict, dataclass, field, fields, replace
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from html.parser import HTMLParser
@@ -1695,7 +1695,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "MoWeFr 09:05 AM - 09:55 AM",
             "Hammond 114",
-            "Dr. Alan Turing",
+            "Vasquez, R.",
             "In-Person",
         ),
         Course(
@@ -1705,7 +1705,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "TuTh 11:15 AM - 12:30 PM",
             "IST Building 202",
-            "Dr. Grace Hopper",
+            "Kovacs, B.",
             "In-Person",
         ),
         Course(
@@ -1715,7 +1715,7 @@ CURRICULA: dict[str, list[Course]] = {
             4,
             "MoWeFr 11:15 AM - 12:05 PM",
             "McAllister 102",
-            "Dr. Richard Feynman",
+            "Goldstein, M.",
             "In-Person",
         ),
         Course(
@@ -1725,7 +1725,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "TuTh 02:30 PM - 03:45 PM",
             "Thomas 100",
-            "Dr. Claude Shannon",
+            "Chen, H.",
             "In-Person",
         ),
         Course(
@@ -1735,7 +1735,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "MoWe 02:30 PM - 03:45 PM",
             "Sparks 121",
-            "Prof. Jane Austen",
+            "O'Brien, T.",
             "Hybrid",
         ),
     ],
@@ -1747,7 +1747,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "MoWeFr 10:10 AM - 11:00 AM",
             "Westgate 108",
-            "Dr. Barbara Liskov",
+            "Singh, D.",
             "In-Person",
         ),
         Course(
@@ -1757,7 +1757,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "TuTh 09:45 AM - 11:00 AM",
             "Westgate 214",
-            "Dr. Fred Brooks",
+            "Rodriguez, M.",
             "In-Person",
         ),
         Course(
@@ -1767,7 +1767,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "MoWeFr 01:25 PM - 02:15 PM",
             "Hammond 216",
-            "Dr. John Backus",
+            "Kim, J.",
             "In-Person",
         ),
         Course(
@@ -1777,7 +1777,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "TuTh 02:30 PM - 03:45 PM",
             "Thomas 100",
-            "Dr. Claude Shannon",
+            "Chen, H.",
             "In-Person",
         ),
         Course(
@@ -1787,7 +1787,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "Fr 01:25 PM - 04:15 PM",
             "Boucke 302",
-            "Prof. Mark Twain",
+            "Brennan, C.",
             "In-Person",
         ),
     ],
@@ -1799,7 +1799,7 @@ CURRICULA: dict[str, list[Course]] = {
             4,
             "MoWe 08:00 AM - 09:15 AM",
             "Smeal 101",
-            "Dr. Warren Buffet",
+            "Stern, D.",
             "In-Person",
         ),
         Course(
@@ -1809,7 +1809,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "TuTh 11:00 AM - 12:15 PM",
             "Smeal 114",
-            "Dr. Peter Drucker",
+            "Alvarez, E.",
             "In-Person",
         ),
         Course(
@@ -1819,7 +1819,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "MoWeFr 11:15 AM - 12:05 PM",
             "Smeal 120",
-            "Dr. Philip Kotler",
+            "Park, S.",
             "In-Person",
         ),
         Course(
@@ -1829,7 +1829,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "TuTh 01:30 PM - 02:45 PM",
             "Smeal 205",
-            "Dr. Eliyahu Goldratt",
+            "Mehta, R.",
             "In-Person",
         ),
         Course(
@@ -1839,7 +1839,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "MoWe 03:00 PM - 04:15 PM",
             "Whetstone 10",
-            "Dr. Milton Friedman",
+            "Petrov, I.",
             "Hybrid",
         ),
     ],
@@ -1851,7 +1851,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "MoWeFr 08:00 AM - 08:50 AM",
             "Hammond 301",
-            "Dr. Nikola Tesla",
+            "Ferreira, C.",
             "In-Person",
         ),
         Course(
@@ -1861,7 +1861,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "TuTh 09:30 AM - 10:45 AM",
             "Reber 108",
-            "Dr. Stephen Timoshenko",
+            "Schreiber, T.",
             "In-Person",
         ),
         Course(
@@ -1871,7 +1871,7 @@ CURRICULA: dict[str, list[Course]] = {
             4,
             "MoWeFr 10:10 AM - 11:00 AM",
             "McAllister 105",
-            "Dr. Leonhard Euler",
+            "Reinholt, F.",
             "In-Person",
         ),
         Course(
@@ -1881,7 +1881,7 @@ CURRICULA: dict[str, list[Course]] = {
             4,
             "TuTh 01:00 PM - 02:15 PM",
             "Osmond 110",
-            "Dr. James Clerk Maxwell",
+            "Volkov, S.",
             "In-Person",
         ),
     ],
@@ -1893,7 +1893,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "Mo 09:00 AM - 12:00 PM",
             "Nursing Sciences 102",
-            "Dr. Florence Nightingale",
+            "Diallo, A.",
             "In-Person",
         ),
         Course(
@@ -1903,7 +1903,7 @@ CURRICULA: dict[str, list[Course]] = {
             4,
             "TuTh 08:00 AM - 11:00 AM",
             "Nursing Sciences 210",
-            "Dr. Clara Barton",
+            "Okonkwo, E.",
             "In-Person",
         ),
         Course(
@@ -1913,7 +1913,7 @@ CURRICULA: dict[str, list[Course]] = {
             3,
             "WeFr 01:00 PM - 02:15 PM",
             "Nursing Sciences 104",
-            "Dr. Virginia Henderson",
+            "Patel, S.",
             "In-Person",
         ),
         Course(
@@ -1923,7 +1923,7 @@ CURRICULA: dict[str, list[Course]] = {
             4,
             "MoWeFr 02:30 PM - 03:20 PM",
             "Mueller Lab 100",
-            "Dr. Andreas Vesalius",
+            "Larsson, G.",
             "In-Person",
         ),
     ],
@@ -1937,7 +1937,7 @@ DEFAULT_COURSES = [
         3,
         "MoWeFr 09:05 AM - 09:55 AM",
         "Boucke 102",
-        "Dr. Mentor Academic",
+        "Academic Affairs Office",
         "In-Person",
     ),
     Course(
@@ -1947,7 +1947,7 @@ DEFAULT_COURSES = [
         3,
         "TuTh 02:30 PM - 03:45 PM",
         "Library 204",
-        "Dr. Faculty Advisor",
+        "Student Success Center",
         "Hybrid",
     ),
 ]
@@ -4658,12 +4658,20 @@ def generate_schedule_document(
     inst = profile.institution
 
     if inst.id == "psu":
-        brand_color = "var(--psu-blue)"
+        # Hardcoded brand hex: keeps saved HTML standalone (no var() dependency)
+        brand_color = "#1E407C"
         topbar_html = f"""
-        <div class="topbar" style="background: {brand_color}; color: #ffffff; padding: 10px 18px;">
-            <div style="font-weight: bold; font-size: 16px; float: left;">{profile.institution_name} &mdash; LionPATH</div>
-            <div style="font-size: 12px; float: right;">Welcome, <strong>{name}</strong> &ensp;|&ensp; {print_date_str}</div>
-            <div style="clear: both;"></div>
+        <div class="topbar" style="background: {brand_color}; color: #ffffff; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 100 100" style="vertical-align: middle; margin-right: 10px; flex-shrink: 0;" aria-label="Penn State University">
+                    <circle cx="50" cy="38" r="26" fill="rgba(255,255,255,0.20)"/>
+                    <text x="50" y="48" text-anchor="middle" font-size="30" font-weight="900" font-family="Georgia,serif" fill="#ffffff">PS</text>
+                    <rect x="14" y="66" width="72" height="3" rx="1.5" fill="rgba(255,255,255,0.35)"/>
+                    <text x="50" y="86" text-anchor="middle" font-size="9" font-weight="700" font-family="Arial,sans-serif" fill="rgba(255,255,255,0.80)" letter-spacing="1">PENN STATE</text>
+                </svg>
+                <span style="font-weight: 700; font-size: 16px;">{profile.institution_name} &mdash; LionPATH</span>
+            </div>
+            <div style="font-size: 12px;">Welcome, <strong>{name}</strong> &ensp;|&ensp; {print_date_str}</div>
         </div>
         """
         breadcrumb = "Home &rsaquo; Self Service &rsaquo; Class Schedule"
@@ -4769,7 +4777,7 @@ def generate_schedule_document(
             <td>{c.meeting_pattern}</td>
             <td>{c.location}</td>
             <td>{c.instructor}</td>
-            <td><span style="color: var(--badge-enrolled); font-weight: bold;">Enrolled</span></td>
+            <td><span style="display: inline-block; background: #d1e7dd; color: #0a3622; font-weight: 700; font-size: 10.5px; padding: 2px 7px; border-radius: 3px; text-transform: uppercase; letter-spacing: .04em;">Enrolled</span></td>
         </tr>
         """
 
@@ -5542,17 +5550,21 @@ def generate_document(
     )
 
     if doc_kind == DocumentKind.SCHEDULE:
-        return generate_schedule_document(profile, academic_state, temporal)
+        doc = generate_schedule_document(profile, academic_state, temporal)
     elif doc_kind == DocumentKind.TUITION_RECEIPT:
-        return generate_tuition_receipt_document(profile, academic_state, temporal)
+        doc = generate_tuition_receipt_document(profile, academic_state, temporal)
     elif doc_kind == DocumentKind.ID_CARD:
-        return generate_id_card_document(profile, temporal)
+        doc = generate_id_card_document(profile, temporal)
     elif doc_kind == DocumentKind.FACULTY_SUMMARY:
-        return generate_faculty_summary_document(profile, temporal)
+        doc = generate_faculty_summary_document(profile, temporal)
     elif doc_kind == DocumentKind.ENROLLMENT_CERTIFICATE:
-        return generate_enrollment_certificate_document(profile, temporal)
+        doc = generate_enrollment_certificate_document(profile, temporal)
     else:
-        return generate_schedule_document(profile, academic_state, temporal)
+        doc = generate_schedule_document(profile, academic_state, temporal)
+
+    # Resolve CSS var() calls once at generation time so every consumer
+    # (saved HTML, PNG, PDF) receives the same standalone markup.
+    return replace(doc, html_content=_resolve_css_vars(doc.html_content))
 
 
 # =====================================================================
@@ -5779,7 +5791,34 @@ def render_png(
             page = ctx.new_page()
             page.set_content(html, wait_until="load")
             page.wait_for_timeout(300)
-            png_bytes = page.screenshot(full_page=True, type="png")
+
+            # Crop to actual content height so no blank white band remains at
+            # the bottom (real portal screenshots frame the content tightly).
+            # scrollHeight is floored at the viewport height, so probe with a
+            # short viewport first to measure the true content extent.
+            page.set_viewport_size({"width": width, "height": 200})
+            page.wait_for_timeout(100)
+            content_height = page.evaluate(
+                "() => {"
+                "  const de = document.documentElement;"
+                "  const b = document.body;"
+                "  let bottom = 0;"
+                "  for (const el of document.querySelectorAll('body *')) {"
+                "    const r = el.getBoundingClientRect();"
+                "    if (r.height > 0 && r.width > 0) {"
+                "      bottom = Math.max(bottom, r.bottom + window.scrollY);"
+                "    }"
+                "  }"
+                "  return Math.max(bottom, b.scrollHeight, de.scrollHeight);"
+                "}"
+            )
+            if isinstance(content_height, (int, float)) and content_height > 0:
+                page.set_viewport_size(
+                    {"width": width, "height": max(1, int(content_height) + 1)}
+                )
+                page.wait_for_timeout(150)
+
+            png_bytes = page.screenshot(full_page=False, type="png")
             browser.close()
             return png_bytes
     except Exception as exc:
@@ -6388,13 +6427,16 @@ def generate_fixture_bundle(
 
     if ArtifactType.HTML in formats:
         html_path = out_dir / "document.html"
-        html_path.write_text(doc.html_content, encoding="utf-8")
+        # Resolve CSS var() calls so the saved HTML renders standalone in any
+        # browser (not dependent on _resolve_css_vars() at render time).
+        standalone_html = _resolve_css_vars(doc.html_content)
+        html_path.write_text(standalone_html, encoding="utf-8")
         artifacts.append(
             GeneratedArtifact(
                 kind=doc.kind,
                 path=str(html_path),
-                byte_size=len(doc.html_content.encode("utf-8")),
-                sha256=hashlib.sha256(doc.html_content.encode("utf-8")).hexdigest(),
+                byte_size=len(standalone_html.encode("utf-8")),
+                sha256=hashlib.sha256(standalone_html.encode("utf-8")).hexdigest(),
                 artifact_type=ArtifactType.HTML,
             )
         )
