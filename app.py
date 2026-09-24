@@ -20,6 +20,7 @@ from generation import (
     GENERATOR_VERSION,
     INSTITUTIONS,
     SCENARIOS,
+    SERVICE_DEFINITIONS,
     ArtifactType,
     DocumentKind,
     SyntheticProfile,
@@ -27,6 +28,7 @@ from generation import (
     generate_document,
     generate_fixture_bundle,
     generate_profile,
+    get_best_institutions_for_service,
     inspect_readback_artifact,
     render_pdf,
     render_png,
@@ -560,11 +562,207 @@ def cmd_visual_regression(args: argparse.Namespace) -> int:
     return 0 if suite_res["all_passed"] else 1
 
 
+def _service_display_name(sid: str) -> str:
+    info = SERVICE_DEFINITIONS.get(sid, {})
+    return info.get("name", sid)
+
+
+def _resolve_service_arg(val: str | None) -> str | None:
+    if not val:
+        return None
+    norm = val.strip().lower().replace("-", "_")
+    if norm in SERVICE_DEFINITIONS:
+        return SERVICE_DEFINITIONS[norm].get("id", norm)
+    # fuzzy: bare name contains
+    for sid, info in SERVICE_DEFINITIONS.items():
+        if norm == sid or norm in info.get("name", "").lower():
+            return info.get("id", sid)
+    return norm
+
+
 def cmd_wizard(args: argparse.Namespace) -> int:
-    """Interactive wizard for choosing module target and generating everything in one command."""
+    """Interactive wizard: Target workflow or Service-optimized (best pass-rate) mode."""
     print("==========================================================================")
     print("      Sanitized Local Identity & Document Generator - Interactive Wizard  ")
     print("==========================================================================")
+
+    # Non-interactive service shortcut: --service spotify --seed 42 --institution X
+    preset_service = _resolve_service_arg(getattr(args, "service", None))
+    preset_institution = getattr(args, "institution", None)
+    preset_scenario = getattr(args, "scenario", None)
+
+    # Decide wizard mode
+    mode = getattr(args, "wizard_mode", None) or getattr(args, "mode", None)
+    # Also support legacy --target non-interactive for classic mode
+    legacy_target = getattr(args, "target", None)
+
+    # If service was explicitly passed, default to service mode
+    if preset_service and not mode:
+        mode = "2"
+
+    if not mode and not legacy_target:
+        print("Select input mode:")
+        print("  [1] Target workflow / module       (classic 1-8 list)")
+        print(
+            "  [2] Service-optimized              (pick service → best credentials auto-suggested)"
+        )
+        print()
+        try:
+            mode = input("Enter mode (1-2) [default: 1]: ").strip() or "1"
+        except (KeyboardInterrupt, EOFError):
+            print("\nAborted.")
+            return 1
+    elif not mode:
+        mode = "1"
+
+    # Normalize mode aliases
+    if mode in ("workflow", "1"):
+        mode = "1"
+    elif mode in ("service", "2"):
+        mode = "2"
+
+    # ── Service-optimized mode ──────────────────────────────────────────
+    if mode == "2":
+        svc_info: dict[str, str] = {}
+        service_id: str = preset_service or ""
+        # Build canonical service list (dedup aliases)
+        seen: dict[str, dict] = {}
+        for sid, info in SERVICE_DEFINITIONS.items():
+            cid = info.get("id", sid)
+            if cid not in seen and sid == cid:
+                seen[cid] = info
+        ordered_services = list(seen.values())
+
+        if not preset_service:
+            print("\nSelect service:")
+            for idx, svc in enumerate(ordered_services, start=1):
+                role = svc.get("role", "")
+                print(f"  [{idx}] {svc['name']:<28s} ({svc['id']}) — {role}")
+            print()
+            try:
+                svc_choice = (
+                    input(
+                        f"Enter service (1-{len(ordered_services)}) [default: 1]: "
+                    ).strip()
+                    or "1"
+                )
+            except (KeyboardInterrupt, EOFError):
+                print("\nAborted.")
+                return 1
+            try:
+                svc_idx = int(svc_choice) - 1
+                svc_info = ordered_services[svc_idx]
+                service_id = svc_info["id"]
+            except (ValueError, IndexError):
+                print(f"Invalid choice '{svc_choice}', using 1.")
+                service_id = ordered_services[0]["id"]
+        else:
+            service_id = preset_service
+            svc_info = SERVICE_DEFINITIONS.get(
+                service_id, {"name": service_id, "id": service_id}
+            )
+
+        # Rank institutions for this service by pass rate
+        ranked = get_best_institutions_for_service(service_id, limit=5)
+        recommended = ranked[0] if ranked else INSTITUTIONS["psu"]
+        rec_label = recommended.pass_rate_label or "n/a"
+        # Show dynamic recommendation
+        print(
+            f"\n[+] Recommended for {svc_info.get('name', service_id)} (highest pass estimate):"
+        )
+        for i, inst in enumerate(ranked[:3], start=1):
+            marker = " ← recommended" if i == 1 else ""
+            label = inst.pass_rate_label or "n/a"
+            print(f"    {i}. {inst.id:<20s} {inst.name:<45s} {label}{marker}")
+        print()
+
+        # Institution prompt with dynamic default
+        if not preset_institution:
+            default_inst = recommended.id
+            avail_hint = ", ".join(list(INSTITUTIONS.keys())[:6]) + ", ..."
+            prompt = f"Enter institution [{default_inst}] (press Enter for recommended {default_inst} — {rec_label} est., or choose from: {avail_hint}): "
+            try:
+                inst_input = input(prompt).strip() or default_inst
+            except (KeyboardInterrupt, EOFError):
+                print("\nAborted.")
+                return 1
+        else:
+            inst_input = preset_institution
+
+        # Scenario prompt with service-appropriate default
+        default_scen = svc_info.get("default_scenario", "undergraduate")
+        if not preset_scenario:
+            try:
+                scen_input = (
+                    input(f"Enter scenario [{default_scen}]: ").strip() or default_scen
+                )
+            except (KeyboardInterrupt, EOFError):
+                print("\nAborted.")
+                return 1
+        else:
+            scen_input = preset_scenario
+
+        target_info = {
+            "name": f"{svc_info.get('name', service_id)} → {inst_input} ({scen_input})",
+            "scenario": scen_input,
+            "institution": inst_input,
+            "kind": None,
+            "service_id": service_id,
+        }
+
+        # Seed
+        seed_val = getattr(args, "seed", None)
+        if seed_val is None and not getattr(args, "non_interactive", False):
+            try:
+                seed_str = input(
+                    "Enter seed integer (Press Enter for random seed): "
+                ).strip()
+                seed_val = int(seed_str) if seed_str else None
+            except ValueError:
+                print("Invalid seed integer, using random seed.")
+                seed_val = None
+
+        print(f"\n[+] Generating bundle for: {target_info['name']}")
+        actual_seed = (
+            seed_val if seed_val is not None else random.randint(10000, 999999)
+        )
+        target_dir = (
+            Path("output") / f"{choice_slug(target_info['name'])}-{actual_seed}"
+        )
+        res = generate_fixture_bundle(
+            scenario_name=target_info["scenario"],
+            seed=actual_seed,
+            output_dir=target_dir,
+            override_institution_id=target_info["institution"],
+        )
+        print(
+            "\n--------------------------------------------------------------------------"
+        )
+        print(
+            f"  Status:             {'SUCCESS (VALID)' if res.validation.valid else 'INVALID'}"
+        )
+        print(
+            f"  Service:            {svc_info.get('name', service_id)} ({service_id})"
+        )
+        print(f"  Target Module:      {target_info['name']}")
+        print(f"  Generated Name:     {res.profile.first_name} {res.profile.last_name}")
+        print(f"  ID:                 {res.profile.student_id}")
+        print(f"  Email:              {res.profile.email}")
+        print(
+            f"  Institution:        {res.profile.institution_name} ({res.profile.institution_id}) — {res.profile.institution.pass_rate_label or 'n/a'} est."
+        )
+        print(f"  Output Directory:   {target_dir.resolve()}")
+        print("  Artifacts Created:")
+        for art in res.artifacts:
+            print(
+                f"    - {Path(art.path).name} ({art.byte_size} bytes, SHA256: {art.sha256[:10]}...)"
+            )
+        print(
+            "--------------------------------------------------------------------------\n"
+        )
+        return 0 if res.validation.valid else 1
+
+    # ── Classic target workflow mode (legacy) ───────────────────────────
     print("Select target workflow / module:")
     print("  [1] PSU Student                (Penn State - LionPATH Student Schedule)")
     print(
@@ -710,7 +908,28 @@ def main() -> int:
     parser.add_argument(
         "--target",
         choices=["1", "2", "3", "4", "5", "6", "7", "8"],
-        help="Pre-select target workflow for wizard",
+        help="Pre-select target workflow for wizard (classic mode)",
+    )
+    parser.add_argument(
+        "--service",
+        help="Pre-select service for service-optimized wizard (e.g. spotify, one, youtube, k12, boltnew)",
+    )
+    parser.add_argument(
+        "--institution",
+        choices=list(INSTITUTIONS.keys()),
+        help="Institution override for wizard",
+    )
+    parser.add_argument(
+        "--scenario",
+        choices=list(SCENARIOS.keys()),
+        help="Scenario override for wizard",
+    )
+    parser.add_argument(
+        "--wizard-mode",
+        "--mode",
+        dest="wizard_mode",
+        choices=["1", "2", "workflow", "service"],
+        help="Wizard mode: 1/workflow (classic) or 2/service (service-optimized)",
     )
     parser.add_argument(
         "--seed", type=int, help="Deterministic seed integer for wizard"
@@ -912,7 +1131,28 @@ def main() -> int:
     p_wiz.add_argument(
         "--target",
         choices=["1", "2", "3", "4", "5", "6", "7", "8"],
-        help="Pre-select target workflow",
+        help="Pre-select target workflow (classic mode)",
+    )
+    p_wiz.add_argument(
+        "--service",
+        help="Pre-select service for service-optimized mode (e.g. spotify, one, youtube, k12, boltnew)",
+    )
+    p_wiz.add_argument(
+        "--institution",
+        choices=list(INSTITUTIONS.keys()),
+        help="Institution override for wizard",
+    )
+    p_wiz.add_argument(
+        "--scenario",
+        choices=list(SCENARIOS.keys()),
+        help="Scenario override for wizard",
+    )
+    p_wiz.add_argument(
+        "--wizard-mode",
+        "--mode",
+        dest="wizard_mode",
+        choices=["1", "2", "workflow", "service"],
+        help="Wizard mode: 1/workflow or 2/service",
     )
     p_wiz.add_argument("--seed", type=int, help="Deterministic seed integer")
 

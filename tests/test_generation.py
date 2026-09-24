@@ -17,6 +17,7 @@ from PIL import Image
 from generation import (
     GENERATOR_VERSION,
     INSTITUTIONS,
+    SERVICE_DEFINITIONS,
     DocumentArchetype,
     DocumentKind,
     SeededNameGenerator,
@@ -33,6 +34,8 @@ from generation import (
     generate_document,
     generate_fixture_bundle,
     generate_profile,
+    get_best_institutions_for_service,
+    get_recommended_institution_for_service,
     get_temporal_anchor,
     inspect_readback_artifact,
     list_scenarios,
@@ -676,7 +679,7 @@ class TestGenerationSystem(unittest.TestCase):
     def test_international_institution_profiles(self):
         intl_targets = {
             "up_diliman": {
-                "id_regex": r"^202[1-5]-\d{5}$",
+                "id_regex": r"^202[0-4]-\d{5}$",
                 "email_suffix": "@up.edu.ph",
                 "standing": "Regular",
             },
@@ -686,9 +689,9 @@ class TestGenerationSystem(unittest.TestCase):
                 "standing": "Ativo",
             },
             "universiti_malaya": {
-                "id_regex": r"^S202[1-5]\d{6}$",
+                "id_regex": r"^S202[0-4]\d{6}$",
                 "email_suffix": "@siswa.um.edu.my",
-                "standing": "Good Standing",
+                "standing": "Aktif",
             },
             "makerere": {
                 "id_regex": r"^\d{2}/U/\d{5}/PS$",
@@ -696,7 +699,7 @@ class TestGenerationSystem(unittest.TestCase):
                 "standing": "Good Standing",
             },
             "unilag": {
-                "id_regex": r"^202[1-5]/1/\d{5}$",
+                "id_regex": r"^202[0-4]/1/\d{5}$",
                 "email_suffix": "@unilag.edu.ng",
                 "standing": "Good Standing",
             },
@@ -806,6 +809,9 @@ class TestGenerationSystem(unittest.TestCase):
         self.assertIn("Disciplinas Matriculadas", usp_doc.html_content)
         self.assertIn("Autenticação digital:", usp_doc.html_content)
         self.assertIn(usp_prof.student_id, usp_doc.html_content)
+        # USP grad credits must be 8 per research spec (not 3-4)
+        self.assertIn(">8<", usp_doc.html_content)
+        self.assertIn("Assinatura Eletrônica", usp_doc.html_content)
         val_usp = validate_document(usp_doc)
         self.assertTrue(
             val_usp.valid, f"USP validate_document failed: {val_usp.errors}"
@@ -828,6 +834,7 @@ class TestGenerationSystem(unittest.TestCase):
         self.assertIn("No. Matrik / Matric No.:", um_doc.html_content)
         self.assertIn("Pendaftar / Registrar", um_doc.html_content)
         self.assertIn(um_prof.student_id, um_doc.html_content)
+        self.assertIn("Aktif / Active", um_doc.html_content)
         val_um = validate_document(um_doc)
         self.assertTrue(val_um.valid, f"UM validate_document failed: {val_um.errors}")
         rb_um = readback_validate_html(um_doc.html_content, um_prof)
@@ -846,6 +853,7 @@ class TestGenerationSystem(unittest.TestCase):
         self.assertIn("ACMIS", mak_doc.html_content)
         self.assertIn("Prof. Buyinza Mukadasi", mak_doc.html_content)
         self.assertIn("Academic Registrar", mak_doc.html_content)
+        self.assertIn("Duly Registered", mak_doc.html_content)
         self.assertIn(mak_prof.student_id, mak_doc.html_content)
         val_mak = validate_document(mak_doc)
         self.assertTrue(
@@ -969,6 +977,42 @@ class TestGenerationSystem(unittest.TestCase):
                 doc_data = json.loads(res_doc.stdout)
                 self.assertTrue(doc_data["valid"])
                 self.assertEqual(doc_data["profile"]["institution_id"], inst_id)
+
+    def test_institution_schools_completeness(self):
+        """Verify international institution school lists match research ground truth."""
+        self.assertIn("College of Law", INSTITUTIONS["up_diliman"].schools)
+        self.assertIn(
+            "Faculty of Environmental Sciences", INSTITUTIONS["unilag"].schools
+        )
+
+    def test_service_recommendation_ranking(self):
+        """Verify service-optimized ranking is data-driven via pass rates."""
+        # Global ranking: makerere should be top (83-90%)
+        top_global = get_recommended_institution_for_service(None)
+        self.assertEqual(top_global.id, "makerere")
+        self.assertEqual(top_global.pass_rate_label, "83–90%")
+
+        # Per-service ranking should also return makerere as top currently
+        for svc in ("spotify", "one", "youtube", "k12", "boltnew"):
+            rec = get_recommended_institution_for_service(svc)
+            self.assertEqual(rec.id, "makerere")
+
+        ranked = get_best_institutions_for_service("spotify", limit=3)
+        self.assertEqual([i.id for i in ranked], ["makerere", "up_diliman", "unilag"])
+        # Verify ordering by mid pass rate descending
+        mids = [i.estimated_pass_rate_mid or 0 for i in ranked]
+        self.assertEqual(mids, sorted(mids, reverse=True))
+
+        # Verify that adding a new institution with higher pass rate would automatically rank top
+        # (simulated by checking that limit works and that all have pass rate labels)
+        all_ranked = get_best_institutions_for_service(None, limit=12)
+        self.assertEqual(len(all_ranked), 12)
+        self.assertTrue(all(i.pass_rate_label is not None for i in all_ranked))
+
+    def test_service_definitions_completeness(self):
+        for svc in ("one", "k12", "spotify", "boltnew", "youtube"):
+            self.assertIn(svc, SERVICE_DEFINITIONS)
+            self.assertIn("default_scenario", SERVICE_DEFINITIONS[svc])
 
 
 if __name__ == "__main__":

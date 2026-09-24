@@ -93,10 +93,33 @@ class Institution:
     schools: tuple[str, ...] = ()
     pdf_producer: str = "Oracle PeopleTools 8.59"
     pdf_creator: str = "PeopleSoft Enterprise"
+    # Estimated document-review pass rate (from research). Used for service recommendations.
+    estimated_pass_rate_low: float | None = None
+    estimated_pass_rate_high: float | None = None
     # Legacy alias fields for backward compatibility
     id_format: str | None = None
     id_prefix: str | None = None
     producer_string: str | None = None
+
+    @property
+    def estimated_pass_rate_mid(self) -> float | None:
+        if (
+            self.estimated_pass_rate_low is None
+            or self.estimated_pass_rate_high is None
+        ):
+            return None
+        return (self.estimated_pass_rate_low + self.estimated_pass_rate_high) / 2.0
+
+    @property
+    def pass_rate_label(self) -> str | None:
+        if (
+            self.estimated_pass_rate_low is None
+            or self.estimated_pass_rate_high is None
+        ):
+            return None
+        lo = int(self.estimated_pass_rate_low * 100)
+        hi = int(self.estimated_pass_rate_high * 100)
+        return f"{lo}–{hi}%"
 
     def __post_init__(self) -> None:
         if isinstance(self.document_archetype, str):
@@ -444,6 +467,8 @@ INSTITUTIONS: dict[str, Institution] = {
             "Eberly College of Science",
             "College of Communications",
         ),
+        estimated_pass_rate_low=0.20,
+        estimated_pass_rate_high=0.35,
     ),
     "ucla": Institution(
         id="ucla",
@@ -488,6 +513,8 @@ INSTITUTIONS: dict[str, Institution] = {
             "Herb Alpert School of Music",
             "Jonathan and Karin Fielding School of Public Health",
         ),
+        estimated_pass_rate_low=0.20,
+        estimated_pass_rate_high=0.35,
     ),
     "nyu": Institution(
         id="nyu",
@@ -532,6 +559,8 @@ INSTITUTIONS: dict[str, Institution] = {
             "Gallatin School of Individualized Study",
             "Silver School of Social Work",
         ),
+        estimated_pass_rate_low=0.20,
+        estimated_pass_rate_high=0.35,
     ),
     "umich": Institution(
         id="umich",
@@ -577,6 +606,8 @@ INSTITUTIONS: dict[str, Institution] = {
             "School of Public Health",
             "Gerald R. Ford School of Public Policy",
         ),
+        estimated_pass_rate_low=0.20,
+        estimated_pass_rate_high=0.35,
     ),
     "ut_austin": Institution(
         id="ut_austin",
@@ -622,6 +653,8 @@ INSTITUTIONS: dict[str, Institution] = {
             "Steve Hicks School of Social Work",
             "College of Education",
         ),
+        estimated_pass_rate_low=0.20,
+        estimated_pass_rate_high=0.35,
     ),
     "springfield_k12": Institution(
         id="springfield_k12",
@@ -652,6 +685,8 @@ INSTITUTIONS: dict[str, Institution] = {
         crn_label="Course ID",
         credit_label="Credits",
         course_id_format="{SUBJ} {NNN}",
+        estimated_pass_rate_low=0.35,
+        estimated_pass_rate_high=0.50,
     ),
     "nittany_tech": Institution(
         id="nittany_tech",
@@ -680,6 +715,8 @@ INSTITUTIONS: dict[str, Institution] = {
         crn_label="CRN",
         credit_label="Credits",
         course_id_format="{SUBJ} {NNN}",
+        estimated_pass_rate_low=0.35,
+        estimated_pass_rate_high=0.50,
     ),
     "up_diliman": Institution(
         id="up_diliman",
@@ -720,7 +757,10 @@ INSTITUTIONS: dict[str, Institution] = {
             "College of Arts and Letters",
             "Cesar E.A. Virata School of Business",
             "College of Education",
+            "College of Law",
         ),
+        estimated_pass_rate_low=0.82,
+        estimated_pass_rate_high=0.88,
     ),
     "usp": Institution(
         id="usp",
@@ -758,6 +798,8 @@ INSTITUTIONS: dict[str, Institution] = {
             "Faculdade de Direito",
             "Instituto de Física (IF)",
         ),
+        estimated_pass_rate_low=0.80,
+        estimated_pass_rate_high=0.87,
     ),
     "universiti_malaya": Institution(
         id="universiti_malaya",
@@ -797,6 +839,8 @@ INSTITUTIONS: dict[str, Institution] = {
             "Faculty of Science",
             "Faculty of Law",
         ),
+        estimated_pass_rate_low=0.78,
+        estimated_pass_rate_high=0.85,
     ),
     "makerere": Institution(
         id="makerere",
@@ -834,6 +878,8 @@ INSTITUTIONS: dict[str, Institution] = {
             "Makerere University Business School (MUBS)",
             "College of Health Sciences (CHS)",
         ),
+        estimated_pass_rate_low=0.83,
+        estimated_pass_rate_high=0.90,
     ),
     "unilag": Institution(
         id="unilag",
@@ -873,9 +919,123 @@ INSTITUTIONS: dict[str, Institution] = {
             "Faculty of Arts",
             "Faculty of Education",
             "Faculty of Business Administration",
+            "Faculty of Environmental Sciences",
         ),
+        estimated_pass_rate_low=0.81,
+        estimated_pass_rate_high=0.88,
     ),
 }
+
+
+# Service definitions for the service-optimized wizard. Kept in generation.py
+# so adding a service or updating the recommendation requires only data edits.
+SERVICE_DEFINITIONS: dict[str, dict[str, str]] = {
+    "one": {
+        "id": "one",
+        "name": "Gemini One Pro",
+        "role": "teacher",
+        "default_scenario": "teacher",
+    },
+    "k12": {
+        "id": "k12",
+        "name": "ChatGPT Teacher K-12",
+        "role": "teacher",
+        "default_scenario": "teacher",
+    },
+    "spotify": {
+        "id": "spotify",
+        "name": "Spotify Student",
+        "role": "student",
+        "default_scenario": "undergraduate",
+    },
+    "boltnew": {
+        "id": "boltnew",
+        "name": "Bolt.new Teacher",
+        "role": "teacher",
+        "default_scenario": "teacher",
+    },
+    "youtube": {
+        "id": "youtube",
+        "name": "YouTube Premium Student",
+        "role": "student",
+        "default_scenario": "undergraduate",
+    },
+    # Aliases that resolve to canonical service ids
+    "gemini": {
+        "id": "one",
+        "name": "Gemini One Pro",
+        "role": "teacher",
+        "default_scenario": "teacher",
+    },
+    "chatgpt": {
+        "id": "k12",
+        "name": "ChatGPT Teacher K-12",
+        "role": "teacher",
+        "default_scenario": "teacher",
+    },
+    "bolt": {
+        "id": "boltnew",
+        "name": "Bolt.new Teacher",
+        "role": "teacher",
+        "default_scenario": "teacher",
+    },
+}
+
+# Optional per-service preference override. If a service lists preferred
+# institution ids, those are tried first (in order) before falling back to
+# global pass-rate ranking. Empty = fully data-driven via Institution pass rates.
+SERVICE_INSTITUTION_OVERRIDES: dict[str, list[str]] = {}
+
+
+def get_best_institutions_for_service(
+    service_id: str | None = None,
+    limit: int = 3,
+) -> list[Institution]:
+    """Return institutions ranked by estimated pass rate for a service.
+
+    Ranking is data-driven: sorted by ``estimated_pass_rate_mid`` descending.
+    Adding a new Institution with pass-rate fields automatically participates.
+    Per-service overrides in ``SERVICE_INSTITUTION_OVERRIDES`` are honored first.
+    """
+    # 1) Honor explicit per-service override if present
+    if service_id:
+        norm = service_id.strip().lower().replace("-", "_")
+        # Resolve alias via SERVICE_DEFINITIONS if present
+        canon = SERVICE_DEFINITIONS.get(norm, {}).get("id", norm)
+        if canon in SERVICE_INSTITUTION_OVERRIDES:
+            ordered: list[Institution] = []
+            for iid in SERVICE_INSTITUTION_OVERRIDES[canon]:
+                inst = INSTITUTIONS.get(iid)
+                if inst:
+                    ordered.append(inst)
+            # Append remaining sorted by pass rate to fill limit
+            remaining = [
+                inst
+                for inst in sorted(
+                    INSTITUTIONS.values(),
+                    key=lambda i: i.estimated_pass_rate_mid or 0,
+                    reverse=True,
+                )
+                if inst not in ordered
+            ]
+            ordered.extend(remaining)
+            return ordered[:limit]
+
+    # 2) Global ranking by pass rate (mid)
+    ranked = sorted(
+        INSTITUTIONS.values(),
+        key=lambda i: i.estimated_pass_rate_mid or 0,
+        reverse=True,
+    )
+    return ranked[:limit]
+
+
+def get_recommended_institution_for_service(
+    service_id: str | None = None,
+) -> Institution:
+    """Convenience: top-ranked institution for a service."""
+    best = get_best_institutions_for_service(service_id, limit=1)
+    return best[0] if best else INSTITUTIONS["psu"]
 
 
 @dataclass
@@ -2327,8 +2487,8 @@ _INSTITUTION_COURSE_POOLS: dict[str, list[dict[str, Any]]] = {
         {
             "subject": "SCC",
             "number": "0103",
-            "title": "Algoritmos e Estruturas de Dados",
-            "credits": 4.0,
+            "title": "Algoritmos e Estruturas de Dados I",
+            "credits": 8.0,
             "days": "Seg/Qua",
             "time": "08:00–10:00",
             "location": "IME Sala 101",
@@ -2339,7 +2499,7 @@ _INSTITUTION_COURSE_POOLS: dict[str, list[dict[str, Any]]] = {
             "subject": "MAC",
             "number": "0110",
             "title": "Introdução à Computação",
-            "credits": 4.0,
+            "credits": 8.0,
             "days": "Ter/Qui",
             "time": "10:00–12:00",
             "location": "IME Sala 105",
@@ -2350,7 +2510,7 @@ _INSTITUTION_COURSE_POOLS: dict[str, list[dict[str, Any]]] = {
             "subject": "MAT",
             "number": "0111",
             "title": "Cálculo Diferencial e Integral I",
-            "credits": 6.0,
+            "credits": 8.0,
             "days": "Seg/Qua/Sex",
             "time": "14:00–16:00",
             "location": "IME Sala 202",
@@ -2360,8 +2520,8 @@ _INSTITUTION_COURSE_POOLS: dict[str, list[dict[str, Any]]] = {
         {
             "subject": "FAP",
             "number": "0151",
-            "title": "Física Geral I",
-            "credits": 4.0,
+            "title": "Física I",
+            "credits": 8.0,
             "days": "Ter/Qui",
             "time": "14:00–16:00",
             "location": "IF Ed. Principal",
@@ -2675,8 +2835,8 @@ def _generate_student_id(rng: random.Random, institution: Institution) -> str:
         return f"{letters}{digits}"
 
     elif iid == "up_diliman":
-        # YYYY-NNNNN: admission year (2021-2025) + 5 digits
-        year = rng.randint(2021, 2025)
+        # YYYY-NNNNN: admission year (2020-2024) + 5 digits — per research spec
+        year = rng.randint(2020, 2024)
         seq = rng.randint(10000, 99999)
         return f"{year}-{seq:05d}"
 
@@ -2685,8 +2845,8 @@ def _generate_student_id(rng: random.Random, institution: Institution) -> str:
         return str(rng.randint(1000000, 99999999))
 
     elif iid == "universiti_malaya":
-        # S + 4-digit year + 6-digit sequence
-        year = rng.randint(2021, 2025)
+        # S + 4-digit year + 6-digit sequence — per research spec
+        year = rng.randint(2020, 2024)
         seq = rng.randint(100000, 999999)
         return f"S{year}{seq}"
 
@@ -2697,8 +2857,8 @@ def _generate_student_id(rng: random.Random, institution: Institution) -> str:
         return f"{year:02d}/U/{seq:05d}/PS"
 
     elif iid == "unilag":
-        # YYYY/1/NNNNN
-        year = rng.randint(2021, 2025)
+        # YYYY/1/NNNNN — per research spec
+        year = rng.randint(2020, 2024)
         seq = rng.randint(10000, 99999)
         return f"{year}/1/{seq:05d}"
 
@@ -2917,7 +3077,11 @@ def generate_profile(
         academic_standing = (
             "Ativo"
             if institution.id == "usp"
-            else ("Regular" if institution.id == "up_diliman" else "Good Standing")
+            else (
+                "Aktif"
+                if institution.id == "universiti_malaya"
+                else ("Regular" if institution.id == "up_diliman" else "Good Standing")
+            )
         )
         if institution.id == "usp":
             advisor_name = "Prof. Dr. Carlos Eduardo Ferreira"
@@ -3722,6 +3886,11 @@ def generate_registrar_letter_document(
             <div style="margin-top: 10px; font-size: 9.5px; color: #777777;">
                 Este documento é emitido eletronicamente pela Universidade de São Paulo e sua autenticidade pode ser confirmada no endereço acima informado com o código de validação.
             </div>
+            <div style="margin-top: 14px; border-top: 1px dashed #dee2e6; padding-top: 8px; text-align: center; font-size: 10.5px; color: #555555;">
+                <div>________________________________</div>
+                <div>Assinatura Eletrônica — Pró-Reitoria de Pós-Graduação</div>
+                <div>Universidade de São Paulo</div>
+            </div>
         </div>
     </div>
 </body>
@@ -4058,7 +4227,7 @@ def generate_registrar_letter_document(
             <tr><td class="lbl">Semester:</td><td>{semester_str}</td></tr>
             <tr><td class="lbl">Academic Term:</td><td>{term_label}</td></tr>
             <tr><td class="lbl">Sponsorship:</td><td>Private (PS)</td></tr>
-            <tr><td class="lbl">Registration Status:</td><td>{profile.academic_standing}</td></tr>
+            <tr><td class="lbl">Registration Status:</td><td>Duly Registered</td></tr>
         </table>
 
         <table class="courses-table">

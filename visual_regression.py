@@ -425,7 +425,7 @@ DEFAULT_BASELINE_SPECS: list[VisualBaselineSpec] = [
         attributes={
             "first_name": "Emmanuel",
             "last_name": "Okello",
-            "student_id": "23/U/14920/EVE",
+            "student_id": "23/U/14920/PS",
             "term_label": "Semester I 2025/2026",
             "document_print_date": "2025-08-18",
         },

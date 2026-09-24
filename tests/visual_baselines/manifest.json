@@ -164,8 +164,8 @@
         "description": "University of the Philippines Diliman - Form 5 Enrollment Certificate / Schedule"
       },
       "file_name": "up_diliman_form5.png",
-      "sha256": "5d5c31c42a7d5b41ff358e9a7983412b54dc5ede8b6da626132b7c08e5b80a78",
-      "size_bytes": 205151
+      "sha256": "7cc6d9730a4185c73d69c58bd386910de286040071dff88e1596b59ea06bfd10",
+      "size_bytes": 206133
     },
     "usp_atestado_matricula": {
       "spec": {
@@ -185,8 +185,8 @@
         "description": "Universidade de S\u00e3o Paulo - Atestado de Matr\u00edcula"
       },
       "file_name": "usp_atestado_matricula.png",
-      "sha256": "b04844659088cf19e3ebd9b63c842f437dcd95674e92dfb1647c6e94916ce0c8",
-      "size_bytes": 204304
+      "sha256": "b1a89a6cbeef6504bf3cc15aea1c9d285227968a0d0f9d2db15efa1ccb4bed19",
+      "size_bytes": 216050
     },
     "universiti_malaya_surat_pengesahan": {
       "spec": {
@@ -206,8 +206,8 @@
         "description": "Universiti Malaya - Surat Pengesahan Pendaftaran Pelajar"
       },
       "file_name": "universiti_malaya_surat_pengesahan.png",
-      "sha256": "14d2af5d5be30e4bd56aff4c7734faab10f0d7e3f883a0d68a1300c5bc4c75aa",
-      "size_bytes": 190768
+      "sha256": "033858007ba011bea7888d4631a2a16700bdde08b9fd984847e8587f856f0b25",
+      "size_bytes": 188403
     },
     "makerere_enrollment_letter": {
       "spec": {
@@ -218,7 +218,7 @@
         "attributes": {
           "first_name": "Emmanuel",
           "last_name": "Okello",
-          "student_id": "23/U/14920/EVE",
+          "student_id": "23/U/14920/PS",
           "term_label": "Semester I 2025/2026",
           "document_print_date": "2025-08-18"
         },
@@ -227,8 +227,8 @@
         "description": "Makerere University - Official Letter of Enrollment"
       },
       "file_name": "makerere_enrollment_letter.png",
-      "sha256": "11ff7f1c1878d681ee52d0dcfc67a4df723ebfcfbe888c86e3134baeb204224e",
-      "size_bytes": 208963
+      "sha256": "22ca3e39a8cf481f392fc373d43278b4bb0b6de40f9758a8477ef6aed2e36f0f",
+      "size_bytes": 208743
     },
     "unilag_enrollment_letter": {
       "spec": {
@@ -248,8 +248,8 @@
         "description": "University of Lagos - Letter of Student Enrollment"
       },
       "file_name": "unilag_enrollment_letter.png",
-      "sha256": "5939e6fc6f6001479f5fa4f640f2b7d5aeb87d6e2bbf0e0ddebf7201462989b1",
-      "size_bytes": 208055
+      "sha256": "5808282c7d0f7688004663a014e80e783aa13cc939da550936bdb4e0ea1aae3f",
+      "size_bytes": 208079
     }
   }
 }
