@@ -66,6 +66,10 @@ htmlcov/
 Thumbs.db
 .DS_Store
 
+# Output
+output/
+repomix*
+
 # Temporary files
 *.tmp
 *.bak

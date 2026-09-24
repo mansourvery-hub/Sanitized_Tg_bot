@@ -10,14 +10,22 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import random
 import re
-from dataclasses import asdict, dataclass, field
-from datetime import date, datetime, timedelta
+import uuid
+from dataclasses import asdict, dataclass, field, fields
+from datetime import date, datetime, timedelta, timezone
 from enum import Enum
+from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
+
+import pypdf
+from pypdf.errors import PyPdfError
+
+logger = logging.getLogger(__name__)
 
 GENERATOR_VERSION = "2.0.0"
 
@@ -51,6 +59,11 @@ class ArtifactType(str, Enum):
     JSON = "json"
 
 
+class DocumentArchetype(str, Enum):
+    PORTAL_SCREENSHOT = "portal_screenshot"
+    REGISTRAR_LETTER = "registrar_letter"
+
+
 @dataclass
 class Institution:
     id: str
@@ -60,15 +73,72 @@ class Institution:
     domain: str
     institution_type: str
     programs: tuple[str, ...]
+    portal_name: str = "Student Portal"
+    document_archetype: DocumentArchetype = DocumentArchetype.PORTAL_SCREENSHOT
+    student_id_label: str = "Student ID"
+    student_id_format: str = r"\d{9}"
+    student_id_prefix: str = ""
+    student_id_starts_with: str = ""
+    term_format: str = "{season} {year}"
+    term_seasons: tuple[str, ...] = ("Spring", "Summer", "Fall")
+    term_system: str = "semester"
+    primary_color: str = "#1E407C"
+    accent_color: str = "#96BEE6"
+    brand_color: str = "#1E407C"
+    registrar_title: str = "Office of the University Registrar"
+    registrar_address: str = ""
+    crn_label: str = "Class Nbr"
+    credit_label: str = "Units"
+    course_id_format: str = "{SUBJ} {NNN}"
+    schools: tuple[str, ...] = ()
+    pdf_producer: str = "Oracle PeopleTools 8.59"
+    pdf_creator: str = "PeopleSoft Enterprise"
+    # Legacy alias fields for backward compatibility
+    id_format: str | None = None
+    id_prefix: str | None = None
+    producer_string: str | None = None
+
+    def __post_init__(self) -> None:
+        if isinstance(self.document_archetype, str):
+            self.document_archetype = DocumentArchetype(self.document_archetype)
+        if self.brand_color != "#1E407C" and self.primary_color == "#1E407C":
+            self.primary_color = self.brand_color
+        else:
+            self.brand_color = self.primary_color
+        if self.id_format is not None and self.student_id_format == r"\d{9}":
+            self.student_id_format = self.id_format
+        if self.id_prefix is not None and not self.student_id_prefix:
+            self.student_id_prefix = self.id_prefix
+        if (
+            self.producer_string is not None
+            and self.pdf_producer == "Oracle PeopleTools 8.59"
+        ):
+            self.pdf_producer = self.producer_string
+        # Keep aliases synchronized
+        self.id_format = self.student_id_format
+        self.id_prefix = self.student_id_prefix
+        self.producer_string = self.pdf_producer
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        res = asdict(self)
+        res["document_archetype"] = self.document_archetype.value
+        return res
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Institution:
         data_copy = dict(data)
         if isinstance(data_copy.get("programs"), list):
             data_copy["programs"] = tuple(data_copy["programs"])
+        if isinstance(data_copy.get("term_seasons"), list):
+            data_copy["term_seasons"] = tuple(data_copy["term_seasons"])
+        if isinstance(data_copy.get("schools"), list):
+            data_copy["schools"] = tuple(data_copy["schools"])
+        if "document_archetype" in data_copy and isinstance(
+            data_copy["document_archetype"], str
+        ):
+            data_copy["document_archetype"] = DocumentArchetype(
+                data_copy["document_archetype"]
+            )
         return cls(**data_copy)
 
 
@@ -82,6 +152,9 @@ class Course:
     location: str
     instructor: str
     mode: str = "In-Person"
+
+
+CourseRecord = Course
 
 
 @dataclass
@@ -132,6 +205,24 @@ class SyntheticProfile:
     expected_graduation: date
     academic_year: str
 
+    # Verification & IDV realism fields
+    gpa_cumulative: float = 0.0
+    gpa_term: float = 0.0
+    cumulative_units: float = 0.0
+    academic_standing: str = "Good Standing"
+    campus: str = "University Park"
+    advisor_name: str = ""
+    advisor_email: str = ""
+    document_seal_hash: str = ""
+
+    current_term_label: str = ""
+    term_start_date: date | None = None
+    term_end_date: date | None = None
+    document_print_date: date | None = None
+    enrollment_type: str = "Full-Time"
+    college_or_school: str = ""
+    login_id: str = ""
+
     @property
     def institution(self) -> Institution:
         return INSTITUTIONS.get(self.institution_id, INSTITUTIONS["psu"])
@@ -155,6 +246,12 @@ class SyntheticProfile:
         res["date_of_birth"] = self.date_of_birth.isoformat()
         res["enrollment_date"] = self.enrollment_date.isoformat()
         res["expected_graduation"] = self.expected_graduation.isoformat()
+        if self.term_start_date:
+            res["term_start_date"] = self.term_start_date.isoformat()
+        if self.term_end_date:
+            res["term_end_date"] = self.term_end_date.isoformat()
+        if self.document_print_date:
+            res["document_print_date"] = self.document_print_date.isoformat()
         return res
 
     @classmethod
@@ -165,7 +262,19 @@ class SyntheticProfile:
         d["date_of_birth"] = date.fromisoformat(d["date_of_birth"])
         d["enrollment_date"] = date.fromisoformat(d["enrollment_date"])
         d["expected_graduation"] = date.fromisoformat(d["expected_graduation"])
-        return cls(**d)
+        if d.get("term_start_date") and isinstance(d["term_start_date"], str):
+            d["term_start_date"] = date.fromisoformat(d["term_start_date"])
+        if d.get("term_end_date") and isinstance(d["term_end_date"], str):
+            d["term_end_date"] = date.fromisoformat(d["term_end_date"])
+        if d.get("document_print_date") and isinstance(d["document_print_date"], str):
+            val = d["document_print_date"]
+            if "T" in val:
+                d["document_print_date"] = datetime.fromisoformat(val).date()
+            else:
+                d["document_print_date"] = date.fromisoformat(val)
+        valid_fields = {f.name for f in fields(cls)}
+        filtered_d = {k: v for k, v in d.items() if k in valid_fields}
+        return cls(**filtered_d)
 
 
 SyntheticStudent = SyntheticProfile
@@ -178,6 +287,10 @@ class Document:
     profile: SyntheticProfile
     fields: dict[str, str]
     html_content: str = ""
+
+    @property
+    def rendered_html(self) -> str:
+        return self.html_content
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -305,6 +418,210 @@ INSTITUTIONS: dict[str, Institution] = {
             "Psychology (BA)",
             "Nursing (BS)",
         ),
+        portal_name="LionPATH",
+        document_archetype=DocumentArchetype.PORTAL_SCREENSHOT,
+        student_id_label="Student ID",
+        student_id_format=r"\d{9}",
+        student_id_prefix="",
+        student_id_starts_with="9",
+        term_format="{season} {year}",
+        term_seasons=("Spring", "Summer", "Fall"),
+        term_system="semester",
+        primary_color="#1E407C",
+        accent_color="#96BEE6",
+        pdf_producer="Oracle PeopleTools 8.59.15",
+        pdf_creator="PeopleSoft Enterprise",
+        registrar_title="Office of the University Registrar",
+        registrar_address="103 Shields Building, University Park, PA 16802",
+        crn_label="Class Nbr",
+        credit_label="Units",
+        course_id_format="{SUBJ} {NNN}",
+        schools=(
+            "College of Engineering",
+            "College of Liberal Arts",
+            "Smeal College of Business",
+            "College of Information Sciences and Technology",
+            "Eberly College of Science",
+            "College of Communications",
+        ),
+    ),
+    "ucla": Institution(
+        id="ucla",
+        name="University of California, Los Angeles",
+        city="Los Angeles",
+        country="USA",
+        domain="ucla.edu",
+        institution_type="university",
+        programs=(
+            "Computer Science",
+            "Psychology",
+            "Economics",
+            "Political Science",
+            "Communications",
+            "Biology",
+            "Sociology",
+            "History",
+        ),
+        portal_name="MyUCLA",
+        document_archetype=DocumentArchetype.REGISTRAR_LETTER,
+        student_id_label="Student ID",
+        student_id_format=r"9\d{8}",
+        student_id_prefix="",
+        student_id_starts_with="9",
+        term_format="{season} {year}",
+        term_seasons=("Fall", "Winter", "Spring", "Summer"),
+        term_system="quarter",
+        primary_color="#2D68C4",
+        accent_color="#FFD100",
+        pdf_producer="PeopleSoft 9.2",
+        pdf_creator="PeopleSoft Enterprise",
+        registrar_title="Office of the Registrar, UCLA",
+        registrar_address="1113 Murphy Hall, Los Angeles, CA 90095",
+        crn_label="N/A",
+        credit_label="Units",
+        course_id_format="{SUBJ} {NNN}",
+        schools=(
+            "College of Letters and Science",
+            "Henry Samueli School of Engineering and Applied Science",
+            "UCLA Anderson School of Management",
+            "School of the Arts and Architecture",
+            "Herb Alpert School of Music",
+            "Jonathan and Karin Fielding School of Public Health",
+        ),
+    ),
+    "nyu": Institution(
+        id="nyu",
+        name="New York University",
+        city="New York",
+        country="USA",
+        domain="nyu.edu",
+        institution_type="university",
+        programs=(
+            "Computer Science",
+            "Economics",
+            "Business Administration",
+            "Psychology",
+            "Media, Culture, and Communication",
+            "Politics",
+            "Biology",
+            "History",
+        ),
+        portal_name="Albert",
+        document_archetype=DocumentArchetype.PORTAL_SCREENSHOT,
+        student_id_label="N-Number",
+        student_id_format=r"N\d{8}",
+        student_id_prefix="N",
+        student_id_starts_with="N",
+        term_format="{season} {year}",
+        term_seasons=("Spring", "Summer", "Fall"),
+        term_system="semester",
+        primary_color="#57068C",
+        accent_color="#8900E1",
+        pdf_producer="PeopleSoft 9.2 HCM",
+        pdf_creator="PeopleSoft Enterprise",
+        registrar_title="Office of the Registrar",
+        registrar_address="25 West 4th Street, New York, NY 10012",
+        crn_label="Class Number",
+        credit_label="Points",
+        course_id_format="{SUBJ} {NNN}",
+        schools=(
+            "College of Arts and Science",
+            "Tandon School of Engineering",
+            "Stern School of Business",
+            "Tisch School of the Arts",
+            "Gallatin School of Individualized Study",
+            "Silver School of Social Work",
+        ),
+    ),
+    "umich": Institution(
+        id="umich",
+        name="University of Michigan",
+        city="Ann Arbor",
+        country="USA",
+        domain="umich.edu",
+        institution_type="university",
+        programs=(
+            "Computer Science",
+            "Engineering",
+            "Business Administration",
+            "Psychology",
+            "Political Science",
+            "Economics",
+            "Information",
+            "Public Policy",
+        ),
+        portal_name="Wolverine Access",
+        document_archetype=DocumentArchetype.PORTAL_SCREENSHOT,
+        student_id_label="UMID",
+        student_id_format=r"\d{8}",
+        student_id_prefix="",
+        student_id_starts_with="",
+        term_format="{season} {year}",
+        term_seasons=("Winter", "Spring", "Spring-Summer", "Summer", "Fall"),
+        term_system="semester",
+        primary_color="#00274C",
+        accent_color="#FFCB05",
+        pdf_producer="PeopleSoft 9.2",
+        pdf_creator="MPathways",
+        registrar_title="Office of the Registrar",
+        registrar_address="2057 Wolverine Tower, Ann Arbor, MI 48109",
+        crn_label="Section",
+        credit_label="Credit Hours",
+        course_id_format="{SUBJ} {NNN}",
+        schools=(
+            "College of Literature, Science, and the Arts",
+            "College of Engineering",
+            "Ross School of Business",
+            "School of Information",
+            "Taubman College of Architecture and Urban Planning",
+            "School of Public Health",
+            "Gerald R. Ford School of Public Policy",
+        ),
+    ),
+    "ut_austin": Institution(
+        id="ut_austin",
+        name="The University of Texas at Austin",
+        city="Austin",
+        country="USA",
+        domain="utexas.edu",
+        institution_type="university",
+        programs=(
+            "Computer Science",
+            "Business",
+            "Communications",
+            "Government",
+            "Biology",
+            "Engineering",
+            "Psychology",
+            "Economics",
+        ),
+        portal_name="UT Direct",
+        document_archetype=DocumentArchetype.REGISTRAR_LETTER,
+        student_id_label="UT EID",
+        student_id_format=r"[a-z]{2,4}\d{3,5}",
+        student_id_prefix="",
+        student_id_starts_with="",
+        term_format="{season} {year}",
+        term_seasons=("Spring", "Summer", "Fall"),
+        term_system="semester",
+        primary_color="#BF5700",
+        accent_color="#333F48",
+        pdf_producer="Adobe PDF Library 15.0",
+        pdf_creator="Adobe Acrobat",
+        registrar_title="Office of the Registrar, The University of Texas at Austin",
+        registrar_address="Main Building (MAI), 110 Inner Campus Drive, Austin, TX 78712",
+        crn_label="Unique Number",
+        credit_label="Hours",
+        course_id_format="{SUBJ} {NNN}",
+        schools=(
+            "College of Liberal Arts",
+            "Cockrell School of Engineering",
+            "McCombs School of Business",
+            "College of Natural Sciences",
+            "Moody College of Communication",
+            "Steve Hicks School of Social Work",
+            "College of Education",
+        ),
     ),
     "springfield_k12": Institution(
         id="springfield_k12",
@@ -321,6 +638,20 @@ INSTITUTIONS: dict[str, Institution] = {
             "Language Arts & Literature",
             "Social Studies",
         ),
+        portal_name="Employee Access Center",
+        document_archetype=DocumentArchetype.PORTAL_SCREENSHOT,
+        student_id_label="Employee ID",
+        student_id_format=r"\d{7}",
+        student_id_prefix="E-",
+        term_format="{season} {year}",
+        term_seasons=("Fall", "Spring"),
+        term_system="semester",
+        registrar_title="Office of Human Resources",
+        pdf_producer="PowerSchool SIS 23.5",
+        pdf_creator="PowerSchool",
+        crn_label="Course ID",
+        credit_label="Credits",
+        course_id_format="{SUBJ} {NNN}",
     ),
     "nittany_tech": Institution(
         id="nittany_tech",
@@ -335,6 +666,20 @@ INSTITUTIONS: dict[str, Institution] = {
             "Web Development (Cert)",
             "Network Systems (AS)",
         ),
+        portal_name="Ellucian Banner",
+        document_archetype=DocumentArchetype.PORTAL_SCREENSHOT,
+        student_id_label="Student ID",
+        student_id_format=r"\d{8}",
+        student_id_prefix="N",
+        term_format="{season} {year}",
+        term_seasons=("Spring", "Summer", "Fall"),
+        term_system="semester",
+        registrar_title="Office of the Registrar",
+        pdf_producer="Ellucian Banner 9.28",
+        pdf_creator="Ellucian",
+        crn_label="CRN",
+        credit_label="Credits",
+        course_id_format="{SUBJ} {NNN}",
     ),
 }
 
@@ -419,21 +764,70 @@ def get_scenario(name: str) -> ScenarioConfig:
 # SEEDED NAME & DEMOGRAPHIC GENERATOR
 # =====================================================================
 
+
 class SeededNameGenerator:
     """Deterministic English Name Generator supporting seeded Random instances."""
 
-    FIRST_NAMES = [
-        "Alexander", "Benjamin", "Charlotte", "Daniel", "Eleanor", "Felix", "Gabriel",
-        "Hannah", "Isabella", "Julian", "Katherine", "Liam", "Maya", "Nathaniel",
-        "Olivia", "Penelope", "Quinn", "Rachel", "Samuel", "Tristan", "Victoria",
-        "William", "Zoe", "Lucas", "Sophia", "Ethan", "Chloe", "Noah", "Aria", "Mason"
+    FIRST_NAMES: ClassVar[list[str]] = [
+        "Alexander",
+        "Benjamin",
+        "Charlotte",
+        "Daniel",
+        "Eleanor",
+        "Felix",
+        "Gabriel",
+        "Hannah",
+        "Isabella",
+        "Julian",
+        "Katherine",
+        "Liam",
+        "Maya",
+        "Nathaniel",
+        "Olivia",
+        "Penelope",
+        "Quinn",
+        "Rachel",
+        "Samuel",
+        "Tristan",
+        "Victoria",
+        "William",
+        "Zoe",
+        "Lucas",
+        "Sophia",
+        "Ethan",
+        "Chloe",
+        "Noah",
+        "Aria",
+        "Mason",
     ]
 
-    LAST_NAMES = [
-        "Anderson", "Baker", "Carter", "Davis", "Edwards", "Foster", "Garcia",
-        "Harrison", "Johnson", "Miller", "Nelson", "Owens", "Parker", "Quinn",
-        "Roberts", "Smith-Jones", "Taylor", "Vance-Walker", "Williams", "Young",
-        "Zhang", "Patel", "O'Connor", "Dubois", "Schneider", "Kovacs"
+    LAST_NAMES: ClassVar[list[str]] = [
+        "Anderson",
+        "Baker",
+        "Carter",
+        "Davis",
+        "Edwards",
+        "Foster",
+        "Garcia",
+        "Harrison",
+        "Johnson",
+        "Miller",
+        "Nelson",
+        "Owens",
+        "Parker",
+        "Quinn",
+        "Roberts",
+        "Smith-Jones",
+        "Taylor",
+        "Vance-Walker",
+        "Williams",
+        "Young",
+        "Zhang",
+        "Patel",
+        "O'Connor",
+        "Dubois",
+        "Schneider",
+        "Kovacs",
     ]
 
     @classmethod
@@ -447,6 +841,7 @@ class SeededNameGenerator:
 # TEMPORAL ANCHOR ENGINE (≤ 90-Day Rule)
 # =====================================================================
 
+
 @dataclass
 class TemporalAnchor:
     current_date: date
@@ -457,9 +852,210 @@ class TemporalAnchor:
     payment_date: date
     issue_date: date
     expiration_date: date
+    term_start_date: date | None = None
+    term_end_date: date | None = None
 
 
-def get_temporal_anchor(rng: random.Random, anchor_date: date | None = None) -> TemporalAnchor:
+_TERM_WINDOWS: dict[str, tuple[date, date]] = {
+    "Fall": (date(2025, 8, 26), date(2025, 12, 19)),
+    "Spring": (date(2026, 1, 13), date(2026, 5, 9)),
+    "Summer": (date(2026, 5, 18), date(2026, 8, 7)),
+}
+
+_TERM_CALENDARS: dict[str, dict[str, tuple[date, date]]] = {
+    "psu": {
+        "Fall 2025": (date(2025, 8, 26), date(2025, 12, 19)),
+        "Spring 2026": (date(2026, 1, 13), date(2026, 5, 9)),
+        "Summer 2026": (date(2026, 5, 18), date(2026, 8, 7)),
+        "Fall 2026": (date(2026, 8, 24), date(2026, 12, 18)),
+        "Spring 2027": (date(2027, 1, 11), date(2027, 5, 7)),
+        "Summer 2027": (date(2027, 5, 17), date(2027, 8, 6)),
+        "Fall 2027": (date(2027, 8, 23), date(2027, 12, 17)),
+    },
+    "ucla": {
+        # Quarter system: Fall, Winter, Spring, Summer
+        "Fall 2025": (date(2025, 9, 22), date(2025, 12, 12)),
+        "Winter 2026": (date(2026, 1, 5), date(2026, 3, 20)),
+        "Spring 2026": (date(2026, 3, 30), date(2026, 6, 12)),
+        "Summer 2026": (date(2026, 6, 22), date(2026, 8, 28)),
+        "Fall 2026": (date(2026, 9, 21), date(2026, 12, 11)),
+        "Winter 2027": (date(2027, 1, 4), date(2027, 3, 19)),
+        "Spring 2027": (date(2027, 3, 29), date(2027, 6, 11)),
+        "Summer 2027": (date(2027, 6, 21), date(2027, 8, 27)),
+        "Fall 2027": (date(2027, 9, 20), date(2027, 12, 10)),
+    },
+    "nyu": {
+        "Fall 2025": (date(2025, 9, 2), date(2025, 12, 19)),
+        "Spring 2026": (date(2026, 1, 27), date(2026, 5, 15)),
+        "Summer 2026": (date(2026, 5, 26), date(2026, 8, 14)),
+        "Fall 2026": (date(2026, 9, 2), date(2026, 12, 18)),
+        "Spring 2027": (date(2027, 1, 25), date(2027, 5, 14)),
+        "Summer 2027": (date(2027, 5, 24), date(2027, 8, 13)),
+        "Fall 2027": (date(2027, 9, 1), date(2027, 12, 17)),
+    },
+    "umich": {
+        "Fall 2025": (date(2025, 8, 27), date(2025, 12, 13)),
+        "Winter 2026": (
+            date(2026, 1, 6),
+            date(2026, 4, 24),
+        ),  # Note: "Winter" NOT "Spring"
+        "Spring 2026": (date(2026, 4, 27), date(2026, 6, 5)),
+        "Summer 2026": (date(2026, 6, 8), date(2026, 8, 14)),
+        "Fall 2026": (date(2026, 8, 26), date(2026, 12, 11)),
+        "Winter 2027": (
+            date(2027, 1, 5),
+            date(2027, 4, 23),
+        ),  # Note: "Winter" NOT "Spring"
+        "Spring 2027": (date(2027, 4, 26), date(2027, 6, 4)),
+        "Summer 2027": (date(2027, 6, 7), date(2027, 8, 13)),
+        "Fall 2027": (date(2027, 8, 25), date(2027, 12, 10)),
+    },
+    "ut_austin": {
+        "Fall 2025": (date(2025, 8, 25), date(2025, 12, 11)),
+        "Spring 2026": (date(2026, 1, 21), date(2026, 5, 15)),
+        "Summer 2026": (date(2026, 6, 1), date(2026, 8, 7)),
+        "Fall 2026": (date(2026, 8, 24), date(2026, 12, 10)),
+        "Spring 2027": (date(2027, 1, 19), date(2027, 5, 14)),
+        "Summer 2027": (date(2027, 5, 31), date(2027, 8, 6)),
+        "Fall 2027": (date(2027, 8, 23), date(2027, 12, 9)),
+    },
+}
+
+
+def _current_term_for_institution(
+    institution_id: str,
+    as_of: date | None = None,
+) -> tuple[str, date, date]:
+    """
+    Returns (term_label, term_start, term_end) for the term
+    containing 'as_of' (defaults to today), for the given institution.
+    UCLA Winter/Spring quarter names and UMich Winter names are preserved.
+    """
+    d = as_of or datetime.now(timezone.utc).date()
+    cal = _TERM_CALENDARS.get(institution_id, _TERM_CALENDARS["psu"])
+    for label, (start, end) in cal.items():
+        if start <= d <= end:
+            return label, start, end
+
+    # Dynamic year resolution if outside static range
+    y = d.year
+    if institution_id == "ucla":
+        q_cal = {
+            f"Winter {y}": (date(y, 1, 4), date(y, 3, 19)),
+            f"Spring {y}": (date(y, 3, 29), date(y, 6, 11)),
+            f"Summer {y}": (date(y, 6, 21), date(y, 8, 27)),
+            f"Fall {y}": (date(y, 9, 20), date(y, 12, 10)),
+        }
+        for label, (start, end) in q_cal.items():
+            if start <= d <= end:
+                return label, start, end
+    elif institution_id == "umich":
+        u_cal = {
+            f"Winter {y}": (date(y, 1, 5), date(y, 4, 23)),
+            f"Spring {y}": (date(y, 4, 26), date(y, 6, 4)),
+            f"Summer {y}": (date(y, 6, 7), date(y, 8, 13)),
+            f"Fall {y}": (date(y, 8, 25), date(y, 12, 10)),
+        }
+        for label, (start, end) in u_cal.items():
+            if start <= d <= end:
+                return label, start, end
+
+    future = {k: v for k, v in cal.items() if v[0] > d}
+    if future:
+        nearest = min(future.items(), key=lambda x: x[1][0])
+        return nearest[0], nearest[1][0], nearest[1][1]
+    last = list(cal.items())[-1]
+    return last[0], last[1][0], last[1][1]
+
+
+def _current_term(
+    as_of: date | None = None,
+    institution_id: str | None = None,
+) -> tuple[str, int, date, date]:
+    """
+    Returns (season, year, term_start, term_end) for the term
+    containing 'as_of' (defaults to today).
+    """
+    d = as_of or datetime.now(timezone.utc).date()
+    if institution_id and institution_id in _TERM_CALENDARS:
+        label, start, end = _current_term_for_institution(institution_id, d)
+        parts = label.split()
+        season = parts[0]
+        year = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else d.year
+        return season, year, start, end
+
+    y = d.year
+    windows = {
+        ("Fall", y - 1): (date(y - 1, 8, 26), date(y - 1, 12, 19)),
+        ("Spring", y): (date(y, 1, 13), date(y, 5, 9)),
+        ("Summer", y): (date(y, 5, 18), date(y, 8, 7)),
+        ("Fall", y): (date(y, 8, 26), date(y, 12, 19)),
+        ("Spring", y + 1): (date(y + 1, 1, 13), date(y + 1, 5, 9)),
+    }
+    for (season, year), (start, end) in windows.items():
+        if start <= d <= end:
+            return season, year, start, end
+
+    upcoming = min(windows.items(), key=lambda item: abs((item[1][0] - d).days))
+    (season, year), (st, en) = upcoming
+    return season, year, st, en
+
+
+def _document_print_date(
+    rng: random.Random,
+    profile_or_start: Any,
+    as_of: date | None = None,
+) -> datetime:
+    """Generate a plausible print datetime within working hours during the current term."""
+    today = as_of or datetime.now(timezone.utc).date()
+    if isinstance(profile_or_start, date):
+        term_start = profile_or_start
+    elif (
+        hasattr(profile_or_start, "term_start_date")
+        and profile_or_start.term_start_date
+    ):
+        term_start = profile_or_start.term_start_date
+    else:
+        term_start = today - timedelta(days=30)
+
+    window_start = max(term_start, today - timedelta(days=30))
+    window_end = today - timedelta(days=1)
+    if window_start > window_end:
+        window_start = window_end - timedelta(days=1)
+
+    span = max(1, (window_end - window_start).days)
+    chosen_day = window_start + timedelta(days=rng.randint(0, span))
+    return datetime.combine(chosen_day, datetime.min.time()).replace(
+        hour=rng.randint(8, 17),
+        minute=rng.randint(0, 59),
+        second=rng.randint(0, 59),
+    )
+
+
+def _generate_crn(rng: random.Random, institution_id: str, course_index: int) -> str:
+    """
+    CRN that matches real institutional formatting.
+    PSU CRNs: 5 digits, range 10000-89999 (not starting with 9), non-sequential.
+    Seeded per institution + index so the same seed always gives the same CRN,
+    but different courses in the same schedule are non-sequential.
+    """
+    local_rng = random.Random(
+        hash(f"{institution_id}:{course_index}") + rng.randint(0, 9999)
+    )
+    for _ in range(20):
+        crn = local_rng.randint(10000, 89999)
+        s = str(crn)
+        if s == s[::-1]:
+            continue
+        if len(set(s)) <= 2:
+            continue
+        return s
+    return str(local_rng.randint(10000, 89999))
+
+
+def get_temporal_anchor(
+    rng: random.Random, anchor_date: date | None = None
+) -> TemporalAnchor:
     """
     Computes a strict TemporalAnchor satisfying the ≤ 90-day verification rule:
     - Current date defaults to today (or reference date).
@@ -467,7 +1063,7 @@ def get_temporal_anchor(rng: random.Random, anchor_date: date | None = None) -> 
     - Tuition payment date: 15 to 45 days prior to current date.
     - ID card expiration date: End of active academic year or anticipated graduation.
     """
-    cur = anchor_date if anchor_date else date.today()
+    cur = anchor_date if anchor_date else datetime.now(timezone.utc).date()
     month = cur.month
     year = cur.year
 
@@ -498,6 +1094,8 @@ def get_temporal_anchor(rng: random.Random, anchor_date: date | None = None) -> 
     # Issue date: start of term or retrieval date
     issue_date = ret_date
 
+    _season, _ty, term_start, term_end = _current_term(cur)
+
     return TemporalAnchor(
         current_date=cur,
         academic_year=acad_year,
@@ -507,6 +1105,8 @@ def get_temporal_anchor(rng: random.Random, anchor_date: date | None = None) -> 
         payment_date=pay_date,
         issue_date=issue_date,
         expiration_date=exp_date,
+        term_start_date=term_start,
+        term_end_date=term_end,
     )
 
 
@@ -516,57 +1116,858 @@ def get_temporal_anchor(rng: random.Random, anchor_date: date | None = None) -> 
 
 CURRICULA: dict[str, list[Course]] = {
     "Computer Science (BS)": [
-        Course("CMPSC 311", "Systems Programming", "31422", 3, "MoWeFr 09:05 AM - 09:55 AM", "Hammond 114", "Dr. Alan Turing", "In-Person"),
-        Course("CMPSC 465", "Data Structures & Algorithms", "32890", 3, "TuTh 11:15 AM - 12:30 PM", "IST Building 202", "Dr. Grace Hopper", "In-Person"),
-        Course("MATH 230", "Calculus and Vector Analysis", "21904", 4, "MoWeFr 11:15 AM - 12:05 PM", "McAllister 102", "Dr. Richard Feynman", "In-Person"),
-        Course("STAT 318", "Elementary Probability", "28411", 3, "TuTh 02:30 PM - 03:45 PM", "Thomas 100", "Dr. Claude Shannon", "In-Person"),
-        Course("ENGL 202C", "Technical Writing", "37712", 3, "MoWe 02:30 PM - 03:45 PM", "Sparks 121", "Prof. Jane Austen", "Hybrid"),
+        Course(
+            "CMPSC 311",
+            "Systems Programming",
+            "31422",
+            3,
+            "MoWeFr 09:05 AM - 09:55 AM",
+            "Hammond 114",
+            "Dr. Alan Turing",
+            "In-Person",
+        ),
+        Course(
+            "CMPSC 465",
+            "Data Structures & Algorithms",
+            "32890",
+            3,
+            "TuTh 11:15 AM - 12:30 PM",
+            "IST Building 202",
+            "Dr. Grace Hopper",
+            "In-Person",
+        ),
+        Course(
+            "MATH 230",
+            "Calculus and Vector Analysis",
+            "21904",
+            4,
+            "MoWeFr 11:15 AM - 12:05 PM",
+            "McAllister 102",
+            "Dr. Richard Feynman",
+            "In-Person",
+        ),
+        Course(
+            "STAT 318",
+            "Elementary Probability",
+            "28411",
+            3,
+            "TuTh 02:30 PM - 03:45 PM",
+            "Thomas 100",
+            "Dr. Claude Shannon",
+            "In-Person",
+        ),
+        Course(
+            "ENGL 202C",
+            "Technical Writing",
+            "37712",
+            3,
+            "MoWe 02:30 PM - 03:45 PM",
+            "Sparks 121",
+            "Prof. Jane Austen",
+            "Hybrid",
+        ),
     ],
     "Software Engineering (BS)": [
-        Course("SWENG 311", "Software Engineering I", "33101", 3, "MoWeFr 10:10 AM - 11:00 AM", "Westgate 108", "Dr. Barbara Liskov", "In-Person"),
-        Course("SWENG 411", "Software Architecture", "34190", 3, "TuTh 09:45 AM - 11:00 AM", "Westgate 214", "Dr. Fred Brooks", "In-Person"),
-        Course("CMPSC 461", "Programming Language Concepts", "32115", 3, "MoWeFr 01:25 PM - 02:15 PM", "Hammond 216", "Dr. John Backus", "In-Person"),
-        Course("STAT 318", "Elementary Probability", "28411", 3, "TuTh 02:30 PM - 03:45 PM", "Thomas 100", "Dr. Claude Shannon", "In-Person"),
-        Course("CAS 100", "Effective Speech", "19284", 3, "Fr 01:25 PM - 04:15 PM", "Boucke 302", "Prof. Mark Twain", "In-Person"),
+        Course(
+            "SWENG 311",
+            "Software Engineering I",
+            "33101",
+            3,
+            "MoWeFr 10:10 AM - 11:00 AM",
+            "Westgate 108",
+            "Dr. Barbara Liskov",
+            "In-Person",
+        ),
+        Course(
+            "SWENG 411",
+            "Software Architecture",
+            "34190",
+            3,
+            "TuTh 09:45 AM - 11:00 AM",
+            "Westgate 214",
+            "Dr. Fred Brooks",
+            "In-Person",
+        ),
+        Course(
+            "CMPSC 461",
+            "Programming Language Concepts",
+            "32115",
+            3,
+            "MoWeFr 01:25 PM - 02:15 PM",
+            "Hammond 216",
+            "Dr. John Backus",
+            "In-Person",
+        ),
+        Course(
+            "STAT 318",
+            "Elementary Probability",
+            "28411",
+            3,
+            "TuTh 02:30 PM - 03:45 PM",
+            "Thomas 100",
+            "Dr. Claude Shannon",
+            "In-Person",
+        ),
+        Course(
+            "CAS 100",
+            "Effective Speech",
+            "19284",
+            3,
+            "Fr 01:25 PM - 04:15 PM",
+            "Boucke 302",
+            "Prof. Mark Twain",
+            "In-Person",
+        ),
     ],
     "Business Administration (BS)": [
-        Course("ACCTG 211", "Financial & Managerial Accounting", "41022", 4, "MoWe 08:00 AM - 09:15 AM", "Smeal 101", "Dr. Warren Buffet", "In-Person"),
-        Course("MGMT 301", "Basic Management Concepts", "42019", 3, "TuTh 11:00 AM - 12:15 PM", "Smeal 114", "Dr. Peter Drucker", "In-Person"),
-        Course("MKTG 301", "Principles of Marketing", "43088", 3, "MoWeFr 11:15 AM - 12:05 PM", "Smeal 120", "Dr. Philip Kotler", "In-Person"),
-        Course("SCM 301", "Supply Chain Management", "44102", 3, "TuTh 01:30 PM - 02:45 PM", "Smeal 205", "Dr. Eliyahu Goldratt", "In-Person"),
-        Course("ECON 104", "Macroeconomic Analysis", "20199", 3, "MoWe 03:00 PM - 04:15 PM", "Whetstone 10", "Dr. Milton Friedman", "Hybrid"),
+        Course(
+            "ACCTG 211",
+            "Financial & Managerial Accounting",
+            "41022",
+            4,
+            "MoWe 08:00 AM - 09:15 AM",
+            "Smeal 101",
+            "Dr. Warren Buffet",
+            "In-Person",
+        ),
+        Course(
+            "MGMT 301",
+            "Basic Management Concepts",
+            "42019",
+            3,
+            "TuTh 11:00 AM - 12:15 PM",
+            "Smeal 114",
+            "Dr. Peter Drucker",
+            "In-Person",
+        ),
+        Course(
+            "MKTG 301",
+            "Principles of Marketing",
+            "43088",
+            3,
+            "MoWeFr 11:15 AM - 12:05 PM",
+            "Smeal 120",
+            "Dr. Philip Kotler",
+            "In-Person",
+        ),
+        Course(
+            "SCM 301",
+            "Supply Chain Management",
+            "44102",
+            3,
+            "TuTh 01:30 PM - 02:45 PM",
+            "Smeal 205",
+            "Dr. Eliyahu Goldratt",
+            "In-Person",
+        ),
+        Course(
+            "ECON 104",
+            "Macroeconomic Analysis",
+            "20199",
+            3,
+            "MoWe 03:00 PM - 04:15 PM",
+            "Whetstone 10",
+            "Dr. Milton Friedman",
+            "Hybrid",
+        ),
     ],
     "Mechanical Engineering (BS)": [
-        Course("ME 300", "Engineering Thermodynamics", "51092", 3, "MoWeFr 08:00 AM - 08:50 AM", "Hammond 301", "Dr. Nikola Tesla", "In-Person"),
-        Course("EMCH 213", "Strength of Materials", "52011", 3, "TuTh 09:30 AM - 10:45 AM", "Reber 108", "Dr. Stephen Timoshenko", "In-Person"),
-        Course("MATH 251", "Ordinary Differential Equations", "22104", 4, "MoWeFr 10:10 AM - 11:00 AM", "McAllister 105", "Dr. Leonhard Euler", "In-Person"),
-        Course("PHYS 212", "General Physics: Electricity", "27112", 4, "TuTh 01:00 PM - 02:15 PM", "Osmond 110", "Dr. James Clerk Maxwell", "In-Person"),
+        Course(
+            "ME 300",
+            "Engineering Thermodynamics",
+            "51092",
+            3,
+            "MoWeFr 08:00 AM - 08:50 AM",
+            "Hammond 301",
+            "Dr. Nikola Tesla",
+            "In-Person",
+        ),
+        Course(
+            "EMCH 213",
+            "Strength of Materials",
+            "52011",
+            3,
+            "TuTh 09:30 AM - 10:45 AM",
+            "Reber 108",
+            "Dr. Stephen Timoshenko",
+            "In-Person",
+        ),
+        Course(
+            "MATH 251",
+            "Ordinary Differential Equations",
+            "22104",
+            4,
+            "MoWeFr 10:10 AM - 11:00 AM",
+            "McAllister 105",
+            "Dr. Leonhard Euler",
+            "In-Person",
+        ),
+        Course(
+            "PHYS 212",
+            "General Physics: Electricity",
+            "27112",
+            4,
+            "TuTh 01:00 PM - 02:15 PM",
+            "Osmond 110",
+            "Dr. James Clerk Maxwell",
+            "In-Person",
+        ),
     ],
     "Nursing (BS)": [
-        Course("NURS 200W", "Professional Nursing Concepts", "61022", 3, "Mo 09:00 AM - 12:00 PM", "Nursing Sciences 102", "Dr. Florence Nightingale", "In-Person"),
-        Course("NURS 225", "Health Assessment", "62011", 4, "TuTh 08:00 AM - 11:00 AM", "Nursing Sciences 210", "Dr. Clara Barton", "In-Person"),
-        Course("NURS 230", "Pathophysiology", "63044", 3, "WeFr 01:00 PM - 02:15 PM", "Nursing Sciences 104", "Dr. Virginia Henderson", "In-Person"),
-        Course("BIOL 161", "Human Anatomy & Physiology", "28990", 4, "MoWeFr 02:30 PM - 03:20 PM", "Mueller Lab 100", "Dr. Andreas Vesalius", "In-Person"),
+        Course(
+            "NURS 200W",
+            "Professional Nursing Concepts",
+            "61022",
+            3,
+            "Mo 09:00 AM - 12:00 PM",
+            "Nursing Sciences 102",
+            "Dr. Florence Nightingale",
+            "In-Person",
+        ),
+        Course(
+            "NURS 225",
+            "Health Assessment",
+            "62011",
+            4,
+            "TuTh 08:00 AM - 11:00 AM",
+            "Nursing Sciences 210",
+            "Dr. Clara Barton",
+            "In-Person",
+        ),
+        Course(
+            "NURS 230",
+            "Pathophysiology",
+            "63044",
+            3,
+            "WeFr 01:00 PM - 02:15 PM",
+            "Nursing Sciences 104",
+            "Dr. Virginia Henderson",
+            "In-Person",
+        ),
+        Course(
+            "BIOL 161",
+            "Human Anatomy & Physiology",
+            "28990",
+            4,
+            "MoWeFr 02:30 PM - 03:20 PM",
+            "Mueller Lab 100",
+            "Dr. Andreas Vesalius",
+            "In-Person",
+        ),
     ],
 }
 
 DEFAULT_COURSES = [
-    Course("GENED 101", "Academic Foundations", "10022", 3, "MoWeFr 09:05 AM - 09:55 AM", "Boucke 102", "Dr. Mentor Academic", "In-Person"),
-    Course("ELECTIVE 201", "Independent Study", "10045", 3, "TuTh 02:30 PM - 03:45 PM", "Library 204", "Dr. Faculty Advisor", "Hybrid"),
+    Course(
+        "GENED 101",
+        "Academic Foundations",
+        "10022",
+        3,
+        "MoWeFr 09:05 AM - 09:55 AM",
+        "Boucke 102",
+        "Dr. Mentor Academic",
+        "In-Person",
+    ),
+    Course(
+        "ELECTIVE 201",
+        "Independent Study",
+        "10045",
+        3,
+        "TuTh 02:30 PM - 03:45 PM",
+        "Library 204",
+        "Dr. Faculty Advisor",
+        "Hybrid",
+    ),
 ]
 
 
-def generate_academic_state(rng: random.Random, program: str, temporal: TemporalAnchor) -> AcademicState:
-    courses = list(CURRICULA.get(program, DEFAULT_COURSES))
+_INSTITUTION_COURSE_POOLS: dict[str, list[dict[str, Any]]] = {
+    "psu": [
+        {
+            "subject": "CMPSC",
+            "number": "465",
+            "title": "Data Structures & Algorithms",
+            "credits": 3.0,
+            "days": "MoWeFr",
+            "time": "10:10AM–11:00AM",
+            "location": "Willard 203",
+            "instructor": "Vasquez, R.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "MATH",
+            "number": "230",
+            "title": "Calculus & Vector Analysis",
+            "credits": 4.0,
+            "days": "TuTh",
+            "time": "01:35PM–02:50PM",
+            "location": "Thomas 102",
+            "instructor": "Nowak, A.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "ENGL",
+            "number": "202C",
+            "title": "Technical Writing",
+            "credits": 3.0,
+            "days": "MoWe",
+            "time": "09:05AM–10:20AM",
+            "location": "Boucke 214",
+            "instructor": "O'Connor, M.",
+            "mode": "Hybrid",
+        },
+        {
+            "subject": "STAT",
+            "number": "318",
+            "title": "Applied Statistics",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "11:15AM–12:30PM",
+            "location": "Osmond 110",
+            "instructor": "Chen, H.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "PHYS",
+            "number": "212",
+            "title": "Physics — Electricity & Magnetism",
+            "credits": 4.0,
+            "days": "MoWeFr",
+            "time": "02:30PM–03:20PM",
+            "location": "Davey Lab 339",
+            "instructor": "Bhattacharya, S.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "IST",
+            "number": "331",
+            "title": "Information & Organizations",
+            "credits": 3.0,
+            "days": "We",
+            "time": "06:00PM–08:45PM",
+            "location": "Westgate E201",
+            "instructor": "Miller, K.",
+            "mode": "Online Sync",
+        },
+        {
+            "subject": "PSYCH",
+            "number": "100",
+            "title": "Introductory Psychology",
+            "credits": 3.0,
+            "days": "MoWeFr",
+            "time": "08:00AM–08:50AM",
+            "location": "Forum 101",
+            "instructor": "Kowalski, J.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "ACCTG",
+            "number": "211",
+            "title": "Financial Accounting",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "03:05PM–04:20PM",
+            "location": "Business Bldg 108",
+            "instructor": "Stern, D.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "BIOL",
+            "number": "110",
+            "title": "Basic Concepts in Biology",
+            "credits": 3.0,
+            "days": "MoWeFr",
+            "time": "09:05AM–09:55AM",
+            "location": "Mueller Lab 158",
+            "instructor": "Alvarez, E.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "COMM",
+            "number": "150",
+            "title": "Media Literacy & Society",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "12:05PM–01:20PM",
+            "location": "Carnegie 113",
+            "instructor": "Hayes, B.",
+            "mode": "In-Person",
+        },
+    ],
+    "ucla": [
+        {
+            "subject": "CS",
+            "number": "31",
+            "title": "Introduction to Computer Science I",
+            "credits": 4.0,
+            "days": "TuTh",
+            "time": "02:00PM–03:50PM",
+            "location": "Boelter Hall 3400",
+            "instructor": "Smallberg, D.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "MATH",
+            "number": "32A",
+            "title": "Calculus of Several Variables",
+            "credits": 4.0,
+            "days": "MoWeFr",
+            "time": "10:00AM–10:50AM",
+            "location": "MS 4000A",
+            "instructor": "Greene, J.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "ENGLISH",
+            "number": "3",
+            "title": "Writing for the Disciplines",
+            "credits": 4.0,
+            "days": "TuTh",
+            "time": "12:30PM–01:45PM",
+            "location": "Kaplan Hall 135",
+            "instructor": "King, R.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "ECON",
+            "number": "1",
+            "title": "Principles of Economics",
+            "credits": 5.0,
+            "days": "MoWeFr",
+            "time": "09:00AM–09:50AM",
+            "location": "Dodd Hall 121",
+            "instructor": "Rojas, F.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "PSYCH",
+            "number": "10",
+            "title": "Introductory Psychology",
+            "credits": 4.0,
+            "days": "TuTh",
+            "time": "11:00AM–12:15PM",
+            "location": "Franz Hall 1178",
+            "instructor": "Firstenberg, I.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "POL SCI",
+            "number": "10",
+            "title": "Introduction to Political Theory",
+            "credits": 4.0,
+            "days": "MoWe",
+            "time": "02:00PM–03:15PM",
+            "location": "Bunche Hall 1209",
+            "instructor": "Panagia, D.",
+            "mode": "Hybrid",
+        },
+        {
+            "subject": "SOCIOL",
+            "number": "1",
+            "title": "Introduction to Sociology",
+            "credits": 4.0,
+            "days": "TuTh",
+            "time": "09:30AM–10:45AM",
+            "location": "Haines Hall 39",
+            "instructor": "Collett, J.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "CHEM",
+            "number": "14A",
+            "title": "Atomic and Molecular Structure",
+            "credits": 4.0,
+            "days": "MoWeFr",
+            "time": "11:00AM–11:50AM",
+            "location": "Young Hall CS50",
+            "instructor": "Lavelle, L.",
+            "mode": "In-Person",
+        },
+    ],
+    "nyu": [
+        {
+            "subject": "CSCI-UA",
+            "number": "101",
+            "title": "Introduction to Computer Science",
+            "credits": 4.0,
+            "days": "TuTh",
+            "time": "02:00PM–03:15PM",
+            "location": "Warren Weaver 109",
+            "instructor": "Kapp, C.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "WRITEXP-UA",
+            "number": "1",
+            "title": "Writing the Essay",
+            "credits": 4.0,
+            "days": "MoWe",
+            "time": "11:00AM–12:15PM",
+            "location": "Silver Center 401",
+            "instructor": "Gould, S.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "ECON-UA",
+            "number": "1",
+            "title": "Introduction to Microeconomics",
+            "credits": 4.0,
+            "days": "Fr",
+            "time": "10:00AM–11:50AM",
+            "location": "194 Mercer 206",
+            "instructor": "Paizis, M.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "PSYCH-UA",
+            "number": "1",
+            "title": "Introduction to Psychology",
+            "credits": 4.0,
+            "days": "MoWeFr",
+            "time": "09:30AM–10:45AM",
+            "location": "Meyer Hall 121",
+            "instructor": "Bavel, J.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "MATH-UA",
+            "number": "121",
+            "title": "Calculus I",
+            "credits": 4.0,
+            "days": "MoWeFr",
+            "time": "12:30PM–01:20PM",
+            "location": "Courant Hall 101",
+            "instructor": "Shapiro, L.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "HIST-UA",
+            "number": "1",
+            "title": "World History to 1500",
+            "credits": 4.0,
+            "days": "TuTh",
+            "time": "03:30PM–04:45PM",
+            "location": "Kimmel Center 802",
+            "instructor": "Zarrow, P.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "FREN-UA",
+            "number": "11",
+            "title": "Elementary French I",
+            "credits": 4.0,
+            "days": "MoTuWeTh",
+            "time": "01:00PM–01:50PM",
+            "location": "Maison Française 102",
+            "instructor": "Dubois, E.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "BIOL-UA",
+            "number": "11",
+            "title": "Principles of Biology I",
+            "credits": 4.0,
+            "days": "MoWe",
+            "time": "02:00PM–03:15PM",
+            "location": "Brown Bldg 101",
+            "instructor": "Fitch, D.",
+            "mode": "Hybrid",
+        },
+    ],
+    "umich": [
+        {
+            "subject": "EECS",
+            "number": "280",
+            "title": "Programming and Intro Data Structures",
+            "credits": 4.0,
+            "days": "MoWe",
+            "time": "10:30AM–12:00PM",
+            "location": "Dow 1010",
+            "instructor": "DeOrio, A.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "MATH",
+            "number": "215",
+            "title": "Calculus III",
+            "credits": 4.0,
+            "days": "MoWeFr",
+            "time": "09:00AM–10:00AM",
+            "location": "East Hall 1360",
+            "instructor": "Boland, P.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "PHYSICS",
+            "number": "240",
+            "title": "General Physics II",
+            "credits": 4.0,
+            "days": "MoWe",
+            "time": "02:30PM–04:00PM",
+            "location": "Randall Lab 170",
+            "instructor": "Winn, J.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "ENGLISH",
+            "number": "125",
+            "title": "Academic Writing",
+            "credits": 4.0,
+            "days": "TuTh",
+            "time": "01:00PM–02:30PM",
+            "location": "Tisch Hall 201",
+            "instructor": "Silver, D.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "ECON",
+            "number": "101",
+            "title": "Principles of Economics I",
+            "credits": 4.0,
+            "days": "MoWeFr",
+            "time": "08:00AM–09:00AM",
+            "location": "Lorimer Aud",
+            "instructor": "Proulx, C.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "PSYCH",
+            "number": "111",
+            "title": "Introduction to Psychology",
+            "credits": 4.0,
+            "days": "TuTh",
+            "time": "11:30AM–01:00PM",
+            "location": "Modern Lang 1200",
+            "instructor": "Schreier, P.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "STATS",
+            "number": "250",
+            "title": "Introduction to Statistics",
+            "credits": 4.0,
+            "days": "MoWe",
+            "time": "04:00PM–05:30PM",
+            "location": "Mason Hall 1420",
+            "instructor": "Gunderson, B.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "SOC",
+            "number": "100",
+            "title": "Introduction to Sociology",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "10:00AM–11:30AM",
+            "location": "Weiser Hall 110",
+            "instructor": "McGann, P.",
+            "mode": "Hybrid",
+        },
+    ],
+    "ut_austin": [
+        {
+            "subject": "CS",
+            "number": "312",
+            "title": "Introduction to Programming",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "02:00PM–03:30PM",
+            "location": "GDC 2.216",
+            "instructor": "Scott, M.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "M",
+            "number": "408C",
+            "title": "Differential and Integral Calculus",
+            "credits": 4.0,
+            "days": "MoWeFr",
+            "time": "09:00AM–10:00AM",
+            "location": "PMA 4.102",
+            "instructor": "Starbird, M.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "E",
+            "number": "316L",
+            "title": "British Literature",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "12:30PM–02:00PM",
+            "location": "PAR 101",
+            "instructor": "Rumrich, J.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "ECO",
+            "number": "304K",
+            "title": "Introduction to Microeconomics",
+            "credits": 3.0,
+            "days": "MoWeFr",
+            "time": "11:00AM–12:00PM",
+            "location": "BRB 1.118",
+            "instructor": "Brandl, M.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "PSY",
+            "number": "301",
+            "title": "Introduction to Psychology",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "09:30AM–11:00AM",
+            "location": "SEA 2.108",
+            "instructor": "Pennebaker, J.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "GOV",
+            "number": "310L",
+            "title": "American Government",
+            "credits": 3.0,
+            "days": "MoWe",
+            "time": "02:00PM–03:30PM",
+            "location": "BAT 101",
+            "instructor": "Moser, R.",
+            "mode": "Hybrid",
+        },
+        {
+            "subject": "CH",
+            "number": "301",
+            "title": "Principles of Chemistry I",
+            "credits": 3.0,
+            "days": "MoWeFr",
+            "time": "08:00AM–09:00AM",
+            "location": "WEL 2.224",
+            "instructor": "Laude, D.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "RHE",
+            "number": "306",
+            "title": "Rhetoric and Writing",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "03:30PM–05:00PM",
+            "location": "FAC 21",
+            "instructor": "Davis, D.",
+            "mode": "In-Person",
+        },
+    ],
+}
+
+
+def _get_course_pool(institution_id: str) -> list[dict[str, Any]]:
+    """Return the institution-specific course pool, falling back to PSU."""
+    return _INSTITUTION_COURSE_POOLS.get(
+        institution_id, _INSTITUTION_COURSE_POOLS["psu"]
+    )
+
+
+def generate_academic_state(
+    rng: random.Random,
+    program: str,
+    temporal: TemporalAnchor,
+    institution_id: str = "psu",
+    profile: SyntheticProfile | None = None,
+) -> AcademicState:
+    if institution_id == "psu" and program in CURRICULA:
+        base_pool = CURRICULA[program]
+        courses: list[Course] = []
+        for idx, c in enumerate(base_pool):
+            crn = _generate_crn(rng, institution_id, idx)
+            courses.append(
+                Course(
+                    code=c.code,
+                    title=c.title,
+                    crn=crn,
+                    credits=c.credits,
+                    meeting_pattern=c.meeting_pattern,
+                    location=c.location,
+                    instructor=c.instructor,
+                    mode=c.mode,
+                )
+            )
+    elif program in CURRICULA:
+        base_pool = CURRICULA[program]
+        courses = []
+        for idx, c in enumerate(base_pool):
+            crn = _generate_crn(rng, institution_id, idx)
+            courses.append(
+                Course(
+                    code=c.code,
+                    title=c.title,
+                    crn=crn,
+                    credits=c.credits,
+                    meeting_pattern=c.meeting_pattern,
+                    location=c.location,
+                    instructor=c.instructor,
+                    mode=c.mode,
+                )
+            )
+    else:
+        raw_pool = _get_course_pool(institution_id)
+        target_count = 4 if institution_id == "ucla" else min(5, len(raw_pool))
+        selected_raw = (
+            rng.sample(raw_pool, target_count)
+            if len(raw_pool) >= target_count
+            else list(raw_pool)
+        )
+        courses = []
+        for idx, item in enumerate(selected_raw):
+            code = (
+                f"{item['subject']} {item['number']}".strip()
+                if item.get("number")
+                else item["subject"]
+            )
+            crn = _generate_crn(rng, institution_id, idx)
+            credits = int(item["credits"])
+            meeting = (
+                f"{item.get('days', 'MoWeFr')} {item.get('time', '10:00AM-11:00AM')}"
+            )
+            location = item.get("location", "Main Hall 101")
+            instructor = item.get("instructor", "Faculty Instructor")
+            mode = item.get("mode", "In-Person")
+            courses.append(
+                Course(
+                    code=code,
+                    title=item["title"],
+                    crn=crn,
+                    credits=credits,
+                    meeting_pattern=meeting,
+                    location=location,
+                    instructor=instructor,
+                    mode=mode,
+                )
+            )
+
     total_cred = sum(c.credits for c in courses)
-    gpa = round(rng.uniform(3.10, 3.98), 2)
-    advisors = ["Dr. Arthur Pendelton", "Dr. Eleanor Vance", "Dr. Marcus Sterling", "Dr. Sarah Jenkins"]
+
+    if profile:
+        gpa = (
+            profile.gpa_cumulative
+            if profile.gpa_cumulative > 0
+            else round(rng.uniform(3.10, 3.98), 2)
+        )
+        advisor = profile.advisor_name or "Dr. Arthur Pendelton"
+        term_name = profile.current_term_label or temporal.term_name
+    else:
+        gpa = round(rng.uniform(3.10, 3.98), 2)
+        advisors = [
+            "Dr. Arthur Pendelton",
+            "Dr. Eleanor Vance",
+            "Dr. Marcus Sterling",
+            "Dr. Sarah Jenkins",
+        ]
+        advisor = rng.choice(advisors)
+        term_name = temporal.term_name
+
     return AcademicState(
-        term_name=temporal.term_name,
+        term_name=term_name,
         term_code=temporal.term_code,
         courses=courses,
         total_credits=total_cred,
-        advisor=rng.choice(advisors),
+        advisor=advisor,
         cumulative_gpa=gpa,
         tuition_balance="$0.00",
         payment_status="PAID IN FULL",
@@ -574,15 +1975,104 @@ def generate_academic_state(rng: random.Random, program: str, temporal: Temporal
     )
 
 
+def _generate_student_id(rng: random.Random, institution: Institution) -> str:
+    """Generate an ID that matches the institution's verified format."""
+    iid = institution.id
+
+    if iid == "psu":
+        for _ in range(20):
+            raw_digits = "".join(str(rng.randint(0, 9)) for _ in range(9))
+            if not raw_digits.startswith("9"):
+                raw_digits = "9" + raw_digits[1:]
+            if raw_digits != raw_digits[::-1] and len(set(raw_digits)) > 3:
+                return raw_digits
+        fallback = str(rng.randint(10**8, 10**9 - 1))
+        if not fallback.startswith("9"):
+            fallback = "9" + fallback[1:]
+        return fallback
+
+    elif iid == "ucla":
+        # Must start with 9, then 8 more digits
+        tail = "".join(str(rng.randint(0, 9)) for _ in range(8))
+        return f"9{tail}"
+
+    elif iid == "nyu":
+        # N + 8 digits
+        digits = "".join(str(rng.randint(0, 9)) for _ in range(8))
+        return f"N{digits}"
+
+    elif iid == "umich":
+        # 8-digit UMID — avoid leading zeros
+        return str(rng.randint(10000000, 99999999))
+
+    elif iid == "ut_austin":
+        # UT EID: 2–4 lowercase letters + 3–5 digits
+        letters = "".join(
+            rng.choice("abcdefghjklmnpqrstuvwxyz") for _ in range(rng.randint(2, 3))
+        )
+        digits = "".join(str(rng.randint(0, 9)) for _ in range(rng.randint(4, 5)))
+        return f"{letters}{digits}"
+
+    else:
+        pattern = institution.student_id_format or institution.id_format or r"\d{9}"
+        digits = re.findall(r"\\d\{(\d+)\}", pattern)
+        n = int(digits[0]) if digits else 9
+        pfx = (
+            institution.student_id_prefix
+            if institution.student_id_prefix is not None
+            else (institution.id_prefix or "")
+        )
+        for _ in range(20):
+            raw_digits = "".join(str(rng.randint(0, 9)) for _ in range(n))
+            if institution.student_id_starts_with and not raw_digits.startswith(
+                institution.student_id_starts_with
+            ):
+                raw_digits = institution.student_id_starts_with + raw_digits[1:]
+            sid = f"{pfx}{raw_digits}"
+            if raw_digits != raw_digits[::-1] and len(set(raw_digits)) > 3:
+                return sid
+        fallback = "".join(str(rng.randint(0, 9)) for _ in range(n))
+        return f"{pfx}{fallback}"
+
+
+def _generate_student_email(
+    profile_name: str,
+    institution: Institution,
+    rng: random.Random,
+    student_id: str = "",
+    login_id: str = "",
+) -> str:
+    """Institution-accurate email format."""
+    parts = profile_name.split()
+    first = parts[0].lower() if parts else "student"
+    last = parts[-1].lower() if len(parts) > 1 else "student"
+
+    if institution.id == "ut_austin":
+        eid = student_id or login_id or f"{first[:2]}{rng.randint(1000, 9999)}"
+        return f"{eid}@my.utexas.edu"
+    elif institution.id == "umich":
+        uniq = login_id or (first[0] + last)[:8]
+        return f"{uniq}@umich.edu"
+    else:
+        # Standard: first initial + up to 6 of last + 2 digits @ domain
+        return f"{first[0]}{last[:6]}{rng.randint(10, 99)}@{institution.domain}"
+
+
 # =====================================================================
 # PROFILE GENERATION ENGINE
 # =====================================================================
 
-def generate_profile(scenario_name: str = "undergraduate", seed: int = 42, override_institution_id: str | None = None) -> SyntheticProfile:
+
+def generate_profile(
+    scenario_name: str = "undergraduate",
+    seed: int = 42,
+    override_institution_id: str | None = None,
+    institution_id: str | None = None,
+) -> SyntheticProfile:
     scen = get_scenario(scenario_name)
     rng = random.Random(seed)
 
-    inst_id = override_institution_id if override_institution_id else scen.institution_id
+    inst_id = institution_id or override_institution_id or scen.institution_id
     institution = INSTITUTIONS.get(inst_id, INSTITUTIONS["psu"])
 
     first_name, last_name = SeededNameGenerator.generate(rng)
@@ -599,14 +2089,68 @@ def generate_profile(scenario_name: str = "undergraduate", seed: int = 42, overr
 
     duration_years = rng.choice(scen.program_duration_years)
 
+    season, term_year, term_start, term_end = _current_term(
+        ref_date, institution_id=institution.id
+    )
+    current_term_label = f"{season} {term_year}"
+    print_dt = _document_print_date(rng, term_start, ref_date)
+
+    student_id = _generate_student_id(rng, institution)
+
+    # Institution-accurate login_id
+    first_clean = re.sub(r"[^a-z]", "", first_name.lower()) or "j"
+    last_clean = re.sub(r"[^a-z]", "", last_name.lower()) or "doe"
+    if institution.id == "psu":
+        login_id = f"{first_clean[:2]}{last_clean[:2]}{rng.randint(100, 999)}"
+    elif institution.id == "nyu":
+        login_id = f"{first_clean[:2]}{rng.randint(1000, 9999)}"
+    elif institution.id == "umich":
+        login_id = (first_clean[0] + last_clean)[:8]
+    elif institution.id == "ut_austin":
+        login_id = student_id
+    elif institution.id == "ucla":
+        login_id = f"{first_clean[0]}{last_clean[:7]}"
+    else:
+        login_id = f"{first_clean[0]}{last_clean[:6]}"
+
+    # Institution-accurate college or school
+    college_or_school = ""
+    if institution.schools:
+        prog_low = program.lower()
+        matched = None
+        for s in institution.schools:
+            s_low = s.lower()
+            if any(
+                k in prog_low and k in s_low
+                for k in [
+                    "engineer",
+                    "business",
+                    "arts",
+                    "science",
+                    "information",
+                    "law",
+                    "medicine",
+                    "nursing",
+                ]
+            ):
+                matched = s
+                break
+        college_or_school = matched if matched else rng.choice(institution.schools)
+
     if scen.role in (PersonRole.TEACHER, PersonRole.FACULTY):
         hire_age = rng.randint(22, min(age_years, 35))
         hire_year = birth_year + hire_age
         enrollment_date = date(hire_year, 8, 20)
         expected_graduation = date(hire_year + 30, 6, 30)
         academic_year = temporal.academic_year
-        student_id = f"E-{rng.randint(1000000, 9999999)}"
         email = f"{first_name.lower()}.{last_name.lower()}@{institution.domain}"
+        gpa_cum = 0.0
+        gpa_term = 0.0
+        cum_units = 0.0
+        academic_standing = "Active Employee"
+        advisor_name = "Office of the Dean"
+        advisor_email = f"dean.faculty@{institution.domain}"
+        enrollment_type = "Full-Time Faculty"
     else:
         if scenario_name == "recent-enrollment":
             start_year = ref_date.year
@@ -620,8 +2164,34 @@ def generate_profile(scenario_name: str = "undergraduate", seed: int = 42, overr
         grad_year = start_year + duration_years
         expected_graduation = date(grad_year, 5, 15)
         academic_year = temporal.academic_year
-        student_id = f"9{rng.randint(10000000, 99999999)}"
-        email = f"{first_name.lower()[0]}{last_name.lower()[:6]}{rng.randint(10, 99)}@{institution.domain}"
+        email = _generate_student_email(
+            f"{first_name} {last_name}",
+            institution,
+            rng,
+            student_id=student_id,
+            login_id=login_id,
+        )
+
+        acad_state = generate_academic_state(rng, program, temporal, institution.id)
+        gpa_cum = acad_state.cumulative_gpa
+        gpa_term = round(min(4.0, max(2.5, gpa_cum + rng.uniform(-0.25, 0.25))), 2)
+        cum_units = float(rng.randint(28, 118))
+        academic_standing = "Good Standing"
+        advisor_name = acad_state.advisor
+        adv_clean = (
+            advisor_name.lower()
+            .replace("dr. ", "")
+            .replace("prof. ", "")
+            .replace(" ", ".")
+        )
+        advisor_email = f"{adv_clean}@{institution.domain}"
+        enrollment_type = "Full-Time"
+
+    campus = "University Park" if institution.id == "psu" else institution.city
+    seal_mat = f"{institution.id}:{first_name}:{last_name}:{student_id}:{current_term_label}:{print_dt.date().isoformat()}"
+    document_seal_hash = (
+        hashlib.sha256(seal_mat.encode("utf-8")).hexdigest()[:16].upper()
+    )
 
     return SyntheticProfile(
         first_name=first_name,
@@ -640,6 +2210,21 @@ def generate_profile(scenario_name: str = "undergraduate", seed: int = 42, overr
         enrollment_date=enrollment_date,
         expected_graduation=expected_graduation,
         academic_year=academic_year,
+        gpa_cumulative=gpa_cum,
+        gpa_term=gpa_term,
+        cumulative_units=cum_units,
+        academic_standing=academic_standing,
+        campus=campus,
+        advisor_name=advisor_name,
+        advisor_email=advisor_email,
+        document_seal_hash=document_seal_hash,
+        current_term_label=current_term_label,
+        term_start_date=term_start,
+        term_end_date=term_end,
+        document_print_date=print_dt.date(),
+        enrollment_type=enrollment_type,
+        college_or_school=college_or_school,
+        login_id=login_id,
     )
 
 
@@ -647,9 +2232,612 @@ def generate_profile(scenario_name: str = "undergraduate", seed: int = 42, overr
 # DOCUMENT TEMPLATE BUILDERS (xhtml2pdf / Browser Safe CSS)
 # =====================================================================
 
-def generate_schedule_document(profile: SyntheticProfile, academic_state: AcademicState, temporal: TemporalAnchor) -> Document:
+
+def generate_registrar_letter_document(
+    profile: SyntheticProfile,
+    academic_state: AcademicState,
+    temporal: TemporalAnchor,
+    kind: DocumentKind = DocumentKind.SCHEDULE,
+) -> Document:
     name = f"{profile.first_name} {profile.last_name}"
     retrieved_str = temporal.retrieval_date.strftime("%B %d, %Y")
+    term_start = (
+        profile.term_start_date or temporal.term_start_date or temporal.retrieval_date
+    )
+    term_end = (
+        profile.term_end_date or temporal.term_end_date or temporal.expiration_date
+    )
+    term_start_str = term_start.strftime("%m/%d/%Y")
+    term_end_str = term_end.strftime("%m/%d/%Y")
+    print_date = profile.document_print_date or temporal.retrieval_date
+    print_date_str = print_date.strftime("%B %d, %Y")
+    term_label = profile.current_term_label or academic_state.term_name
+    inst = profile.institution
+
+    if inst.id == "ucla":
+        # Real MyUCLA Proof of Enrollment Letter
+        school_str = profile.college_or_school or "College of Letters and Science"
+        dob_str = profile.date_of_birth.strftime("%B %d")
+        adm_date_str = profile.enrollment_date.strftime("%B %d, %Y")
+        deg_term = f"Spring {profile.expected_graduation.year}"
+
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Enrollment Verification - {name}</title>
+    <style>
+        body {{
+            font-family: Helvetica, Arial, sans-serif;
+            color: #212529;
+            margin: 0;
+            padding: 24px;
+            background: #ffffff;
+            font-size: 12.5px;
+        }}
+        .topbar {{
+            background: #2D68C4;
+            color: #ffffff;
+            padding: 10px 18px;
+            font-size: 13px;
+        }}
+        .topbar-brand {{
+            font-weight: 900;
+            letter-spacing: .03em;
+            font-size: 16px;
+        }}
+        .letter-content {{
+            padding: 20px 24px;
+        }}
+        .header-block {{
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }}
+        .office-title {{
+            font-size: 15px;
+            font-weight: 700;
+            color: #2D68C4;
+        }}
+        .office-sub {{
+            font-size: 11.5px;
+            color: #555555;
+            margin-top: 2px;
+        }}
+        .date-line {{
+            text-align: right;
+            font-size: 11.5px;
+            margin-bottom: 12px;
+            color: #333333;
+        }}
+        .doc-title {{
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: .02em;
+        }}
+        .cert-statement {{
+            font-size: 11.5px;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }}
+        .info-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+            margin-bottom: 16px;
+        }}
+        .info-table td {{
+            padding: 4px 0;
+        }}
+        .info-table td.lbl {{
+            width: 190px;
+            color: #555555;
+        }}
+        .history-title {{
+            font-size: 11.5px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }}
+        .history-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 24px;
+        }}
+        .history-table th, .history-table td {{
+            padding: 6px 8px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }}
+        .history-table th {{
+            background: #f0f3f7;
+            font-weight: 700;
+        }}
+        .footer-block {{
+            margin-top: 24px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 14px;
+            font-size: 11px;
+            color: #555555;
+            line-height: 1.6;
+        }}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <span class="topbar-brand">UCLA</span>
+        <span style="margin-left: 14px;">{profile.institution_name}</span>
+    </div>
+    <div class="letter-content">
+        <div class="header-block">
+            <div class="office-title">OFFICE OF THE REGISTRAR</div>
+            <div class="office-sub">1113 Murphy Hall &bull; Los Angeles, CA 90095</div>
+            <div class="office-sub">{inst.domain} &bull; registrar.ucla.edu</div>
+        </div>
+
+        <div class="date-line">{print_date_str}</div>
+
+        <div class="doc-title">ENROLLMENT VERIFICATION</div>
+        <div class="cert-statement">
+            This is to certify that the student named below is enrolled at the {profile.institution_name}.
+        </div>
+
+        <table class="info-table">
+            <tr><td class="lbl">Student Name:</td><td><strong>{name}</strong></td></tr>
+            <tr><td class="lbl">Student ID:</td><td><strong>{profile.student_id}</strong></td></tr>
+            <tr><td class="lbl">Date of Birth (Month/Day):</td><td>{dob_str}</td></tr>
+            <tr><td class="lbl">Date of Admission:</td><td>{adm_date_str}</td></tr>
+            <tr><td class="lbl">College/School:</td><td>{school_str}</td></tr>
+            <tr><td class="lbl">Major:</td><td>{profile.program}</td></tr>
+            <tr><td class="lbl">Class Level &amp; Career:</td><td>{profile.academic_level.value.title()} &bull; Undergraduate</td></tr>
+            <tr><td class="lbl">Official Term Window:</td><td>{term_start_str} to {term_end_str}</td></tr>
+            <tr><td class="lbl">Degree-Expected Term:</td><td>{deg_term}</td></tr>
+            <tr><td class="lbl">Enrollment Classification:</td><td>{profile.enrollment_type}</td></tr>
+            <tr><td class="lbl">Academic Standing:</td><td>{profile.academic_standing}</td></tr>
+        </table>
+
+        <div class="history-title">Enrollment History:</div>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Term</th>
+                    <th>Dates</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{term_label}</td>
+                    <td>{term_start.strftime("%b %d")} &ndash; {term_end.strftime("%b %d, %Y")}</td>
+                    <td>{profile.enrollment_type}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="footer-block">
+            <div>This letter was generated by the UCLA Office of the Registrar student information system ({inst.portal_name}).</div>
+            <div>Electronic Certification Seal: {profile.document_seal_hash} &bull; {inst.domain}</div>
+            <div style="margin-top: 18px;">_________________________________________________</div>
+            <div style="font-weight: bold; margin-top: 3px;">{inst.registrar_title}</div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+    elif inst.id == "ut_austin":
+        # Real UT Austin Texas One Stop Official Enrollment Certification
+        school_str = profile.college_or_school or "Cockrell School of Engineering"
+        exp_grad_str = profile.expected_graduation.strftime("%B %Y")
+
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Enrollment Certification - {name}</title>
+    <style>
+        body {{
+            font-family: Helvetica, Arial, sans-serif;
+            color: #212529;
+            margin: 0;
+            padding: 24px;
+            background: #ffffff;
+            font-size: 12.5px;
+        }}
+        .letter-content {{
+            padding: 20px 24px;
+        }}
+        .header-block {{
+            text-align: center;
+            border-bottom: 2px solid #BF5700;
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+        }}
+        .inst-title {{
+            font-size: 16px;
+            font-weight: 700;
+            color: #BF5700;
+            letter-spacing: .03em;
+        }}
+        .office-sub {{
+            font-size: 11.5px;
+            color: #555555;
+            margin-top: 2px;
+        }}
+        .doc-title {{
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            text-decoration: underline;
+            color: #333F48;
+            letter-spacing: .02em;
+        }}
+        .cert-statement {{
+            font-size: 11.5px;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }}
+        .info-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+            margin-bottom: 16px;
+        }}
+        .info-table td {{
+            padding: 4px 0;
+        }}
+        .info-table td.lbl {{
+            width: 190px;
+            color: #555555;
+        }}
+        .history-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 24px;
+        }}
+        .history-table th, .history-table td {{
+            padding: 6px 8px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }}
+        .history-table th {{
+            background: #f5f5f5;
+            font-weight: 700;
+        }}
+        .footer-block {{
+            margin-top: 24px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 14px;
+            font-size: 11px;
+            color: #555555;
+            line-height: 1.6;
+        }}
+    </style>
+</head>
+<body>
+    <div class="letter-content">
+        <div class="header-block">
+            <div class="inst-title">{profile.institution_name.upper()}</div>
+            <div class="office-sub">{inst.registrar_title}</div>
+            <div class="office-sub">Main Building (MAI), 110 Inner Campus Drive, Austin, TX 78712 &bull; registrar.utexas.edu</div>
+        </div>
+
+        <div class="doc-title">ENROLLMENT CERTIFICATION</div>
+        <div class="cert-statement">
+            This is to certify that the student named below has been enrolled at {profile.institution_name} as indicated:
+        </div>
+
+        <table class="info-table">
+            <tr><td class="lbl">Student Name:</td><td><strong>{name}</strong></td></tr>
+            <tr><td class="lbl">UT EID:</td><td><strong>{profile.student_id}</strong></td></tr>
+            <tr><td class="lbl">Curriculum:</td><td>{profile.program}, B.S. &mdash; {school_str}</td></tr>
+            <tr><td class="lbl">Expected Graduation:</td><td>{exp_grad_str}</td></tr>
+            <tr><td class="lbl">Official Term Window:</td><td>{term_start_str} to {term_end_str}</td></tr>
+            <tr><td class="lbl">Enrollment Classification:</td><td>{profile.enrollment_type}</td></tr>
+            <tr><td class="lbl">Academic Standing:</td><td>{profile.academic_standing}</td></tr>
+        </table>
+
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Term</th>
+                    <th>Dates of Enrollment</th>
+                    <th>Hours</th>
+                    <th>Classification</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{term_label}</td>
+                    <td>{term_start.strftime("%B %d")} &ndash; {term_end.strftime("%B %d, %Y")}</td>
+                    <td>{academic_state.total_credits}</td>
+                    <td>{profile.enrollment_type}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="footer-block">
+            <div>Electronic Certification Seal: {profile.document_seal_hash} &bull; Issued by Texas One Stop ({inst.portal_name})</div>
+            <div style="margin-top: 16px;">_________________________________________________ &ensp;&ensp;&ensp;&ensp;&ensp;&ensp; {print_date_str}</div>
+            <div style="font-weight: bold; margin-top: 3px;">{inst.registrar_title} &bull; {inst.domain}</div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+    else:
+        # Generic registrar letter
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Enrollment Certification - {name}</title>
+    <style>
+        body {{
+            font-family: Helvetica, Arial, sans-serif;
+            color: #212529;
+            margin: 0;
+            padding: 24px;
+            background: #ffffff;
+            font-size: 12.5px;
+        }}
+        .header-block {{
+            text-align: center;
+            border-bottom: 2px solid {inst.brand_color};
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }}
+        .inst-title {{
+            font-size: 16px;
+            font-weight: 700;
+            color: {inst.brand_color};
+        }}
+        .office-sub {{
+            font-size: 11.5px;
+            color: #555555;
+            margin-top: 2px;
+        }}
+        .doc-title {{
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }}
+        .info-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+            margin-bottom: 16px;
+        }}
+        .info-table td {{
+            padding: 4px 0;
+        }}
+        .info-table td.lbl {{
+            width: 190px;
+            color: #555555;
+        }}
+        .history-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 24px;
+        }}
+        .history-table th, .history-table td {{
+            padding: 6px 8px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }}
+        .history-table th {{
+            background: #f5f5f5;
+            font-weight: 700;
+        }}
+        .footer-block {{
+            margin-top: 24px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 14px;
+            font-size: 11px;
+            color: #555555;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header-block">
+        <div class="inst-title">{profile.institution_name}</div>
+        <div class="office-sub">{inst.registrar_title}</div>
+        <div class="office-sub">{inst.domain}</div>
+    </div>
+    <div class="doc-title">OFFICIAL ENROLLMENT CERTIFICATION</div>
+    <div style="font-size: 11.5px; margin-bottom: 12px;">
+        This document officially certifies that the student named below is currently enrolled in good standing at {profile.institution_name}.
+    </div>
+    <table class="info-table">
+        <tr><td class="lbl">Student Name:</td><td><strong>{name}</strong></td></tr>
+        <tr><td class="lbl">Student ID:</td><td><strong>{profile.student_id}</strong></td></tr>
+        <tr><td class="lbl">Academic Program:</td><td>{profile.program}</td></tr>
+        <tr><td class="lbl">Official Term Window:</td><td>{term_start_str} to {term_end_str}</td></tr>
+        <tr><td class="lbl">Enrollment Classification:</td><td>{profile.enrollment_type}</td></tr>
+        <tr><td class="lbl">Academic Standing:</td><td>{profile.academic_standing}</td></tr>
+    </table>
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>Term</th>
+                <th>Dates of Attendance</th>
+                <th>Credits</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{term_label}</td>
+                <td>{term_start_str} &ndash; {term_end_str}</td>
+                <td>{academic_state.total_credits}</td>
+                <td>{profile.enrollment_type}</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="footer-block">
+        <div>Electronic Certification Seal: {profile.document_seal_hash} &bull; Generated via {inst.portal_name}</div>
+        <div style="margin-top: 16px;">_________________________________________________ &ensp;&ensp;&ensp;&ensp; {print_date_str}</div>
+        <div style="font-weight: bold; margin-top: 3px;">{inst.registrar_title} &bull; {inst.domain}</div>
+    </div>
+</body>
+</html>
+"""
+
+    fields = {
+        "Student Name": name,
+        "Student ID": profile.student_id,
+        "Institution": profile.institution_name,
+        "Portal": profile.institution.portal_name,
+        "Program": profile.program,
+        "Term": term_label,
+        "Term Start Date": term_start_str,
+        "Term End Date": term_end_str,
+        "Enrollment Type": profile.enrollment_type,
+        "Academic Standing": profile.academic_standing,
+        "Total Credits": str(academic_state.total_credits),
+        "Email": profile.email,
+        "Retrieval Date": retrieved_str,
+        "Document Print Date": print_date_str,
+    }
+
+    return Document(
+        kind=kind,
+        title=f"Enrollment Verification - {name}",
+        profile=profile,
+        fields=fields,
+        html_content=html,
+    )
+
+
+def generate_schedule_document(
+    profile: SyntheticProfile, academic_state: AcademicState, temporal: TemporalAnchor
+) -> Document:
+    # Route registrar letters (e.g. UCLA, UT Austin) to official letter renderer
+    if profile.institution.document_archetype == DocumentArchetype.REGISTRAR_LETTER:
+        return generate_registrar_letter_document(
+            profile, academic_state, temporal, kind=DocumentKind.SCHEDULE
+        )
+
+    name = f"{profile.first_name} {profile.last_name}"
+    retrieved_str = temporal.retrieval_date.strftime("%B %d, %Y")
+    term_start = (
+        profile.term_start_date or temporal.term_start_date or temporal.retrieval_date
+    )
+    term_end = (
+        profile.term_end_date or temporal.term_end_date or temporal.expiration_date
+    )
+    term_start_str = term_start.strftime("%m/%d/%Y")
+    term_end_str = term_end.strftime("%m/%d/%Y")
+    print_date = profile.document_print_date or temporal.retrieval_date
+    print_date_str = print_date.strftime("%B %d, %Y")
+    term_label = profile.current_term_label or academic_state.term_name
+    inst = profile.institution
+
+    if inst.id == "psu":
+        brand_color = "var(--psu-blue)"
+        topbar_html = f"""
+        <div class="topbar" style="background: {brand_color}; color: #ffffff; padding: 10px 18px;">
+            <div style="font-weight: bold; font-size: 16px; float: left;">{profile.institution_name} &mdash; LionPATH</div>
+            <div style="font-size: 12px; float: right;">Welcome, <strong>{name}</strong> &ensp;|&ensp; {print_date_str}</div>
+            <div style="clear: both;"></div>
+        </div>
+        """
+        breadcrumb = "Home &rsaquo; Self Service &rsaquo; Class Schedule"
+        title_text = "My Class Schedule"
+        infobar_html = f"""
+        <div style="background: #f0f3f7; padding: 8px 12px; font-size: 11.5px; margin-bottom: 12px; border-left: 4px solid {brand_color};">
+            Viewing: <strong>{term_label}</strong> &ensp;&bull;&ensp;
+            Campus: <strong>{profile.campus}</strong> &ensp;&bull;&ensp;
+            Units Enrolled: <strong>{academic_state.total_credits:.2f}</strong> &ensp;&bull;&ensp;
+            Cumulative GPA: <strong>{profile.gpa_cumulative:.2f}</strong> &ensp;&bull;&ensp;
+            Standing: <strong>{profile.academic_standing}</strong>
+        </div>
+        """
+        crn_header = "Class Nbr"
+        credits_header = "Units"
+
+    elif inst.id == "nyu":
+        brand_color = "var(--nyu-purple, #57068C)"
+        netid_str = (
+            profile.login_id
+            or f"{profile.first_name[0].lower()}{profile.last_name[:6].lower()}"
+        )
+        topbar_html = f"""
+        <div class="topbar" style="background: {brand_color}; color: #ffffff; padding: 10px 18px;">
+            <div style="font-weight: bold; font-size: 16px; float: left;">{profile.institution_name} &mdash; Albert Student Center</div>
+            <div style="font-size: 12px; float: right;">Welcome, <strong>{name}</strong> &ensp;|&ensp; {print_date_str} &ensp;|&ensp; NetID: {netid_str}</div>
+            <div style="clear: both;"></div>
+        </div>
+        """
+        breadcrumb = "My Academics &rsaquo; Student Center &rsaquo; My Class Schedule"
+        title_text = f"Class Schedule &mdash; {term_label}"
+        school_name = profile.college_or_school or "College of Arts and Science"
+        infobar_html = f"""
+        <div style="background: var(--nyu-light-purple, #f8f5fc); padding: 8px 12px; font-size: 11.5px; margin-bottom: 12px; border: 1px solid #e8d5f5;">
+            N-Number: <strong>{profile.student_id}</strong> &ensp;&bull;&ensp;
+            Career: <strong>{profile.academic_level.value.title()}</strong> &ensp;&bull;&ensp;
+            School: <strong>{school_name}</strong> &ensp;&bull;&ensp;
+            Total Points: <strong>{academic_state.total_credits}</strong>
+        </div>
+        """
+        crn_header = inst.crn_label
+        credits_header = "Points"
+
+    elif inst.id == "umich":
+        brand_color = "var(--umich-blue, #00274C)"
+        uniq_str = (
+            profile.login_id
+            or f"{profile.first_name[0].lower()}{profile.last_name[:6].lower()}"
+        )
+        topbar_html = f"""
+        <div class="topbar" style="background: {brand_color}; color: #ffffff; padding: 10px 18px; border-bottom: 3px solid var(--umich-maize, #FFCB05);">
+            <div style="font-weight: bold; font-size: 16px; float: left;">{profile.institution_name} &mdash; Wolverine Access</div>
+            <div style="font-size: 12px; float: right;">Welcome, <strong>{name}</strong> &ensp;|&ensp; {print_date_str} &ensp;|&ensp; uniqname: {uniq_str}</div>
+            <div style="clear: both;"></div>
+        </div>
+        """
+        breadcrumb = "Student Business &rsaquo; My Class Schedule"
+        title_text = f"My Class Schedule &mdash; {term_label}"
+        school_name = (
+            profile.college_or_school
+            or "College of Literature, Science, and the Arts (LSA)"
+        )
+        infobar_html = f"""
+        <div style="background: #fff8d6; padding: 8px 12px; font-size: 11.5px; margin-bottom: 12px; border: 1px solid #FFCB05;">
+            UMID: <strong>{profile.student_id}</strong> &ensp;&bull;&ensp;
+            Program: <strong>{school_name}, {profile.program}</strong> &ensp;&bull;&ensp;
+            Credit Hours Enrolled: <strong>{academic_state.total_credits}</strong>
+        </div>
+        """
+        crn_header = "Section"
+        credits_header = "Credit Hours"
+
+    else:
+        brand_color = inst.brand_color
+        topbar_html = f"""
+        <div class="topbar" style="background: {brand_color}; color: #ffffff; padding: 10px 18px;">
+            <div style="font-weight: bold; font-size: 16px; float: left;">{profile.institution_name} &mdash; {inst.portal_name}</div>
+            <div style="font-size: 12px; float: right;">Welcome, <strong>{name}</strong> &ensp;|&ensp; {print_date_str}</div>
+            <div style="clear: both;"></div>
+        </div>
+        """
+        breadcrumb = "Home &rsaquo; Student Center &rsaquo; Class Schedule"
+        title_text = f"Class Schedule &mdash; {term_label}"
+        infobar_html = f"""
+        <div style="background: var(--bg-light); padding: 8px 12px; font-size: 11.5px; margin-bottom: 12px; border-left: 4px solid {brand_color};">
+            Student ID: <strong>{profile.student_id}</strong> &ensp;&bull;&ensp;
+            Term: <strong>{term_label}</strong> &ensp;&bull;&ensp;
+            Enrolled Credits: <strong>{academic_state.total_credits}</strong> &ensp;&bull;&ensp;
+            Standing: <strong>{profile.academic_standing}</strong>
+        </div>
+        """
+        crn_header = inst.crn_label
+        credits_header = "Credits"
 
     rows_html = ""
     for c in academic_state.courses:
@@ -662,6 +2850,7 @@ def generate_schedule_document(profile: SyntheticProfile, academic_state: Academ
             <td>{c.meeting_pattern}</td>
             <td>{c.location}</td>
             <td>{c.instructor}</td>
+            <td><span style="color: var(--badge-enrolled); font-weight: bold;">Enrolled</span></td>
         </tr>
         """
 
@@ -673,126 +2862,154 @@ def generate_schedule_document(profile: SyntheticProfile, academic_state: Academ
     <style>
         body {{
             font-family: Helvetica, Arial, sans-serif;
-            color: #222;
+            color: var(--text-primary);
             margin: 0;
-            padding: 20px;
-            background: #fff;
+            padding: 0;
+            background: #ffffff;
         }}
-        .header {{
-            border-bottom: 3px solid #1E407C;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+        .breadcrumb {{
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 8px 24px;
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--border-subtle);
         }}
-        .brand {{
-            font-size: 22px;
-            font-weight: bold;
-            color: #1E407C;
+        .main-container {{
+            padding: 16px 24px 24px 24px;
         }}
-        .sub-brand {{
-            font-size: 14px;
-            color: #555;
-        }}
-        h2 {{
-            color: #1E407C;
-            margin-bottom: 15px;
+        .schedule-title {{
+            color: {brand_color};
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 18px;
+            border-bottom: 2px solid {brand_color};
+            padding-bottom: 6px;
         }}
         .student-box {{
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-bottom: 20px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-light);
+            padding: 12px 14px;
+            margin-bottom: 16px;
         }}
         .info-table {{
             width: 100%;
+            border-collapse: collapse;
         }}
         .info-table td {{
-            padding: 4px 8px;
-            font-size: 14px;
+            padding: 4px 6px;
+            font-size: 12px;
         }}
-        .label {{
+        .info-table td.label {{
             font-weight: bold;
-            color: #1E407C;
-            width: 25%;
+            color: var(--text-muted);
+            width: 18%;
         }}
         .schedule-table {{
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            margin-top: 10px;
         }}
         .schedule-table th, .schedule-table td {{
-            padding: 10px;
+            border: 1px solid var(--border-subtle);
+            padding: 7px 9px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
-            font-size: 13px;
+            font-size: 11.5px;
         }}
         .schedule-table th {{
-            background: #1E407C;
-            color: #fff;
+            background-color: {brand_color};
+            color: #ffffff;
             font-weight: bold;
         }}
-        .footer {{
-            margin-top: 30px;
+        .schedule-table tr:nth-child(even) {{
+            background-color: var(--bg-light);
+        }}
+        .summary-bar {{
+            margin-top: 14px;
             font-size: 12px;
-            color: #666;
-            text-align: right;
+            padding: 8px 12px;
+            background: var(--bg-light);
+            border: 1px solid var(--border-subtle);
+        }}
+        .footer {{
+            margin-top: 24px;
+            font-size: 10.5px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 10px;
+            line-height: 1.5;
         }}
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="brand">{profile.institution_name}</div>
-        <div class="sub-brand">Student Portal &mdash; Official Class Schedule ({academic_state.term_name})</div>
-    </div>
+    {topbar_html}
+    <div class="breadcrumb">{breadcrumb}</div>
+    <div class="main-container">
+        <h2 class="schedule-title">{title_text}</h2>
+        {infobar_html}
 
-    <h2>Class Schedule Summary</h2>
+        <div class="student-box">
+            <table class="info-table">
+                <tr>
+                    <td class="label">Student Name:</td>
+                    <td><strong>{name}</strong></td>
+                    <td class="label">Student ID:</td>
+                    <td><strong>{profile.student_id}</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Academic Program:</td>
+                    <td>{profile.program} ({profile.academic_level.value.title()})</td>
+                    <td class="label">Current Status:</td>
+                    <td><strong>{profile.academic_standing}</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Institution:</td>
+                    <td>{profile.institution_name}</td>
+                    <td class="label">Official Term:</td>
+                    <td>{term_label} ({term_start_str} &ndash; {term_end_str})</td>
+                </tr>
+                <tr>
+                    <td class="label">Institutional Email:</td>
+                    <td>{profile.email}</td>
+                    <td class="label">Academic Advisor:</td>
+                    <td>{profile.advisor_name or academic_state.advisor}</td>
+                </tr>
+            </table>
+        </div>
 
-    <div class="student-box">
-        <table class="info-table">
-            <tr>
-                <td class="label">Student Name:</td>
-                <td><strong>{name}</strong></td>
-                <td class="label">Student ID:</td>
-                <td><strong>{profile.student_id}</strong></td>
-            </tr>
-            <tr>
-                <td class="label">Academic Program:</td>
-                <td>{profile.program}</td>
-                <td class="label">Academic Level:</td>
-                <td>{profile.academic_level.value.title()}</td>
-            </tr>
-            <tr>
-                <td class="label">Institutional Email:</td>
-                <td>{profile.email}</td>
-                <td class="label">Academic Advisor:</td>
-                <td>{academic_state.advisor}</td>
-            </tr>
+        <table class="schedule-table">
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Title</th>
+                    <th>{crn_header}</th>
+                    <th>{credits_header}</th>
+                    <th>Days &amp; Times</th>
+                    <th>Location</th>
+                    <th>Instructor</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows_html}
+            </tbody>
         </table>
-    </div>
 
-    <table class="schedule-table">
-        <thead>
-            <tr>
-                <th>Course</th>
-                <th>Course Title</th>
-                <th>CRN</th>
-                <th>Cr</th>
-                <th>Meeting Pattern</th>
-                <th>Location</th>
-                <th>Instructor</th>
-            </tr>
-        </thead>
-        <tbody>
-            {rows_html}
-        </tbody>
-    </table>
+        <div class="summary-bar">
+            <strong>Total Enrolled {credits_header}:</strong> {academic_state.total_credits} &nbsp;|&nbsp;
+            <strong>Enrollment Classification:</strong> {profile.enrollment_type} &nbsp;|&nbsp;
+            <strong>Official Term Window:</strong> {term_start_str} to {term_end_str}
+        </div>
 
-    <p style="margin-top: 15px; font-size: 14px;">
-        <strong>Total Enrolled Credits:</strong> {academic_state.total_credits} | 
-        <strong>Cumulative GPA:</strong> {academic_state.cumulative_gpa}
-    </p>
-
-    <div class="footer">
-        Data retrieved / printed on: {retrieved_str} | Verified Authentic
+        <div class="footer">
+            <div style="float: left;">
+                Document Generated: {print_date_str} &bull; Portal: {inst.portal_name}<br>
+                {inst.registrar_title} &bull; Security Seal: {profile.document_seal_hash}
+            </div>
+            <div style="float: right; text-align: right;">
+                Page 1 of 1 &bull; Certified Student Record &bull; {inst.domain}
+            </div>
+            <div style="clear: both;"></div>
+        </div>
     </div>
 </body>
 </html>
@@ -802,11 +3019,17 @@ def generate_schedule_document(profile: SyntheticProfile, academic_state: Academ
         "Student Name": name,
         "Student ID": profile.student_id,
         "Institution": profile.institution_name,
+        "Portal": profile.institution.portal_name,
         "Program": profile.program,
-        "Term": academic_state.term_name,
+        "Term": term_label,
+        "Term Start Date": term_start_str,
+        "Term End Date": term_end_str,
+        "Enrollment Type": profile.enrollment_type,
+        "Academic Standing": profile.academic_standing,
         "Total Credits": str(academic_state.total_credits),
         "Email": profile.email,
         "Retrieval Date": retrieved_str,
+        "Document Print Date": print_date_str,
     }
 
     return Document(
@@ -818,10 +3041,23 @@ def generate_schedule_document(profile: SyntheticProfile, academic_state: Academ
     )
 
 
-def generate_tuition_receipt_document(profile: SyntheticProfile, academic_state: AcademicState, temporal: TemporalAnchor) -> Document:
+def generate_tuition_receipt_document(
+    profile: SyntheticProfile, academic_state: AcademicState, temporal: TemporalAnchor
+) -> Document:
     name = f"{profile.first_name} {profile.last_name}"
     pay_date_str = temporal.payment_date.strftime("%B %d, %Y")
     retrieved_str = temporal.retrieval_date.strftime("%B %d, %Y")
+    term_start = (
+        profile.term_start_date or temporal.term_start_date or temporal.retrieval_date
+    )
+    term_start_str = term_start.strftime("%m/%d/%Y")
+    term_label = profile.current_term_label or academic_state.term_name
+    print_date = profile.document_print_date or temporal.retrieval_date
+    print_date_str = print_date.strftime("%B %d, %Y")
+    inst = profile.institution
+    brand_color = inst.primary_color or "#1E407C"
+    id_label = inst.student_id_label or "Student ID"
+    credit_label = inst.credit_label or "Credits"
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -831,33 +3067,35 @@ def generate_tuition_receipt_document(profile: SyntheticProfile, academic_state:
     <style>
         body {{
             font-family: Helvetica, Arial, sans-serif;
-            color: #222;
+            color: var(--text-primary);
             margin: 0;
-            padding: 20px;
+            padding: 24px;
             background: #fff;
         }}
         .header {{
-            border-bottom: 3px solid #1E407C;
-            padding-bottom: 10px;
+            border-bottom: 3px solid {brand_color};
+            padding-bottom: 12px;
             margin-bottom: 20px;
         }}
         .brand {{
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
-            color: #1E407C;
+            color: {brand_color};
         }}
         .sub-brand {{
             font-size: 14px;
-            color: #555;
+            color: var(--text-muted);
+            margin-top: 4px;
         }}
         h2 {{
-            color: #1E407C;
+            color: {brand_color};
             margin-bottom: 15px;
+            font-size: 18px;
         }}
         .receipt-box {{
-            border: 2px solid #1E407C;
+            border: 2px solid {brand_color};
             padding: 20px;
-            background: #fdfdfd;
+            background: var(--bg-light);
         }}
         .table {{
             width: 100%;
@@ -866,12 +3104,12 @@ def generate_tuition_receipt_document(profile: SyntheticProfile, academic_state:
         }}
         .table th, .table td {{
             padding: 10px 12px;
-            border-bottom: 1px solid #ddd;
-            font-size: 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 13px;
             text-align: left;
         }}
         .table th {{
-            background: #1E407C;
+            background: {brand_color};
             color: #fff;
         }}
         .status-badge {{
@@ -881,53 +3119,58 @@ def generate_tuition_receipt_document(profile: SyntheticProfile, academic_state:
             padding: 12px;
             text-align: center;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 15px;
             margin-top: 20px;
         }}
         .footer {{
             margin-top: 30px;
-            font-size: 12px;
-            color: #666;
-            text-align: right;
+            font-size: 11px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 10px;
         }}
     </style>
 </head>
 <body>
     <div class="header">
         <div class="brand">{profile.institution_name}</div>
-        <div class="sub-brand">Office of the Bursar &mdash; Official Account Statement / Tuition Receipt</div>
+        <div class="sub-brand">{profile.institution.portal_name} &mdash; Official Bursar Account Statement & Payment Receipt</div>
     </div>
 
-    <h2>Bursar Payment Receipt</h2>
+    <h2>Bursar Statement & Payment Confirmation</h2>
 
     <div class="receipt-box">
-        <table style="width: 100%; margin-bottom: 15px;">
+        <table style="width: 100%; margin-bottom: 15px; font-size: 13px;">
             <tr>
                 <td><strong>Student Name:</strong> {name}</td>
-                <td><strong>Student ID:</strong> {profile.student_id}</td>
+                <td><strong>{id_label}:</strong> {profile.student_id}</td>
             </tr>
             <tr>
-                <td><strong>Term:</strong> {academic_state.term_name} ({academic_state.term_code})</td>
+                <td><strong>Term / Session:</strong> {term_label} (Starts: {term_start_str})</td>
+                <td><strong>Enrollment Status:</strong> {profile.enrollment_type}</td>
+            </tr>
+            <tr>
                 <td><strong>Transaction ID:</strong> {academic_state.transaction_id}</td>
+                <td><strong>Payment Date:</strong> {pay_date_str}</td>
             </tr>
             <tr>
-                <td><strong>Payment Date:</strong> {pay_date_str}</td>
-                <td><strong>Method:</strong> Electronic Check (ACH)</td>
+                <td><strong>Campus / College:</strong> {profile.campus}</td>
+                <td><strong>Payment Method:</strong> Electronic ACH / Campus Portal</td>
             </tr>
         </table>
 
         <table class="table">
             <thead>
                 <tr>
-                    <th>Description</th>
+                    <th>Item Description</th>
                     <th>Category</th>
                     <th>Amount</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>Undergraduate Tuition ({academic_state.total_credits} Credits)</td>
-                    <td>Tuition & Fees</td>
+                    <td>Undergraduate Instructional Tuition ({academic_state.total_credits} {credit_label.lower()})</td>
+                    <td>Instructional Tuition</td>
                     <td>$7,450.00</td>
                 </tr>
                 <tr>
@@ -954,7 +3197,14 @@ def generate_tuition_receipt_document(profile: SyntheticProfile, academic_state:
     </div>
 
     <div class="footer">
-        Statement generated on {retrieved_str} | Office of the Bursar, {profile.institution_name}
+        <div style="float: left;">
+            Statement Generated: {print_date_str} &bull; Office of the Bursar, {profile.institution_name}<br>
+            Portal: {profile.institution.portal_name} &bull; Security Seal: {profile.document_seal_hash}
+        </div>
+        <div style="float: right; text-align: right;">
+            Record ID: {academic_state.transaction_id} &bull; {profile.institution.domain}
+        </div>
+        <div style="clear: both;"></div>
     </div>
 </body>
 </html>
@@ -964,11 +3214,16 @@ def generate_tuition_receipt_document(profile: SyntheticProfile, academic_state:
         "Student Name": name,
         "Student ID": profile.student_id,
         "Institution": profile.institution_name,
-        "Term": academic_state.term_name,
+        "Portal": profile.institution.portal_name,
+        "Term": term_label,
+        "Term Start Date": term_start_str,
+        "Enrollment Type": profile.enrollment_type,
         "Payment Date": pay_date_str,
         "Transaction ID": academic_state.transaction_id,
         "Tuition Balance": "$0.00",
         "Status": "PAID IN FULL",
+        "Retrieval Date": retrieved_str,
+        "Document Print Date": print_date_str,
     }
 
     return Document(
@@ -980,10 +3235,15 @@ def generate_tuition_receipt_document(profile: SyntheticProfile, academic_state:
     )
 
 
-def generate_id_card_document(profile: SyntheticProfile, temporal: TemporalAnchor) -> Document:
+def generate_id_card_document(
+    profile: SyntheticProfile, temporal: TemporalAnchor
+) -> Document:
     name = f"{profile.first_name} {profile.last_name}"
     issue_str = temporal.issue_date.strftime("%m/%d/%Y")
     exp_str = temporal.expiration_date.strftime("%m/%d/%Y")
+    inst = profile.institution
+    brand_color = inst.primary_color or "#1E407C"
+    id_label = inst.student_id_label or "Student ID"
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -1000,14 +3260,14 @@ def generate_id_card_document(profile: SyntheticProfile, temporal: TemporalAncho
         .card {{
             width: 480px;
             height: 300px;
-            border: 2px solid #1E407C;
+            border: 2px solid {brand_color};
             background: #ffffff;
             position: relative;
             box-sizing: border-box;
             padding: 15px;
         }}
         .card-header {{
-            background: #1E407C;
+            background: {brand_color};
             color: #ffffff;
             padding: 10px;
             font-weight: bold;
@@ -1036,7 +3296,7 @@ def generate_id_card_document(profile: SyntheticProfile, temporal: TemporalAncho
         .name {{
             font-size: 18px;
             font-weight: bold;
-            color: #1E407C;
+            color: {brand_color};
             margin-bottom: 5px;
         }}
         .detail {{
@@ -1058,7 +3318,7 @@ def generate_id_card_document(profile: SyntheticProfile, temporal: TemporalAncho
 <body>
     <div class="card">
         <div class="card-header">
-            {profile.institution_name.upper()} &mdash; OFFICIAL ID
+            {profile.institution_name.upper()} &mdash; OFFICIAL IDENTIFICATION
         </div>
         <div class="card-body">
             <div class="photo-box">
@@ -1066,9 +3326,10 @@ def generate_id_card_document(profile: SyntheticProfile, temporal: TemporalAncho
             </div>
             <div class="info-section">
                 <div class="name">{name}</div>
-                <div class="detail"><strong>ID Number:</strong> {profile.student_id}</div>
+                <div class="detail"><strong>{id_label}:</strong> {profile.student_id}</div>
                 <div class="detail"><strong>Role:</strong> {profile.role.value.title()}</div>
                 <div class="detail"><strong>Program:</strong> {profile.program}</div>
+                <div class="detail"><strong>Campus:</strong> {profile.campus}</div>
                 <div class="detail"><strong>Issue Date:</strong> {issue_str}</div>
                 <div class="detail" style="color: #b30000; font-weight: bold;">Expiration Date: {exp_str}</div>
             </div>
@@ -1076,7 +3337,7 @@ def generate_id_card_document(profile: SyntheticProfile, temporal: TemporalAncho
         <div class="barcode-section">
             ||||||| | |||| ||||| ||| ||||
             <div style="font-size: 10px; color: #666; letter-spacing: normal; margin-top: 2px;">
-                {profile.student_id} &bull; {profile.institution_id.upper()}
+                {profile.student_id} &bull; {profile.institution.portal_name} &bull; {profile.document_seal_hash[:8]}
             </div>
         </div>
     </div>
@@ -1088,9 +3349,12 @@ def generate_id_card_document(profile: SyntheticProfile, temporal: TemporalAncho
         "Student Name": name,
         "Student ID": profile.student_id,
         "Institution": profile.institution_name,
+        "Portal": profile.institution.portal_name,
         "Role": profile.role.value,
+        "Campus": profile.campus,
         "Issue Date": issue_str,
         "Expiration Date": exp_str,
+        "Security Seal": profile.document_seal_hash,
     }
 
     return Document(
@@ -1102,9 +3366,14 @@ def generate_id_card_document(profile: SyntheticProfile, temporal: TemporalAncho
     )
 
 
-def generate_faculty_summary_document(profile: SyntheticProfile, temporal: TemporalAnchor) -> Document:
+def generate_faculty_summary_document(
+    profile: SyntheticProfile, temporal: TemporalAnchor
+) -> Document:
     name = f"{profile.first_name} {profile.last_name}"
     issue_str = temporal.issue_date.strftime("%B %d, %Y")
+    term_label = profile.current_term_label or temporal.term_name
+    inst = profile.institution
+    brand_color = inst.primary_color or "#1E407C"
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -1112,27 +3381,31 @@ def generate_faculty_summary_document(profile: SyntheticProfile, temporal: Tempo
     <meta charset="utf-8">
     <title>Faculty Summary - {name}</title>
     <style>
-        body {{ font-family: Helvetica, Arial, sans-serif; padding: 20px; color: #222; }}
-        .header {{ border-bottom: 3px solid #003366; padding-bottom: 10px; margin-bottom: 20px; }}
-        .brand {{ font-size: 22px; font-weight: bold; color: #003366; }}
-        .box {{ background: #f8f9fa; border: 1px solid #ddd; padding: 15px; margin-top: 15px; }}
-        .footer {{ margin-top: 40px; font-size: 12px; color: #666; text-align: right; }}
+        body {{ font-family: Helvetica, Arial, sans-serif; padding: 20px; color: var(--text-primary); }}
+        .header {{ border-bottom: 3px solid {brand_color}; padding-bottom: 10px; margin-bottom: 20px; }}
+        .brand {{ font-size: 22px; font-weight: bold; color: {brand_color}; }}
+        .sub-brand {{ font-size: 14px; color: var(--text-muted); margin-top: 4px; }}
+        .box {{ background: var(--bg-light); border: 1px solid var(--border-subtle); padding: 15px; margin-top: 15px; }}
+        .footer {{ margin-top: 40px; font-size: 12px; color: var(--text-muted); text-align: right; }}
     </style>
 </head>
 <body>
     <div class="header">
         <div class="brand">{profile.institution_name}</div>
-        <div>Office of Human Resources &mdash; Faculty & Staff Verification Summary</div>
+        <div class="sub-brand">{profile.institution.portal_name} &mdash; Faculty & Academic Staff Record</div>
     </div>
     <h2>Employee Verification Certificate</h2>
     <div class="box">
         <p>This document verifies that <strong>{name}</strong> (Employee ID: <strong>{profile.student_id}</strong>) is actively employed at {profile.institution_name} in good standing.</p>
         <p><strong>Position / Department:</strong> {profile.program}</p>
+        <p><strong>Campus / Location:</strong> {profile.campus}</p>
         <p><strong>Institutional Email:</strong> {profile.email}</p>
+        <p><strong>Active Term:</strong> {term_label}</p>
         <p><strong>Appointment Academic Year:</strong> {profile.academic_year}</p>
+        <p><strong>Employment Status:</strong> {profile.enrollment_type}</p>
     </div>
     <div class="footer">
-        Issued on: {issue_str} | Verified Official Record
+        Issued on: {issue_str} | Verified via {profile.institution.portal_name} | Seal: {profile.document_seal_hash}
     </div>
 </body>
 </html>
@@ -1142,9 +3415,12 @@ def generate_faculty_summary_document(profile: SyntheticProfile, temporal: Tempo
         "Employee Name": name,
         "Employee ID": profile.student_id,
         "Institution": profile.institution_name,
+        "Portal": profile.institution.portal_name,
         "Department": profile.program,
         "Email": profile.email,
         "Issue Date": issue_str,
+        "Term": term_label,
+        "Enrollment Type": profile.enrollment_type,
     }
 
     return Document(
@@ -1156,9 +3432,25 @@ def generate_faculty_summary_document(profile: SyntheticProfile, temporal: Tempo
     )
 
 
-def generate_enrollment_certificate_document(profile: SyntheticProfile, temporal: TemporalAnchor) -> Document:
+def generate_enrollment_certificate_document(
+    profile: SyntheticProfile, temporal: TemporalAnchor
+) -> Document:
     name = f"{profile.first_name} {profile.last_name}"
     issue_str = temporal.issue_date.strftime("%B %d, %Y")
+    term_start = (
+        profile.term_start_date or temporal.term_start_date or temporal.retrieval_date
+    )
+    term_end = (
+        profile.term_end_date or temporal.term_end_date or temporal.expiration_date
+    )
+    term_start_str = term_start.strftime("%m/%d/%Y")
+    term_end_str = term_end.strftime("%m/%d/%Y")
+    term_label = profile.current_term_label or temporal.term_name
+    print_date = profile.document_print_date or temporal.retrieval_date
+    print_date_str = print_date.strftime("%B %d, %Y")
+    inst = profile.institution
+    brand_color = inst.primary_color or "#1E407C"
+    id_label = inst.student_id_label or "Student ID"
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -1166,58 +3458,122 @@ def generate_enrollment_certificate_document(profile: SyntheticProfile, temporal
     <meta charset="utf-8">
     <title>Enrollment Certificate - {name}</title>
     <style>
-        body {{ font-family: Helvetica, Arial, sans-serif; padding: 30px; color: #222; }}
-        .certificate {{ border: 3px double #1E407C; padding: 40px; background: white; }}
-        h1 {{ text-align: center; color: #1E407C; margin-bottom: 5px; }}
-        h3 {{ text-align: center; color: #555; font-weight: normal; margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 15px; }}
-        .details {{ margin-top: 30px; line-height: 1.8; font-size: 16px; }}
-        .field-table {{ width: 100%; margin-top: 20px; border-collapse: collapse; }}
-        .field-table td {{ padding: 8px 12px; border-bottom: 1px solid #eee; }}
-        .field-table td.label {{ font-weight: bold; color: #1E407C; width: 35%; }}
+        body {{
+            font-family: Helvetica, Arial, sans-serif;
+            padding: 30px;
+            color: var(--text-primary);
+        }}
+        .certificate {{
+            border: 3px double {brand_color};
+            padding: 40px;
+            background: white;
+        }}
+        h1 {{
+            text-align: center;
+            color: {brand_color};
+            margin-bottom: 5px;
+            font-size: 26px;
+        }}
+        h3 {{
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: normal;
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 15px;
+            font-size: 15px;
+        }}
+        .details {{
+            margin-top: 25px;
+            line-height: 1.8;
+            font-size: 15px;
+        }}
+        .field-table {{
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }}
+        .field-table td {{
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 14px;
+        }}
+        .field-table td.label {{
+            font-weight: bold;
+            color: {brand_color};
+            width: 35%;
+        }}
+        .seal-box {{
+            margin-top: 35px;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 15px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }}
     </style>
 </head>
 <body>
 <div class="certificate">
     <h1>{profile.institution_name}</h1>
-    <h3>Office of the University Registrar &mdash; Enrollment Verification</h3>
+    <h3>{profile.institution.registrar_title} &mdash; Official Enrollment Verification ({profile.institution.portal_name})</h3>
 
     <div class="details">
-        <p>This document certifies that the individual named below is currently enrolled in good academic standing at {profile.institution_name}.</p>
+        <p>This official document certifies that the student named below is actively registered and enrolled in good academic standing at {profile.institution_name} for the specified academic term.</p>
 
         <table class="field-table">
             <tr>
-                <td class="label">Full Legal Name</td>
-                <td>{name}</td>
+                <td class="label">Student Full Name:</td>
+                <td><strong>{name}</strong></td>
             </tr>
             <tr>
-                <td class="label">Student ID Number</td>
-                <td>{profile.student_id}</td>
+                <td class="label">{id_label}:</td>
+                <td><strong>{profile.student_id}</strong></td>
             </tr>
             <tr>
-                <td class="label">Academic Program</td>
+                <td class="label">Current Academic Term:</td>
+                <td><strong>{term_label}</strong> (Term Dates: {term_start_str} &ndash; {term_end_str})</td>
+            </tr>
+            <tr>
+                <td class="label">Enrollment Classification:</td>
+                <td><strong>{profile.enrollment_type}</strong></td>
+            </tr>
+            <tr>
+                <td class="label">Academic Standing:</td>
+                <td>{profile.academic_standing}</td>
+            </tr>
+            <tr>
+                <td class="label">Campus Location:</td>
+                <td>{profile.campus}</td>
+            </tr>
+            <tr>
+                <td class="label">Academic Degree & Major:</td>
                 <td>{profile.program}</td>
             </tr>
             <tr>
-                <td class="label">Academic Level</td>
+                <td class="label">Academic Career Level:</td>
                 <td>{profile.academic_level.value.title()}</td>
             </tr>
             <tr>
-                <td class="label">Enrollment Status</td>
-                <td>Full-Time ({profile.academic_year})</td>
+                <td class="label">Anticipated Graduation Date:</td>
+                <td>{profile.expected_graduation.strftime("%B %d, %Y")}</td>
             </tr>
             <tr>
-                <td class="label">Expected Graduation</td>
-                <td>{profile.expected_graduation.strftime('%B %d, %Y')}</td>
-            </tr>
-            <tr>
-                <td class="label">Institutional Email</td>
-                <td>{profile.email}</td>
+                <td class="label">Official Certification Date:</td>
+                <td>{issue_str}</td>
             </tr>
         </table>
+    </div>
 
-        <p style="margin-top: 40px; font-size: 13px; color: #666; text-align: right;">
-            Issued on {issue_str}
-        </p>
+    <div class="seal-box">
+        <div style="float: left;">
+            Electronic Certification Seal: {profile.document_seal_hash}<br>
+            Verified via {profile.institution.portal_name} &bull; Printed: {print_date_str}
+        </div>
+        <div style="float: right; text-align: right;">
+            {profile.institution.registrar_title}<br>
+            {profile.institution_name} &bull; {profile.institution.domain}
+        </div>
+        <div style="clear: both;"></div>
     </div>
 </div>
 </body>
@@ -1228,10 +3584,17 @@ def generate_enrollment_certificate_document(profile: SyntheticProfile, temporal
         "Student Name": name,
         "Student ID": profile.student_id,
         "Institution": profile.institution_name,
+        "Portal": profile.institution.portal_name,
         "Program": profile.program,
         "Academic Level": profile.academic_level.value,
-        "Expected Graduation": profile.expected_graduation.strftime('%Y-%m-%d'),
+        "Term": term_label,
+        "Term Start Date": term_start_str,
+        "Term End Date": term_end_str,
+        "Enrollment Type": profile.enrollment_type,
+        "Academic Standing": profile.academic_standing,
+        "Expected Graduation": profile.expected_graduation.strftime("%Y-%m-%d"),
         "Issue Date": issue_str,
+        "Document Print Date": print_date_str,
     }
 
     return Document(
@@ -1243,10 +3606,21 @@ def generate_enrollment_certificate_document(profile: SyntheticProfile, temporal
     )
 
 
-def generate_document(profile: SyntheticProfile, doc_kind: DocumentKind = DocumentKind.SCHEDULE, seed: int = 42) -> Document:
+def generate_document(
+    profile: SyntheticProfile,
+    doc_kind: DocumentKind = DocumentKind.SCHEDULE,
+    seed: int = 42,
+) -> Document:
     rng = random.Random(seed)
-    temporal = get_temporal_anchor(rng)
-    academic_state = generate_academic_state(rng, profile.program, temporal)
+    anchor_dt = profile.document_print_date or profile.enrollment_date
+    temporal = get_temporal_anchor(rng, anchor_date=anchor_dt)
+    academic_state = generate_academic_state(
+        rng,
+        profile.program,
+        temporal,
+        institution_id=profile.institution_id,
+        profile=profile,
+    )
 
     if doc_kind == DocumentKind.SCHEDULE:
         return generate_schedule_document(profile, academic_state, temporal)
@@ -1263,63 +3637,239 @@ def generate_document(profile: SyntheticProfile, doc_kind: DocumentKind = Docume
 
 
 # =====================================================================
+# CSS VARIABLE RESOLVER & PDF METADATA SPOOFING
+# =====================================================================
+
+_CSS_TOKENS: dict[str, str] = {
+    "--psu-blue": "#1E407C",
+    "--psu-light-blue": "#96BEE6",
+    "--psu-gold": "#BF9B2F",
+    "--accent-gray": "#6c757d",
+    "--bg-light": "#f4f6f9",
+    "--border-subtle": "#dee2e6",
+    "--text-primary": "#212529",
+    "--text-muted": "#6c757d",
+    "--badge-enrolled": "#198754",
+    "--badge-waitlist": "#dc3545",
+    "--nyu-purple": "#57068C",
+    "--nyu-light-purple": "#f8f5fc",
+    "--umich-blue": "#00274C",
+    "--umich-maize": "#FFCB05",
+    "--ucla-blue": "#2D68C4",
+    "--ucla-gold": "#F2A900",
+    "--ut-orange": "#BF5700",
+    "--ut-gray": "#333F48",
+}
+
+
+def _resolve_css_vars(html: str, tokens: dict[str, str] | None = None) -> str:
+    """Pre-resolve CSS var() calls to concrete values before rendering."""
+    tok = {**_CSS_TOKENS, **(tokens or {})}
+
+    def _replacer(m: re.Match[str]) -> str:
+        name = m.group(1).strip()
+        fallback = (m.group(2) or "").strip().lstrip(",").strip()
+        return tok.get(name, fallback or "inherit")
+
+    return re.sub(r"var\(\s*(--[\w-]+)\s*(?:,([^)]*))?\)", _replacer, html)
+
+
+def _spoof_pdf_metadata(
+    pdf_bytes: bytes,
+    institution: Institution | None = None,
+    profile: SyntheticProfile | None = None,
+    term_label: str = "",
+) -> bytes:
+    """
+    Rewrite PDF /Info dictionary to match real institutional producers.
+
+    Real Penn State LionPATH PDFs show:
+      /Producer  (Oracle PeopleTools 8.59.15)
+      /Creator   (PeopleSoft Enterprise)
+      /Author    ()           [blank — system-generated]
+      /Subject   (Class Schedule)
+      /Keywords  (Student Schedule Penn State)
+      /CreationDate (D:20260915143022-05'00')
+      /ModDate      (D:20260915143022-05'00')
+    """
+    inst = institution or (profile.institution if profile else INSTITUTIONS["psu"])
+    is_letter = inst.document_archetype == DocumentArchetype.REGISTRAR_LETTER
+    if profile:
+        season, term_year, term_start, _ = _current_term(
+            profile.document_print_date, institution_id=inst.id
+        )
+        print_date = profile.document_print_date or term_start
+        h = abs(hash(profile.first_name)) % 8 + 8  # 8am–4pm
+        m = abs(hash(profile.last_name)) % 59
+        s = abs(hash(profile.email)) % 59
+        fake_dt = datetime.combine(print_date, datetime.min.time()) + timedelta(
+            hours=h, minutes=m, seconds=s
+        )
+        active_term = (
+            term_label or profile.current_term_label or f"{season} {term_year}"
+        )
+        if is_letter:
+            subject_str = f"Enrollment Verification - {active_term}"
+            keywords_str = f"Enrollment Verification {inst.name}"
+            title_str = f"{inst.portal_name} - Enrollment Verification"
+        else:
+            subject_str = f"Class Schedule - {active_term}"
+            keywords_str = f"Student Schedule {inst.name}"
+            title_str = f"{inst.portal_name} - Student Schedule"
+    else:
+        season, term_year, term_start, _ = _current_term(institution_id=inst.id)
+        fake_dt = datetime.combine(
+            term_start + timedelta(days=15), datetime.min.time()
+        ) + timedelta(hours=10, minutes=24, seconds=12)
+        active_term = term_label or f"{season} {term_year}"
+        if is_letter:
+            subject_str = f"Enrollment Verification - {active_term}"
+            keywords_str = f"Enrollment Verification {inst.name}"
+            title_str = f"{inst.portal_name} - Enrollment Verification"
+        else:
+            subject_str = f"Class Schedule - {active_term}"
+            keywords_str = f"Student Schedule {inst.name}"
+            title_str = f"{inst.portal_name} - Student Schedule"
+
+    fake_dt = min(
+        fake_dt, datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1)
+    )
+    pdf_date = fake_dt.strftime("D:%Y%m%d%H%M%S-05'00'")
+
+    try:
+        reader = pypdf.PdfReader(BytesIO(pdf_bytes))
+        writer = pypdf.PdfWriter()
+        writer.append_pages_from_reader(reader)
+        writer.add_metadata(
+            {
+                "/Producer": inst.producer_string,
+                "/Creator": inst.pdf_creator,
+                "/Author": "",
+                "/Subject": subject_str,
+                "/Keywords": keywords_str,
+                "/CreationDate": pdf_date,
+                "/ModDate": pdf_date,
+                "/Title": title_str,
+            }
+        )
+        out = BytesIO()
+        writer.write(out)
+        return out.getvalue()
+    except (PyPdfError, ValueError, KeyError, OSError, TypeError) as exc:
+        logger.debug("Failed to spoof PDF metadata with pypdf: %s", exc)
+
+    # Fallback: byte-level substitution
+    result = pdf_bytes
+    producer_str = inst.pdf_producer or "Oracle PeopleTools 8.59"
+    for old, new_s in [
+        (b"WeasyPrint", producer_str[:10].encode()),
+        (b"xhtml2pdf", producer_str[:9].encode()),
+        (b"ReportLab", producer_str[:9].encode()),
+    ]:
+        if old in result:
+            result = result.replace(old, new_s.ljust(len(old)))
+    return result
+
+
+# =====================================================================
 # RENDERING ENGINE (HTML, PDF, PNG, JPEG)
 # =====================================================================
 
-def render_pdf(html_content: str) -> bytes:
-    """Render HTML string to PDF bytes using xhtml2pdf or ReportLab fallback."""
-    try:
-        from xhtml2pdf import pisa
-        output = BytesIO()
-        pisa_status = pisa.CreatePDF(html_content, dest=output, encoding="utf-8")
-        if not pisa_status.err:
-            return output.getvalue()
-    except Exception:
-        pass
+
+def render_pdf(
+    html_content: str,
+    institution: Institution | None = None,
+    profile: SyntheticProfile | None = None,
+    term_label: str = "",
+) -> bytes:
+    """Render HTML string to PDF bytes with institutional metadata spoofing."""
+    html = _resolve_css_vars(html_content)
+    pdf_bytes: bytes | None = None
 
     try:
-        from reportlab.lib.pagesizes import letter
-        from reportlab.pdfgen import canvas
+        from xhtml2pdf import pisa
+
         output = BytesIO()
-        c = canvas.Canvas(output, pagesize=letter)
-        c.drawString(100, 750, "Document Summary")
-        clean_text = re.sub(r"<[^>]+>", "\n", html_content)
-        lines = [line.strip() for line in clean_text.splitlines() if line.strip()]
-        y = 720
-        for line in lines[:35]:
-            c.drawString(50, y, line[:90])
-            y -= 18
-        c.save()
-        return output.getvalue()
-    except Exception as exc:
-        raise RuntimeError(f"Failed to render PDF: {exc}")
+        pisa_status = pisa.CreatePDF(html, dest=output, encoding="utf-8")
+        if not pisa_status.err:
+            pdf_bytes = output.getvalue()
+    except (ImportError, RuntimeError, ValueError, TypeError, OSError) as exc:
+        logger.debug("xhtml2pdf rendering failed: %s", exc)
+
+    if pdf_bytes is None:
+        try:
+            import weasyprint  # type: ignore
+
+            pdf_bytes = weasyprint.HTML(string=html).write_pdf()
+        except (ImportError, RuntimeError, ValueError, TypeError, OSError) as exc:
+            logger.debug("weasyprint rendering failed: %s", exc)
+
+    if pdf_bytes is None:
+        try:
+            from reportlab.lib.pagesizes import letter
+            from reportlab.pdfgen import canvas
+
+            output = BytesIO()
+            c = canvas.Canvas(output, pagesize=letter)
+            c.drawString(100, 750, "Document Summary")
+            clean_text = re.sub(r"<[^>]+>", "\n", html)
+            lines = [line.strip() for line in clean_text.splitlines() if line.strip()]
+            y = 720
+            for line in lines[:35]:
+                c.drawString(50, y, line[:90])
+                y -= 18
+            c.save()
+            pdf_bytes = output.getvalue()
+        except (ImportError, RuntimeError, ValueError, TypeError, OSError) as exc:
+            raise RuntimeError(f"Failed to render PDF: {exc}") from exc
+
+    inst = institution or (profile.institution if profile else None)
+    return _spoof_pdf_metadata(pdf_bytes, inst, profile, term_label)
 
 
 _html_to_pdf = render_pdf
 
 
-def render_png(html_content: str, width: int = 1000, height: int = 800) -> bytes:
-    """Render HTML string to PNG bytes using Playwright if present, or PIL fallback."""
+def render_png(
+    html_content: str,
+    width: int = 1280,
+    height: int = 900,
+    require_high_fidelity: bool = True,
+) -> bytes:
+    """Render HTML string to PNG bytes using Playwright retina capture with high-fidelity guard."""
+    html = _resolve_css_vars(html_content)
     try:
         from playwright.sync_api import sync_playwright
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            page = browser.new_page(viewport={"width": width, "height": height})
-            page.set_content(html_content, wait_until="domcontentloaded")
-            png_bytes = page.screenshot(full_page=True)
+            ctx = browser.new_context(
+                viewport={"width": width, "height": height},
+                device_scale_factor=2.0,
+            )
+            page = ctx.new_page()
+            page.set_content(html, wait_until="load")
+            page.wait_for_timeout(300)
+            png_bytes = page.screenshot(full_page=True, type="png")
             browser.close()
             return png_bytes
-    except Exception:
-        pass
+    except Exception as exc:
+        if require_high_fidelity:
+            raise RuntimeError(
+                f"High-fidelity PNG rendering failed: {exc}. "
+                "PIL fallback is forensically detectable as a synthetic image."
+            ) from exc
 
+    # Fallback via PIL when require_high_fidelity is explicitly disabled
     try:
         from PIL import Image, ImageDraw
+
         img = Image.new("RGB", (width, height), color=(245, 247, 250))
         draw = ImageDraw.Draw(img)
         draw.rectangle([0, 0, width, 60], fill=(30, 64, 124))
         draw.text((20, 20), "SYNTHETIC DOCUMENT PREVIEW", fill=(255, 255, 255))
 
-        clean_text = re.sub(r"<[^>]+>", "\n", html_content)
+        clean_text = re.sub(r"<[^>]+>", "\n", html)
         lines = [line.strip() for line in clean_text.splitlines() if line.strip()]
 
         y = 80
@@ -1330,101 +3880,170 @@ def render_png(html_content: str, width: int = 1000, height: int = 800) -> bytes
         buffer = BytesIO()
         img.save(buffer, format="PNG")
         return buffer.getvalue()
-    except Exception as exc:
-        raise RuntimeError(f"Failed to render PNG image: {exc}")
+    except (ImportError, OSError, ValueError, TypeError) as exc:
+        raise RuntimeError(f"Failed to render PNG image: {exc}") from exc
 
 
-def render_jpeg(html_content: str, width: int = 1000, height: int = 800) -> bytes:
+def render_jpeg(html_content: str, width: int = 1280, height: int = 900) -> bytes:
     """Render HTML string to JPEG bytes."""
+    html = _resolve_css_vars(html_content)
     try:
         from playwright.sync_api import sync_playwright
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            page = browser.new_page(viewport={"width": width, "height": height})
-            page.set_content(html_content, wait_until="domcontentloaded")
-            jpg_bytes = page.screenshot(full_page=True, type="jpeg", quality=90)
+            ctx = browser.new_context(
+                viewport={"width": width, "height": height},
+                device_scale_factor=2.0,
+            )
+            page = ctx.new_page()
+            page.set_content(html, wait_until="load")
+            page.wait_for_timeout(300)
+            jpg_bytes = page.screenshot(full_page=True, type="jpeg", quality=92)
             browser.close()
             return jpg_bytes
-    except Exception:
-        pass
+    except (ImportError, RuntimeError, OSError) as exc:
+        logger.debug("Playwright JPEG rendering failed, using PIL fallback: %s", exc)
 
     # Fallback via PIL from PNG
-    png_b = render_png(html_content, width, height)
+    png_b = render_png(html, width, height, require_high_fidelity=False)
     try:
         from PIL import Image
+
         img = Image.open(BytesIO(png_b))
         buf = BytesIO()
         img.convert("RGB").save(buf, format="JPEG", quality=90)
         return buf.getvalue()
-    except Exception as exc:
-        raise RuntimeError(f"Failed to render JPEG image: {exc}")
+    except (ImportError, OSError, ValueError) as exc:
+        raise RuntimeError(f"Failed to render JPEG image: {exc}") from exc
 
 
 # =====================================================================
 # VALIDATION LAYER & READ-BACK INSPECTION
 # =====================================================================
 
+
 def validate_profile(profile: SyntheticProfile) -> ValidationResult:
     errors: list[ValidationError] = []
     warnings: list[str] = []
 
     if not profile.first_name or not profile.last_name:
-        errors.append(ValidationError("INVALID_NAME", "name", "Profile name is missing or empty"))
+        errors.append(
+            ValidationError("INVALID_NAME", "name", "Profile name is missing or empty")
+        )
 
     if not profile.student_id:
-        errors.append(ValidationError("INVALID_ID", "student_id", "Student ID is missing"))
+        errors.append(
+            ValidationError("INVALID_ID", "student_id", "Student ID is missing")
+        )
 
     if profile.enrollment_date <= profile.date_of_birth:
-        errors.append(ValidationError("INVALID_DATES", "enrollment_date", "Enrollment date precedes date of birth"))
+        errors.append(
+            ValidationError(
+                "INVALID_DATES",
+                "enrollment_date",
+                "Enrollment date precedes date of birth",
+            )
+        )
 
     if profile.expected_graduation <= profile.enrollment_date:
-        errors.append(ValidationError("INVALID_DATES", "expected_graduation", "Graduation precedes enrollment"))
+        errors.append(
+            ValidationError(
+                "INVALID_DATES", "expected_graduation", "Graduation precedes enrollment"
+            )
+        )
 
     if "@" not in profile.email or not profile.email.endswith(profile.domain):
-        errors.append(ValidationError("INVALID_EMAIL", "email", f"Email does not match domain '{profile.domain}'"))
+        errors.append(
+            ValidationError(
+                "INVALID_EMAIL",
+                "email",
+                f"Email does not match domain '{profile.domain}'",
+            )
+        )
 
     return ValidationResult(valid=len(errors) == 0, errors=errors, warnings=warnings)
 
 
-def validate_document(doc: Document) -> ValidationResult:
+def validate_document(
+    doc: Document, profile: SyntheticProfile | None = None
+) -> ValidationResult:
     errors: list[ValidationError] = []
     warnings: list[str] = []
+    target_profile = profile if profile is not None else doc.profile
 
     if not doc.fields:
-        errors.append(ValidationError("EMPTY_FIELDS", "fields", "Document fields are empty"))
+        errors.append(
+            ValidationError("EMPTY_FIELDS", "fields", "Document fields are empty")
+        )
 
     if not doc.html_content or len(doc.html_content) < 50:
-        errors.append(ValidationError("EMPTY_HTML", "html_content", "Rendered HTML content is missing or trivial"))
+        errors.append(
+            ValidationError(
+                "EMPTY_HTML",
+                "html_content",
+                "Rendered HTML content is missing or trivial",
+            )
+        )
 
     field_text = " ".join(doc.fields.values())
 
-    if doc.profile.first_name not in field_text or doc.profile.last_name not in field_text:
-        errors.append(ValidationError("FIELD_MISMATCH", "fields", "Profile name missing from document fields"))
+    if (
+        target_profile.first_name not in field_text
+        or target_profile.last_name not in field_text
+    ):
+        errors.append(
+            ValidationError(
+                "FIELD_MISMATCH", "fields", "Profile name missing from document fields"
+            )
+        )
 
-    if doc.profile.student_id not in field_text:
-        errors.append(ValidationError("FIELD_MISMATCH", "student_id", "Profile ID missing from document fields"))
+    if target_profile.student_id not in field_text:
+        errors.append(
+            ValidationError(
+                "FIELD_MISMATCH",
+                "student_id",
+                "Profile ID missing from document fields",
+            )
+        )
 
     return ValidationResult(valid=len(errors) == 0, errors=errors, warnings=warnings)
 
 
-def validate_artifact(artifact_path: str | Path, expected_type: ArtifactType) -> ValidationResult:
+def validate_artifact(
+    artifact_path: str | Path, expected_type: ArtifactType
+) -> ValidationResult:
     path = Path(artifact_path)
     errors: list[ValidationError] = []
     warnings: list[str] = []
 
     if not path.exists():
-        errors.append(ValidationError("FILE_NOT_FOUND", "path", f"Artifact file '{path}' does not exist"))
+        errors.append(
+            ValidationError(
+                "FILE_NOT_FOUND", "path", f"Artifact file '{path}' does not exist"
+            )
+        )
         return ValidationResult(valid=False, errors=errors)
 
     size = path.stat().st_size
     if size == 0:
-        errors.append(ValidationError("ZERO_BYTE_FILE", "size", f"Artifact file '{path}' is empty"))
+        errors.append(
+            ValidationError(
+                "ZERO_BYTE_FILE", "size", f"Artifact file '{path}' is empty"
+            )
+        )
         return ValidationResult(valid=False, errors=errors)
 
     if expected_type == ArtifactType.PDF:
         header = path.read_bytes()[:5]
         if not header.startswith(b"%PDF-"):
-            errors.append(ValidationError("INVALID_PDF_HEADER", "header", "File does not start with valid %PDF- header"))
+            errors.append(
+                ValidationError(
+                    "INVALID_PDF_HEADER",
+                    "header",
+                    "File does not start with valid %PDF- header",
+                )
+            )
     elif expected_type == ArtifactType.PNG:
         header = path.read_bytes()[:8]
         if not header.startswith(b"\x89PNG\r\n\x1a\n"):
@@ -1437,67 +4056,377 @@ def validate_artifact(artifact_path: str | Path, expected_type: ArtifactType) ->
     return ValidationResult(valid=len(errors) == 0, errors=errors, warnings=warnings)
 
 
-def inspect_readback_artifact(artifact_path: str | Path, profile: SyntheticProfile) -> ValidationResult:
+class _HTMLTextExtractor(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._pieces: list[str] = []
+
+    def handle_data(self, data: str) -> None:
+        text = data.strip()
+        if text:
+            self._pieces.append(text)
+
+    def get_text(self) -> str:
+        return " ".join(self._pieces)
+
+
+def _extract_html_text(raw_html: str) -> str:
+    parser = _HTMLTextExtractor()
+    try:
+        parser.feed(raw_html)
+        return parser.get_text()
+    except (ValueError, TypeError, RuntimeError) as exc:
+        logger.debug("HTML text extractor encountered parsing error: %s", exc)
+        return re.sub(r"<[^>]+>", " ", raw_html)
+
+
+def _validate_pdf_metadata(
+    pdf_bytes: bytes,
+    institution: Institution | None = None,
+) -> list[ValidationError]:
+    errors: list[ValidationError] = []
+    try:
+        reader = pypdf.PdfReader(BytesIO(pdf_bytes))
+        info = reader.metadata or {}
+        producer = str(info.get("/Producer", "")).lower()
+        creator = str(info.get("/Creator", "")).lower()
+
+        bad_fingerprints = [
+            "weasyprint",
+            "xhtml2pdf",
+            "reportlab",
+            "fpdf",
+            "wkhtmltopdf",
+            "pdfkit",
+            "pyppeteer",
+            "puppeteer",
+            "playwright",
+        ]
+        for fp in bad_fingerprints:
+            if fp in producer or fp in creator:
+                errors.append(
+                    ValidationError(
+                        "PDF_PRODUCER_FINGERPRINT",
+                        "producer",
+                        f"PDF /Producer or /Creator contains '{fp}' — identifiable as synthetic. "
+                        "Run _spoof_pdf_metadata() before submission.",
+                    )
+                )
+                break
+
+        creation_raw = str(info.get("/CreationDate", ""))
+        if creation_raw:
+            m = re.match(r"D:(\d{4})(\d{2})(\d{2})", creation_raw)
+            if m:
+                pdf_date = date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                today = datetime.now(timezone.utc).date()
+                if pdf_date > today:
+                    errors.append(
+                        ValidationError(
+                            "PDF_FUTURE_DATE",
+                            "creation_date",
+                            f"PDF /CreationDate {pdf_date} is in the future",
+                        )
+                    )
+                if (today - pdf_date).days > 90:
+                    errors.append(
+                        ValidationError(
+                            "PDF_DATE_TOO_OLD",
+                            "creation_date",
+                            f"PDF /CreationDate {pdf_date} is >90 days old",
+                        )
+                    )
+    except (PyPdfError, ValueError, KeyError, OSError, TypeError) as exc:
+        errors.append(
+            ValidationError(
+                "PDF_METADATA_PARSE_ERROR",
+                "metadata",
+                f"Failed to parse PDF metadata: {exc}",
+            )
+        )
+    return errors
+
+
+def inspect_readback_artifact(
+    artifact_path: str | Path,
+    profile: SyntheticProfile,
+    courses: list[CourseRecord] | None = None,
+    institution: Institution | None = None,
+    preflight_mode: bool = True,
+) -> ValidationResult:
     path = Path(artifact_path)
     errors: list[ValidationError] = []
     warnings: list[str] = []
 
     if not path.exists():
-        errors.append(ValidationError("FILE_NOT_FOUND", "path", f"Artifact '{path}' not found"))
+        errors.append(
+            ValidationError("FILE_NOT_FOUND", "path", f"Artifact '{path}' not found")
+        )
         return ValidationResult(valid=False, errors=errors)
 
-    if path.suffix.lower() == ".pdf":
+    if path.stat().st_size == 0:
+        errors.append(
+            ValidationError("EMPTY_FILE", "path", f"Artifact '{path}' is empty")
+        )
+        return ValidationResult(valid=False, errors=errors)
+
+    inst = institution or profile.institution
+    suffix = path.suffix.lower()
+
+    if suffix == ".html":
         try:
-            import pypdf
-            reader = pypdf.PdfReader(str(path))
+            raw = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError as exc:
+            errors.append(
+                ValidationError(
+                    "TEXT_READ_ERROR", "path", f"Failed to read file: {exc}"
+                )
+            )
+            return ValidationResult(valid=False, errors=errors)
+
+        if profile.first_name not in raw or profile.last_name not in raw:
+            errors.append(
+                ValidationError(
+                    "READBACK_NAME_MISSING",
+                    "text",
+                    "Profile name could not be read back from artifact",
+                )
+            )
+        if profile.student_id not in raw:
+            errors.append(
+                ValidationError(
+                    "READBACK_ID_MISSING",
+                    "text",
+                    "Profile ID could not be read back from artifact",
+                )
+            )
+
+        is_id_card = (
+            "OFFICIAL IDENTIFICATION" in raw
+            or "Student ID Card" in raw
+            or "id_card" in str(path).lower()
+        )
+
+        if preflight_mode:
+            if (
+                not is_id_card
+                and profile.current_term_label
+                and profile.current_term_label not in raw
+            ):
+                errors.append(
+                    ValidationError(
+                        "VERIFY_MISSING_TERM",
+                        "current_term_label",
+                        f"Term label '{profile.current_term_label}' not in document — "
+                        "the Intelligent Document Verification (IDV) layer requires current term enrollment date.",
+                    )
+                )
+            if not is_id_card and profile.term_start_date:
+                term_str = profile.term_start_date.strftime("%m/%d/%Y")
+                if term_str not in raw:
+                    warnings.append(
+                        f"Term start date {term_str} not visible — the verification platform checks enrollment date, not print date."
+                    )
+            if inst and inst.name not in raw and profile.institution_name not in raw:
+                errors.append(
+                    ValidationError(
+                        "VERIFY_INSTITUTION_MISMATCH",
+                        "institution_name",
+                        f"Institution name '{inst.name}' not found. Must exactly match form submission.",
+                    )
+                )
+            if inst and inst.portal_name not in raw:
+                warnings.append(
+                    f"Portal name '{inst.portal_name}' not in document — the verification platform knows which portal label each institution uses."
+                )
+            if (
+                not is_id_card
+                and profile.enrollment_type
+                and profile.enrollment_type not in raw
+            ):
+                warnings.append(
+                    f"Enrollment type '{profile.enrollment_type}' not in document."
+                )
+
+        if courses and (
+            not inst or inst.document_archetype != DocumentArchetype.REGISTRAR_LETTER
+        ):
+            for c in courses:
+                if c.crn and c.crn not in raw:
+                    warnings.append(f"Course CRN '{c.crn}' not found in artifact")
+
+    elif suffix == ".pdf":
+        content = path.read_bytes()
+        if not content.startswith(b"%PDF-"):
+            errors.append(
+                ValidationError(
+                    "PDF_MAGIC_INVALID",
+                    "magic",
+                    "File does not start with valid PDF magic header (%PDF-)",
+                )
+            )
+
+        if preflight_mode:
+            errors.extend(_validate_pdf_metadata(content, inst))
+
+        text = ""
+        try:
+            reader = pypdf.PdfReader(BytesIO(content))
             text = "".join([page.extract_text() or "" for page in reader.pages])
-        except Exception:
+        except (PyPdfError, ValueError, KeyError, OSError, TypeError) as exc:
+            logger.debug("Failed to extract PDF text with pypdf: %s", exc)
+
+        if not text:
             try:
-                text = path.read_bytes().decode("latin1", errors="ignore")
-            except Exception as exc:
-                errors.append(ValidationError("PDF_READ_ERROR", "path", f"Failed to read PDF text: {exc}"))
+                text = content.decode("latin1", errors="ignore")
+            except (UnicodeDecodeError, ValueError) as exc:
+                errors.append(
+                    ValidationError(
+                        "PDF_READ_ERROR", "path", f"Failed to read PDF text: {exc}"
+                    )
+                )
                 return ValidationResult(valid=False, errors=errors)
-    elif path.suffix.lower() in (".png", ".jpg", ".jpeg"):
-        text = f"{profile.first_name} {profile.last_name} {profile.student_id}"
+
+        if profile.first_name not in text or profile.last_name not in text:
+            errors.append(
+                ValidationError(
+                    "READBACK_NAME_MISSING",
+                    "text",
+                    "Profile name could not be read back from artifact",
+                )
+            )
+        if profile.student_id not in text:
+            errors.append(
+                ValidationError(
+                    "READBACK_ID_MISSING",
+                    "text",
+                    "Profile ID could not be read back from artifact",
+                )
+            )
+
+        is_id_card = (
+            "OFFICIAL IDENTIFICATION" in text
+            or "Student ID Card" in text
+            or "id_card" in str(path).lower()
+        )
+
+        if preflight_mode:
+            if (
+                not is_id_card
+                and profile.current_term_label
+                and profile.current_term_label not in text
+            ):
+                warnings.append(
+                    f"Term label '{profile.current_term_label}' not found in PDF text extract."
+                )
+            if inst and inst.name not in text and profile.institution_name not in text:
+                warnings.append(
+                    f"Institution name '{inst.name}' not found in PDF text extract."
+                )
+
+    elif suffix in (".png", ".jpg", ".jpeg"):
+        content = path.read_bytes()
+        if suffix == ".png" and not content.startswith(b"\x89PNG\r\n\x1a\n"):
+            errors.append(
+                ValidationError("PNG_MAGIC_INVALID", "magic", "Invalid PNG header")
+            )
+        elif suffix in (".jpg", ".jpeg") and not content.startswith(b"\xff\xd8"):
+            errors.append(
+                ValidationError("JPEG_MAGIC_INVALID", "magic", "Invalid JPEG header")
+            )
+
+        if preflight_mode:
+            try:
+                from PIL import Image
+
+                img = Image.open(BytesIO(content))
+                w, _ = img.size
+                if w < 1000:
+                    errors.append(
+                        ValidationError(
+                            "PNG_RESOLUTION_LOW",
+                            "width",
+                            f"PNG width {w}px below 1000px threshold. Real portal screenshots are 1280px+.",
+                        )
+                    )
+            except (ImportError, OSError, ValueError) as exc:
+                warnings.append(f"Could not inspect image dimensions: {exc}")
+
     else:
         try:
             text = path.read_text(encoding="utf-8", errors="ignore")
-        except Exception as exc:
-            errors.append(ValidationError("TEXT_READ_ERROR", "path", f"Failed to read file: {exc}"))
+        except OSError as exc:
+            errors.append(
+                ValidationError(
+                    "TEXT_READ_ERROR", "path", f"Failed to read file: {exc}"
+                )
+            )
             return ValidationResult(valid=False, errors=errors)
 
-    if profile.first_name not in text or profile.last_name not in text:
-        errors.append(ValidationError("READBACK_NAME_MISSING", "text", "Profile name could not be read back from artifact"))
-
-    if profile.student_id not in text:
-        errors.append(ValidationError("READBACK_ID_MISSING", "text", "Profile ID could not be read back from artifact"))
+        if profile.first_name not in text or profile.last_name not in text:
+            errors.append(
+                ValidationError(
+                    "READBACK_NAME_MISSING",
+                    "text",
+                    "Profile name could not be read back from artifact",
+                )
+            )
+        if profile.student_id not in text:
+            errors.append(
+                ValidationError(
+                    "READBACK_ID_MISSING",
+                    "text",
+                    "Profile ID could not be read back from artifact",
+                )
+            )
 
     return ValidationResult(valid=len(errors) == 0, errors=errors, warnings=warnings)
 
 
-def readback_validate_html(html_str: str, profile: SyntheticProfile) -> ValidationResult:
-    errors: list[ValidationError] = []
-    if profile.first_name not in html_str or profile.last_name not in html_str:
-        errors.append(ValidationError("HTML_READBACK_NAME", "html", "Name missing from HTML"))
-    if profile.student_id not in html_str:
-        errors.append(ValidationError("HTML_READBACK_ID", "html", "ID missing from HTML"))
-    return ValidationResult(valid=len(errors) == 0, errors=errors)
-
-
-def readback_validate_pdf(pdf_bytes: bytes, profile: SyntheticProfile) -> ValidationResult:
-    tmp = Path("/tmp") / f"rb_{profile.student_id}.pdf"
-    tmp.write_bytes(pdf_bytes)
-    res = inspect_readback_artifact(tmp, profile)
+def readback_validate_html(
+    html_str: str,
+    profile: SyntheticProfile,
+    institution: Institution | None = None,
+    preflight_mode: bool = True,
+) -> ValidationResult:
+    base_dir = Path("/tmp/opencode") if Path("/tmp/opencode").exists() else Path("/tmp")
+    tmp = base_dir / f"rb_{profile.student_id}_{uuid.uuid4().hex[:8]}.html"
+    tmp.write_text(html_str, encoding="utf-8")
     try:
-        tmp.unlink(missing_ok=True)
-    except Exception:
-        pass
-    return res
+        return inspect_readback_artifact(
+            tmp, profile, institution=institution, preflight_mode=preflight_mode
+        )
+    finally:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError as exc:
+            logger.debug("Failed to remove temp file %s: %s", tmp, exc)
+
+
+def readback_validate_pdf(
+    pdf_bytes: bytes,
+    profile: SyntheticProfile,
+    institution: Institution | None = None,
+    preflight_mode: bool = True,
+) -> ValidationResult:
+    base_dir = Path("/tmp/opencode") if Path("/tmp/opencode").exists() else Path("/tmp")
+    tmp = base_dir / f"rb_{profile.student_id}_{uuid.uuid4().hex[:8]}.pdf"
+    tmp.write_bytes(pdf_bytes)
+    try:
+        return inspect_readback_artifact(
+            tmp, profile, institution=institution, preflight_mode=preflight_mode
+        )
+    finally:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError as exc:
+            logger.debug("Failed to remove temp file %s: %s", tmp, exc)
 
 
 # =====================================================================
 # FIXTURE & BUNDLE GENERATION
 # =====================================================================
+
 
 def generate_fixture_bundle(
     scenario_name: str = "undergraduate",
@@ -1505,12 +4434,20 @@ def generate_fixture_bundle(
     output_dir: str | Path = "output/fixture",
     override_institution_id: str | None = None,
     doc_kind: DocumentKind = DocumentKind.SCHEDULE,
-    formats: tuple[ArtifactType, ...] = (ArtifactType.HTML, ArtifactType.PDF, ArtifactType.PNG),
+    formats: tuple[ArtifactType, ...] = (
+        ArtifactType.HTML,
+        ArtifactType.PDF,
+        ArtifactType.PNG,
+    ),
 ) -> GenerationResult:
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    profile = generate_profile(scenario_name=scenario_name, seed=seed, override_institution_id=override_institution_id)
+    profile = generate_profile(
+        scenario_name=scenario_name,
+        seed=seed,
+        override_institution_id=override_institution_id,
+    )
     doc = generate_document(profile, doc_kind=doc_kind, seed=seed)
 
     profile_val = validate_profile(profile)
@@ -1533,7 +4470,12 @@ def generate_fixture_bundle(
 
     if ArtifactType.PDF in formats:
         pdf_path = out_dir / "document.pdf"
-        pdf_bytes = render_pdf(doc.html_content)
+        pdf_bytes = render_pdf(
+            doc.html_content,
+            institution=profile.institution,
+            profile=profile,
+            term_label=profile.current_term_label,
+        )
         pdf_path.write_bytes(pdf_bytes)
         artifacts.append(
             GeneratedArtifact(
@@ -1575,7 +4517,9 @@ def generate_fixture_bundle(
 
     # Save profile JSON
     profile_json_path = out_dir / "profile.json"
-    profile_json_path.write_text(json.dumps(profile.to_dict(), indent=2), encoding="utf-8")
+    profile_json_path.write_text(
+        json.dumps(profile.to_dict(), indent=2), encoding="utf-8"
+    )
 
     all_errors = list(profile_val.errors) + list(doc_val.errors)
     validated_artifacts = 0
@@ -1621,7 +4565,12 @@ def generate_document_bundle(
     profile: SyntheticProfile,
     output_dir: str | Path = "output/bundle",
     seed: int = 42,
-    formats: tuple[ArtifactType, ...] = (ArtifactType.HTML, ArtifactType.PDF, ArtifactType.PNG, ArtifactType.JPEG),
+    formats: tuple[ArtifactType, ...] = (
+        ArtifactType.HTML,
+        ArtifactType.PDF,
+        ArtifactType.PNG,
+        ArtifactType.JPEG,
+    ),
 ) -> dict[str, Any]:
     """
     Generates a complete multi-document bundle (Schedule, Tuition Receipt, ID Card)
@@ -1693,27 +4642,33 @@ def generate_batch(
             else:
                 invalid_count += 1
                 for err in res.validation.errors:
-                    failure_categories[err.code] = failure_categories.get(err.code, 0) + 1
+                    failure_categories[err.code] = (
+                        failure_categories.get(err.code, 0) + 1
+                    )
 
-            results_summary.append({
-                "index": i + 1,
-                "seed": derived_seed,
-                "profile_id": res.profile.student_id,
-                "name": f"{res.profile.first_name} {res.profile.last_name}",
-                "valid": is_valid,
-                "errors": [e.code for e in res.validation.errors],
-                "path": str(sub_dir),
-            })
-        except Exception as exc:
+            results_summary.append(
+                {
+                    "index": i + 1,
+                    "seed": derived_seed,
+                    "profile_id": res.profile.student_id,
+                    "name": f"{res.profile.first_name} {res.profile.last_name}",
+                    "valid": is_valid,
+                    "errors": [e.code for e in res.validation.errors],
+                    "path": str(sub_dir),
+                }
+            )
+        except (RuntimeError, ValueError, OSError, TypeError, KeyError) as exc:
             invalid_count += 1
             err_code = "EXCEPTION"
             failure_categories[err_code] = failure_categories.get(err_code, 0) + 1
-            results_summary.append({
-                "index": i + 1,
-                "seed": derived_seed,
-                "valid": False,
-                "errors": [f"EXCEPTION: {exc}"],
-            })
+            results_summary.append(
+                {
+                    "index": i + 1,
+                    "seed": derived_seed,
+                    "valid": False,
+                    "errors": [f"EXCEPTION: {exc}"],
+                }
+            )
 
     summary = {
         "synthetic": True,

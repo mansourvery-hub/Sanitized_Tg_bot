@@ -48,7 +48,9 @@ def cmd_list(args: argparse.Namespace) -> int:
         "scenario_details": {
             k: {
                 "role": v.role.value if hasattr(v.role, "value") else str(v.role),
-                "academic_level": v.academic_level.value if hasattr(v.academic_level, "value") else str(v.academic_level),
+                "academic_level": v.academic_level.value
+                if hasattr(v.academic_level, "value")
+                else str(v.academic_level),
                 "min_age": v.min_age,
                 "max_age": v.max_age,
                 "institution_id": v.institution_id,
@@ -75,11 +77,15 @@ def cmd_list(args: argparse.Namespace) -> int:
         print(f"Sanitized Local Identity Engine (v{GENERATOR_VERSION})\n")
         print("Available Scenarios:")
         for name, details in info["scenario_details"].items():
-            print(f"  - {name:20s} (Role: {details['role']}, Level: {details['academic_level']}, Age: {details['min_age']}-{details['max_age']})")
+            print(
+                f"  - {name:20s} (Role: {details['role']}, Level: {details['academic_level']}, Age: {details['min_age']}-{details['max_age']})"
+            )
 
         print("\nAvailable Institutions:")
         for inst in info["institutions"]:
-            print(f"  - [{inst['id']}] {inst['name']} ({inst['city']}, {inst['country']}) - Domain: {inst['domain']}")
+            print(
+                f"  - [{inst['id']}] {inst['name']} ({inst['city']}, {inst['country']}) - Domain: {inst['domain']}"
+            )
 
         print("\nAvailable Document Kinds:")
         for dk in info["document_kinds"]:
@@ -114,7 +120,9 @@ def cmd_identity(args: argparse.Namespace) -> int:
         print(f"Role:               {profile.role.value}")
         print(f"Academic Level:     {profile.academic_level.value}")
         print(f"Birth Date:         {profile.date_of_birth.strftime('%Y-%m-%d')}")
-        print(f"Institution:        {profile.institution_name} ({profile.institution_id})")
+        print(
+            f"Institution:        {profile.institution_name} ({profile.institution_id})"
+        )
         print(f"Student/ID:         {profile.student_id}")
         print(f"Email:              {profile.email}")
         print(f"Program/Major:      {profile.program}")
@@ -138,12 +146,14 @@ def cmd_document(args: argparse.Namespace) -> int:
         override_institution_id=args.institution,
     )
 
-    doc_kind = None
+    doc_kind = DocumentKind.SCHEDULE
     if args.kind:
         try:
             doc_kind = DocumentKind(args.kind)
         except ValueError:
-            print(f"Error: Unknown document kind '{args.kind}'. Options: {[dk.value for dk in DocumentKind]}")
+            print(
+                f"Error: Unknown document kind '{args.kind}'. Options: {[dk.value for dk in DocumentKind]}"
+            )
             return 1
 
     doc = generate_document(profile, doc_kind=doc_kind)
@@ -183,7 +193,7 @@ def cmd_render(args: argparse.Namespace) -> int:
         override_institution_id=args.institution,
     )
 
-    doc_kind = None
+    doc_kind = DocumentKind.SCHEDULE
     if args.kind:
         try:
             doc_kind = DocumentKind(args.kind)
@@ -192,7 +202,11 @@ def cmd_render(args: argparse.Namespace) -> int:
             return 1
 
     doc = generate_document(profile, doc_kind=doc_kind)
-    out_dir = Path(args.output) if args.output else Path("output") / f"render-{args.scenario}-{args.seed or 'default'}"
+    out_dir = (
+        Path(args.output)
+        if args.output
+        else Path("output") / f"render-{args.scenario}-{args.seed or 'default'}"
+    )
     out_dir.mkdir(parents=True, exist_ok=True)
 
     fmt = args.format.lower()
@@ -203,7 +217,12 @@ def cmd_render(args: argparse.Namespace) -> int:
         artifact_path.write_text(doc.html_content, encoding="utf-8")
     elif fmt == "pdf":
         artifact_path = out_dir / "document.pdf"
-        pdf_bytes = render_pdf(doc.html_content)
+        pdf_bytes = render_pdf(
+            doc.html_content,
+            institution=profile.institution,
+            profile=profile,
+            term_label=profile.current_term_label,
+        )
         artifact_path.write_bytes(pdf_bytes)
     elif fmt == "png":
         artifact_path = out_dir / "document.png"
@@ -216,14 +235,16 @@ def cmd_render(args: argparse.Namespace) -> int:
     val_art = inspect_readback_artifact(artifact_path, profile)
 
     if args.json:
-        _print_json({
-            "generator_version": GENERATOR_VERSION,
-            "format": fmt,
-            "path": str(artifact_path),
-            "valid": val_art.valid,
-            "errors": [e.to_dict() for e in val_art.errors],
-            "warnings": val_art.warnings,
-        })
+        _print_json(
+            {
+                "generator_version": GENERATOR_VERSION,
+                "format": fmt,
+                "path": str(artifact_path),
+                "valid": val_art.valid,
+                "errors": [e.to_dict() for e in val_art.errors],
+                "warnings": val_art.warnings,
+            }
+        )
     else:
         print("=== RENDER COMPLETE ===")
         print(f"Format:     {fmt.upper()}")
@@ -243,7 +264,7 @@ def cmd_render(args: argparse.Namespace) -> int:
 
 def cmd_fixture(args: argparse.Namespace) -> int:
     """Generate a complete local fixture bundle with profile, documents, artifacts & report."""
-    output_dir = Path(args.output) if args.output else None
+    output_dir = Path(args.output) if args.output else Path("output/fixture")
     res = generate_fixture_bundle(
         scenario_name=args.scenario,
         seed=args.seed if args.seed is not None else 12345,
@@ -257,13 +278,17 @@ def cmd_fixture(args: argparse.Namespace) -> int:
         print("=== FIXTURE BUNDLE CREATED ===")
         print(f"Scenario:          {res.scenario}")
         print(f"Seed:              {res.seed}")
-        print(f"Output Directory:  {Path(res.artifacts[0].path).parent if res.artifacts else 'N/A'}")
-        print(f"Profile:           {res.profile.first_name} {res.profile.last_name} ({res.profile.student_id})")
+        print(
+            f"Output Directory:  {Path(res.artifacts[0].path).parent if res.artifacts else 'N/A'}"
+        )
+        print(
+            f"Profile:           {res.profile.first_name} {res.profile.last_name} ({res.profile.student_id})"
+        )
         print(f"Artifacts Count:   {len(res.artifacts)}")
         print(f"Validation Status: {'VALID' if res.validation.valid else 'INVALID'}")
-        if res.warnings:
+        if res.validation.warnings:
             print("Warnings:")
-            for w in res.warnings:
+            for w in res.validation.warnings:
                 print(f"  - {w}")
         if not res.validation.valid:
             print("Errors:")
@@ -293,12 +318,12 @@ def cmd_batch(args: argparse.Namespace) -> int:
         print(f"Valid:           {summary['valid_count']}")
         print(f"Invalid:         {summary['invalid_count']}")
         print(f"Output Dir:      {summary['batch_output_dir']}")
-        if summary['failure_categories']:
+        if summary["failure_categories"]:
             print("Failure Categories:")
-            for cat, cnt in summary['failure_categories'].items():
+            for cat, cnt in summary["failure_categories"].items():
                 print(f"  - {cat}: {cnt}")
 
-    return 0 if summary['invalid_count'] == 0 else 1
+    return 0 if summary["invalid_count"] == 0 else 1
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
@@ -317,29 +342,35 @@ def cmd_validate(args: argparse.Namespace) -> int:
         try:
             prof_data = json.loads(prof_file.read_text(encoding="utf-8"))
             profile = SyntheticProfile.from_dict(prof_data)
-        except Exception as exc:
+        except (json.JSONDecodeError, KeyError, ValueError, OSError) as exc:
             print(f"Error parsing profile JSON: {exc}")
             return 1
 
         val_prof = validate_profile(profile)
         art_validations = []
         for file_path in target.glob("*"):
-            if file_path.name != "profile.json":
+            if file_path.name not in ("profile.json", "report.json"):
                 art_val = inspect_readback_artifact(file_path, profile)
                 art_validations.append((file_path.name, art_val))
 
         all_valid = val_prof.valid and all(v.valid for _, v in art_validations)
 
         if args.json:
-            _print_json({
-                "target": str(target),
-                "valid": all_valid,
-                "profile_validation": val_prof.to_dict(),
-                "artifacts": [
-                    {"file": name, "valid": v.valid, "errors": [e.to_dict() for e in v.errors]}
-                    for name, v in art_validations
-                ]
-            })
+            _print_json(
+                {
+                    "target": str(target),
+                    "valid": all_valid,
+                    "profile_validation": val_prof.to_dict(),
+                    "artifacts": [
+                        {
+                            "file": name,
+                            "valid": v.valid,
+                            "errors": [e.to_dict() for e in v.errors],
+                        }
+                        for name, v in art_validations
+                    ],
+                }
+            )
         else:
             print(f"=== VALIDATION REPORT: {target.name} ===")
             print(f"Profile Status: {'VALID' if val_prof.valid else 'INVALID'}")
@@ -353,11 +384,28 @@ def cmd_validate(args: argparse.Namespace) -> int:
         return 0 if all_valid else 1
 
     else:
-        val = validate_artifact(target, ArtifactType.HTML if target.suffix == ".html" else ArtifactType.PDF if target.suffix == ".pdf" else ArtifactType.PNG if target.suffix == ".png" else ArtifactType.JSON)
+        val = validate_artifact(
+            target,
+            ArtifactType.HTML
+            if target.suffix == ".html"
+            else ArtifactType.PDF
+            if target.suffix == ".pdf"
+            else ArtifactType.PNG
+            if target.suffix == ".png"
+            else ArtifactType.JSON,
+        )
         if args.json:
-            _print_json({"path": str(target), "valid": val.valid, "errors": [e.to_dict() for e in val.errors]})
+            _print_json(
+                {
+                    "path": str(target),
+                    "valid": val.valid,
+                    "errors": [e.to_dict() for e in val.errors],
+                }
+            )
         else:
-            print(f"Validation for file '{target}': {'VALID' if val.valid else 'INVALID'}")
+            print(
+                f"Validation for file '{target}': {'VALID' if val.valid else 'INVALID'}"
+            )
             if not val.valid:
                 for err in val.errors:
                     print(f"  - [{err.code}] {err.field}: {err.message}")
@@ -378,18 +426,20 @@ def cmd_inspect(args: argparse.Namespace) -> int:
     try:
         data = json.loads(target.read_text(encoding="utf-8"))
         profile = SyntheticProfile.from_dict(data)
-    except Exception as exc:
+    except (json.JSONDecodeError, KeyError, ValueError, OSError) as exc:
         print(f"Error parsing profile file '{target}': {exc}")
         return 1
 
     val = validate_profile(profile)
 
     if args.json:
-        _print_json({
-            "file": str(target),
-            "profile": profile.to_dict(),
-            "validation": val.to_dict(),
-        })
+        _print_json(
+            {
+                "file": str(target),
+                "profile": profile.to_dict(),
+                "validation": val.to_dict(),
+            }
+        )
     else:
         print("=== FIXTURE PROFILE INSPECTION ===")
         print(f"Name:            {profile.first_name} {profile.last_name}")
@@ -414,43 +464,95 @@ def cmd_wizard(args: argparse.Namespace) -> int:
     print("      Sanitized Local Identity & Document Generator - Interactive Wizard  ")
     print("==========================================================================")
     print("Select target workflow / module:")
-    print("  [1] One / PSU Student         (Penn State - LionPATH Student Schedule)")
-    print("  [2] K12 Teacher / Employee     (Springfield K-12 Employee Access Center)")
-    print("  [3] Spotify Student            (Penn State - LionPATH Student Verification)")
-    print("  [4] YouTube Student            (Penn State - LionPATH Student Verification)")
-    print("  [5] Bolt.new Teacher / PSU     (Penn State / LionPATH Faculty Access)")
-    print("  [6] Custom / Advanced Scenario")
+    print("  [1] PSU Student                (Penn State - LionPATH Student Schedule)")
+    print(
+        "  [2] UCLA Student               (UCLA - Registrar Enrollment Verification Letter)"
+    )
+    print("  [3] NYU Student                (NYU - Albert Student Center Schedule)")
+    print("  [4] UMich Student              (UMich - Wolverine Access Class Schedule)")
+    print(
+        "  [5] UT Austin Student          (UT Austin - Texas One Stop Enrollment Certification)"
+    )
+    print("  [6] K12 Teacher / Employee     (Springfield K-12 Employee Access Center)")
+    print("  [7] Bolt.new Teacher / PSU     (Penn State / LionPATH Faculty Access)")
+    print("  [8] Custom / Advanced Scenario")
     print()
 
     targets = {
-        "1": {"name": "One / PSU Student", "scenario": "undergraduate", "institution": "psu", "kind": DocumentKind.SCHEDULE},
-        "2": {"name": "K12 Teacher", "scenario": "teacher", "institution": "springfield_k12", "kind": DocumentKind.FACULTY_SUMMARY},
-        "3": {"name": "Spotify Student", "scenario": "undergraduate", "institution": "psu", "kind": DocumentKind.SCHEDULE},
-        "4": {"name": "YouTube Student", "scenario": "undergraduate", "institution": "psu", "kind": DocumentKind.SCHEDULE},
-        "5": {"name": "Bolt.new Teacher", "scenario": "teacher", "institution": "psu", "kind": DocumentKind.FACULTY_SUMMARY},
+        "1": {
+            "name": "PSU Student",
+            "scenario": "undergraduate",
+            "institution": "psu",
+            "kind": DocumentKind.SCHEDULE,
+        },
+        "2": {
+            "name": "UCLA Student",
+            "scenario": "undergraduate",
+            "institution": "ucla",
+            "kind": DocumentKind.SCHEDULE,
+        },
+        "3": {
+            "name": "NYU Student",
+            "scenario": "undergraduate",
+            "institution": "nyu",
+            "kind": DocumentKind.SCHEDULE,
+        },
+        "4": {
+            "name": "UMich Student",
+            "scenario": "undergraduate",
+            "institution": "umich",
+            "kind": DocumentKind.SCHEDULE,
+        },
+        "5": {
+            "name": "UT Austin Student",
+            "scenario": "undergraduate",
+            "institution": "ut_austin",
+            "kind": DocumentKind.SCHEDULE,
+        },
+        "6": {
+            "name": "K12 Teacher",
+            "scenario": "teacher",
+            "institution": "springfield_k12",
+            "kind": DocumentKind.FACULTY_SUMMARY,
+        },
+        "7": {
+            "name": "Bolt.new Teacher",
+            "scenario": "teacher",
+            "institution": "psu",
+            "kind": DocumentKind.FACULTY_SUMMARY,
+        },
     }
 
     choice = getattr(args, "target", None)
     if not choice:
         try:
-            choice = input("Enter choice (1-6) [default: 1]: ").strip() or "1"
+            choice = input("Enter choice (1-8) [default: 1]: ").strip() or "1"
         except (KeyboardInterrupt, EOFError):
             print("\nAborted.")
             return 1
 
-    if choice == "6":
+    if choice == "8":
         print("\nAvailable scenarios:", ", ".join(SCENARIOS.keys()))
-        scen_input = input("Enter scenario [undergraduate]: ").strip() or "undergraduate"
+        scen_input = (
+            input("Enter scenario [undergraduate]: ").strip() or "undergraduate"
+        )
         print("Available institutions:", ", ".join(INSTITUTIONS.keys()))
         inst_input = input("Enter institution [psu]: ").strip() or "psu"
-        target_info = {"name": f"Custom ({scen_input}/{inst_input})", "scenario": scen_input, "institution": inst_input, "kind": None}
+        target_info = {
+            "name": f"Custom ({scen_input}/{inst_input})",
+            "scenario": scen_input,
+            "institution": inst_input,
+            "kind": None,
+        }
     else:
         target_info = targets.get(choice, targets["1"])
 
     seed_val = getattr(args, "seed", None)
     if seed_val is None and not getattr(args, "non_interactive", False):
         try:
-            seed_str = input("Enter seed integer (Press Enter for random seed): ").strip()
+            seed_str = input(
+                "Enter seed integer (Press Enter for random seed): "
+            ).strip()
             seed_val = int(seed_str) if seed_str else None
         except ValueError:
             print("Invalid seed integer, using random seed.")
@@ -467,18 +569,28 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         override_institution_id=target_info["institution"],
     )
 
-    print("\n--------------------------------------------------------------------------")
-    print(f"  Status:             {'SUCCESS (VALID)' if res.validation.valid else 'INVALID'}")
+    print(
+        "\n--------------------------------------------------------------------------"
+    )
+    print(
+        f"  Status:             {'SUCCESS (VALID)' if res.validation.valid else 'INVALID'}"
+    )
     print(f"  Target Module:      {target_info['name']}")
     print(f"  Generated Name:     {res.profile.first_name} {res.profile.last_name}")
     print(f"  ID:                 {res.profile.student_id}")
     print(f"  Email:              {res.profile.email}")
-    print(f"  Institution:        {res.profile.institution_name} ({res.profile.institution_id})")
+    print(
+        f"  Institution:        {res.profile.institution_name} ({res.profile.institution_id})"
+    )
     print(f"  Output Directory:   {target_dir.resolve()}")
     print("  Artifacts Created:")
     for art in res.artifacts:
-        print(f"    - {Path(art.path).name} ({art.byte_size} bytes, SHA256: {art.sha256[:10]}...)")
-    print("--------------------------------------------------------------------------\n")
+        print(
+            f"    - {Path(art.path).name} ({art.byte_size} bytes, SHA256: {art.sha256[:10]}...)"
+        )
+    print(
+        "--------------------------------------------------------------------------\n"
+    )
 
     return 0 if res.validation.valid else 1
 
@@ -493,70 +605,170 @@ def main() -> int:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     # Top-level arguments for wizard when run directly
-    parser.add_argument("--target", choices=["1", "2", "3", "4", "5", "6"], help="Pre-select target workflow for wizard")
-    parser.add_argument("--seed", type=int, help="Deterministic seed integer for wizard")
+    parser.add_argument(
+        "--target",
+        choices=["1", "2", "3", "4", "5", "6", "7", "8"],
+        help="Pre-select target workflow for wizard",
+    )
+    parser.add_argument(
+        "--seed", type=int, help="Deterministic seed integer for wizard"
+    )
 
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
     # List command
-    p_list = subparsers.add_parser("list", help="List available scenarios and institutions")
+    p_list = subparsers.add_parser(
+        "list", help="List available scenarios and institutions"
+    )
     p_list.add_argument("--json", action="store_true", help="Format output as JSON")
 
     # Identity command
-    p_id = subparsers.add_parser("identity", help="Generate a canonical synthetic identity profile")
-    p_id.add_argument("--scenario", default="undergraduate", choices=list(SCENARIOS.keys()), help="Scenario name")
-    p_id.add_argument("--institution", choices=list(INSTITUTIONS.keys()), help="Institution override (e.g. psu, springfield_k12)")
-    p_id.add_argument("--seed", type=int, default=None, help="Deterministic seed integer")
+    p_id = subparsers.add_parser(
+        "identity", help="Generate a canonical synthetic identity profile"
+    )
+    p_id.add_argument(
+        "--scenario",
+        default="undergraduate",
+        choices=list(SCENARIOS.keys()),
+        help="Scenario name",
+    )
+    p_id.add_argument(
+        "--institution",
+        choices=list(INSTITUTIONS.keys()),
+        help="Institution override (e.g. psu, springfield_k12)",
+    )
+    p_id.add_argument(
+        "--seed", type=int, default=None, help="Deterministic seed integer"
+    )
     p_id.add_argument("--json", action="store_true", help="Format output as JSON")
 
     # Document command
-    p_doc = subparsers.add_parser("document", help="Project profile into a logical document model")
-    p_doc.add_argument("--scenario", default="undergraduate", choices=list(SCENARIOS.keys()), help="Scenario name")
-    p_doc.add_argument("--institution", choices=list(INSTITUTIONS.keys()), help="Institution override (e.g. psu, springfield_k12)")
-    p_doc.add_argument("--kind", choices=[dk.value for dk in DocumentKind], help="Document kind override")
-    p_doc.add_argument("--seed", type=int, default=None, help="Deterministic seed integer")
+    p_doc = subparsers.add_parser(
+        "document", help="Project profile into a logical document model"
+    )
+    p_doc.add_argument(
+        "--scenario",
+        default="undergraduate",
+        choices=list(SCENARIOS.keys()),
+        help="Scenario name",
+    )
+    p_doc.add_argument(
+        "--institution",
+        choices=list(INSTITUTIONS.keys()),
+        help="Institution override (e.g. psu, springfield_k12)",
+    )
+    p_doc.add_argument(
+        "--kind",
+        choices=[dk.value for dk in DocumentKind],
+        help="Document kind override",
+    )
+    p_doc.add_argument(
+        "--seed", type=int, default=None, help="Deterministic seed integer"
+    )
     p_doc.add_argument("--json", action="store_true", help="Format output as JSON")
 
     # Render command
-    p_rnd = subparsers.add_parser("render", help="Render local HTML, PDF, or PNG document artifact")
-    p_rnd.add_argument("--scenario", default="undergraduate", choices=list(SCENARIOS.keys()), help="Scenario name")
-    p_rnd.add_argument("--institution", choices=list(INSTITUTIONS.keys()), help="Institution override (e.g. psu, springfield_k12)")
-    p_rnd.add_argument("--kind", choices=[dk.value for dk in DocumentKind], help="Document kind override")
-    p_rnd.add_argument("--format", default="html", choices=["html", "pdf", "png"], help="Output artifact format")
-    p_rnd.add_argument("--seed", type=int, default=None, help="Deterministic seed integer")
+    p_rnd = subparsers.add_parser(
+        "render", help="Render local HTML, PDF, or PNG document artifact"
+    )
+    p_rnd.add_argument(
+        "--scenario",
+        default="undergraduate",
+        choices=list(SCENARIOS.keys()),
+        help="Scenario name",
+    )
+    p_rnd.add_argument(
+        "--institution",
+        choices=list(INSTITUTIONS.keys()),
+        help="Institution override (e.g. psu, springfield_k12)",
+    )
+    p_rnd.add_argument(
+        "--kind",
+        choices=[dk.value for dk in DocumentKind],
+        help="Document kind override",
+    )
+    p_rnd.add_argument(
+        "--format",
+        default="html",
+        choices=["html", "pdf", "png"],
+        help="Output artifact format",
+    )
+    p_rnd.add_argument(
+        "--seed", type=int, default=None, help="Deterministic seed integer"
+    )
     p_rnd.add_argument("--output", help="Custom output directory")
     p_rnd.add_argument("--json", action="store_true", help="Format output as JSON")
 
     # Fixture command
-    p_fix = subparsers.add_parser("fixture", help="Generate complete fixture bundle (JSON, HTML, PDF, PNG, Report)")
-    p_fix.add_argument("--scenario", default="undergraduate", choices=list(SCENARIOS.keys()), help="Scenario name")
-    p_fix.add_argument("--institution", choices=list(INSTITUTIONS.keys()), help="Institution override (e.g. psu, springfield_k12)")
-    p_fix.add_argument("--seed", type=int, default=12345, help="Deterministic seed integer")
+    p_fix = subparsers.add_parser(
+        "fixture",
+        help="Generate complete fixture bundle (JSON, HTML, PDF, PNG, Report)",
+    )
+    p_fix.add_argument(
+        "--scenario",
+        default="undergraduate",
+        choices=list(SCENARIOS.keys()),
+        help="Scenario name",
+    )
+    p_fix.add_argument(
+        "--institution",
+        choices=list(INSTITUTIONS.keys()),
+        help="Institution override (e.g. psu, springfield_k12)",
+    )
+    p_fix.add_argument(
+        "--seed", type=int, default=12345, help="Deterministic seed integer"
+    )
     p_fix.add_argument("--output", help="Custom target output directory")
     p_fix.add_argument("--json", action="store_true", help="Format output as JSON")
 
     # Batch command
-    p_btc = subparsers.add_parser("batch", help="Run batch fixture generation with summary tracking")
-    p_btc.add_argument("--scenario", default="undergraduate", choices=list(SCENARIOS.keys()), help="Scenario name")
-    p_btc.add_argument("--institution", choices=list(INSTITUTIONS.keys()), help="Institution override (e.g. psu, springfield_k12)")
-    p_btc.add_argument("--count", type=int, default=10, help="Number of items to generate")
+    p_btc = subparsers.add_parser(
+        "batch", help="Run batch fixture generation with summary tracking"
+    )
+    p_btc.add_argument(
+        "--scenario",
+        default="undergraduate",
+        choices=list(SCENARIOS.keys()),
+        help="Scenario name",
+    )
+    p_btc.add_argument(
+        "--institution",
+        choices=list(INSTITUTIONS.keys()),
+        help="Institution override (e.g. psu, springfield_k12)",
+    )
+    p_btc.add_argument(
+        "--count", type=int, default=10, help="Number of items to generate"
+    )
     p_btc.add_argument("--seed", type=int, default=1000, help="Base seed integer")
     p_btc.add_argument("--output", help="Custom target output directory")
     p_btc.add_argument("--json", action="store_true", help="Format output as JSON")
 
     # Validate command
-    p_val = subparsers.add_parser("validate", help="Validate a fixture directory or artifact on disk")
-    p_val.add_argument("target", help="Directory path or artifact file path to validate")
+    p_val = subparsers.add_parser(
+        "validate", help="Validate a fixture directory or artifact on disk"
+    )
+    p_val.add_argument(
+        "target", help="Directory path or artifact file path to validate"
+    )
     p_val.add_argument("--json", action="store_true", help="Format output as JSON")
 
     # Inspect command
-    p_ins = subparsers.add_parser("inspect", help="Inspect a profile JSON or fixture directory")
+    p_ins = subparsers.add_parser(
+        "inspect", help="Inspect a profile JSON or fixture directory"
+    )
     p_ins.add_argument("target", help="Profile JSON file or fixture directory")
     p_ins.add_argument("--json", action="store_true", help="Format output as JSON")
 
     # Wizard command (default)
-    p_wiz = subparsers.add_parser("wizard", help="Interactive menu to select a target workflow/module and generate everything")
-    p_wiz.add_argument("--target", choices=["1", "2", "3", "4", "5", "6"], help="Pre-select target workflow")
+    p_wiz = subparsers.add_parser(
+        "wizard",
+        help="Interactive menu to select a target workflow/module and generate everything",
+    )
+    p_wiz.add_argument(
+        "--target",
+        choices=["1", "2", "3", "4", "5", "6", "7", "8"],
+        help="Pre-select target workflow",
+    )
     p_wiz.add_argument("--seed", type=int, help="Deterministic seed integer")
 
     args = parser.parse_args()
