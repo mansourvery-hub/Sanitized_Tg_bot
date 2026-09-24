@@ -677,8 +677,8 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         print()
 
         # Institution prompt with dynamic default
+        default_inst = recommended.id
         if not preset_institution:
-            default_inst = recommended.id
             avail_hint = ", ".join(list(INSTITUTIONS.keys())[:6]) + ", ..."
             prompt = f"Enter institution [{default_inst}] (press Enter for recommended {default_inst} — {rec_label} est., or choose from: {avail_hint}): "
             try:
@@ -689,18 +689,46 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         else:
             inst_input = preset_institution
 
-        # Scenario prompt with service-appropriate default
+        # Scenario prompt with service-appropriate default (with alias mapping)
         default_scen = svc_info.get("default_scenario", "undergraduate")
+        scenario_aliases = {
+            "student": "undergraduate",
+            "undergrad": "undergraduate",
+            "undergraduated": "undergraduate",
+            "grad": "graduate",
+            "teacher": "teacher",
+            "k12": "teacher",
+        }
         if not preset_scenario:
             try:
-                scen_input = (
+                raw = (
                     input(f"Enter scenario [{default_scen}]: ").strip() or default_scen
                 )
+                norm = raw.strip().lower().replace("-", "_").replace(" ", "_")
+                scen_input = scenario_aliases.get(norm, norm)
+                if scen_input not in SCENARIOS:
+                    print(
+                        f"[!] Unknown scenario '{raw}'. Available: {', '.join(SCENARIOS.keys())} — using '{default_scen}'."
+                    )
+                    scen_input = default_scen
             except (KeyboardInterrupt, EOFError):
                 print("\nAborted.")
                 return 1
         else:
-            scen_input = preset_scenario
+            norm = preset_scenario.strip().lower().replace("-", "_").replace(" ", "_")
+            scen_input = scenario_aliases.get(norm, norm)
+            if scen_input not in SCENARIOS:
+                print(
+                    f"[!] Unknown scenario '{preset_scenario}'. Available: {', '.join(SCENARIOS.keys())} — using '{default_scen}'."
+                )
+                scen_input = default_scen
+
+        # Institution validation (fallback to recommended if unknown)
+        if inst_input not in INSTITUTIONS:
+            print(
+                f"[!] Unknown institution '{inst_input}'. Available: {', '.join(sorted(INSTITUTIONS.keys()))} — using '{default_inst}'."
+            )
+            inst_input = default_inst
 
         target_info = {
             "name": f"{svc_info.get('name', service_id)} → {inst_input} ({scen_input})",
@@ -921,8 +949,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--scenario",
-        choices=list(SCENARIOS.keys()),
-        help="Scenario override for wizard",
+        help="Scenario override for wizard (undergraduate, graduate, teacher, etc.; aliases like student→undergraduate)",
     )
     parser.add_argument(
         "--wizard-mode",
@@ -1144,8 +1171,7 @@ def main() -> int:
     )
     p_wiz.add_argument(
         "--scenario",
-        choices=list(SCENARIOS.keys()),
-        help="Scenario override for wizard",
+        help="Scenario override for wizard (aliases: student→undergraduate)",
     )
     p_wiz.add_argument(
         "--wizard-mode",
