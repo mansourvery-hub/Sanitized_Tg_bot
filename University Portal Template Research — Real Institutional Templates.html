@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>University Portal Template Research — Real Institutional Templates</title>
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#fff;--text:rgba(0,0,0,.85);--muted:rgba(0,0,0,.52);
+  --fill:rgba(0,0,0,.04);--fill-s:rgba(0,0,0,.07);
+  --rule:rgba(0,0,0,.10);--rule-s:rgba(0,0,0,.18);
+  --link:hsl(210 100% 40%);
+  --ok-bg:#f0fdf4;--ok-border:#22c55e;
+  --warn-bg:#fff8e1;--warn-border:#f59e0b;
+  --crit-bg:#fef2f2;--crit-border:#ef4444;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d0d0d;--text:rgba(255,255,255,.87);--muted:rgba(255,255,255,.52);
+    --fill:rgba(255,255,255,.06);--fill-s:rgba(255,255,255,.10);
+    --rule:rgba(255,255,255,.12);--rule-s:rgba(255,255,255,.20);
+    --link:hsl(210 100% 68%);
+    --ok-bg:rgba(34,197,94,.08);--ok-border:#22c55e;
+    --warn-bg:rgba(245,158,11,.10);--warn-border:#f59e0b;
+    --crit-bg:rgba(239,68,68,.10);--crit-border:#ef4444;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--text);
+  max-width:900px;margin:0 auto;
+  padding:40px 28px env(safe-area-inset-bottom,32px);
+  font:14px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  overflow-wrap:break-word}
+h1{font-size:1.6em;font-weight:800;margin-bottom:4px;line-height:1.2}
+h2{font-size:1.18em;font-weight:700;margin:36px 0 10px;padding-bottom:6px;
+   border-bottom:3px solid var(--uni-color, #1a1a1a)}
+h3{font-size:1.02em;font-weight:700;margin:20px 0 6px}
+h4{font-size:.93em;font-weight:700;margin:14px 0 5px;color:var(--muted)}
+p{margin:7px 0}a{color:var(--link)}
+strong{font-weight:700}
+hr{border:0;border-top:1px solid var(--rule-s);margin:32px 0}
+:not(pre)>code{background:var(--fill-s);padding:1px 5px;border-radius:4px;
+  font:.88em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}
+pre{background:var(--fill);padding:13px 16px;border-radius:6px;
+  overflow-x:auto;margin:9px 0;
+  font:12px/1.55 'SF Mono',ui-monospace,Menlo,Consolas,monospace;
+  border-left:3px solid var(--uni-color,#555)}
+pre code{background:none;padding:0;font:inherit}
+ul,ol{padding-left:22px;display:flex;flex-direction:column;gap:4px;margin:5px 0}
+ul{list-style:disc}ol{list-style:decimal}
+table{width:100%;border-collapse:separate;border-spacing:2px;margin:9px 0;font:inherit}
+th{background:var(--fill-s);font-weight:700;padding:7px 10px;
+   border-radius:3px;text-align:left;vertical-align:top}
+td{background:var(--fill);padding:6px 10px;border-radius:3px;vertical-align:top}
+.doc-meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 28px;
+  font-size:.8em;color:var(--muted)}
+.doc-meta span{background:var(--fill-s);padding:3px 9px;border-radius:20px}
+.toc{background:var(--fill);border-radius:8px;padding:14px 18px;margin:16px 0 28px}
+.toc h3{margin:0 0 9px;font-size:.88em;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--muted)}
+.toc ol{gap:3px}.toc a{color:var(--link)}
+.callout{border-radius:6px;padding:11px 15px;margin:12px 0;border-left:4px solid}
+.callout.ok{background:var(--ok-bg);border-color:var(--ok-border)}
+.callout.warn{background:var(--warn-bg);border-color:var(--warn-border)}
+.callout.crit{background:var(--crit-bg);border-color:var(--crit-border)}
+.callout strong{display:block;margin-bottom:4px;font-size:.88em;
+  text-transform:uppercase;letter-spacing:.05em;opacity:.7}
+
+/* ── University section headers ── */
+.uni-header{display:flex;align-items:center;gap:14px;
+  margin:44px 0 6px;padding:14px 18px;border-radius:8px;
+  background:var(--uni-color,#1a1a1a)}
+.uni-header h2{color:#fff;margin:0;border:0;padding:0;font-size:1.22em}
+.uni-abbr{font-size:2em;font-weight:900;color:rgba(255,255,255,.25);
+  line-height:1;flex-shrink:0}
+.uni-sub{font-size:.82em;color:rgba(255,255,255,.7);margin-top:2px}
+
+/* ── Field table ── */
+.field-table td:first-child{font-weight:700;white-space:nowrap;
+  width:200px;color:var(--muted)}
+.field-table td:last-child{font-family:'SF Mono',ui-monospace,monospace;font-size:.88em}
+
+/* ── Template mockup frames ── */
+.mock{border:1px solid var(--rule-s);border-radius:8px;overflow:hidden;
+  margin:14px 0;font-size:12.5px;line-height:1.5}
+.mock-topbar{padding:10px 16px;display:flex;justify-content:space-between;
+  align-items:center;color:#fff;font-weight:700;font-size:13px}
+.mock-topbar .session{font-size:11px;font-weight:400;opacity:.85}
+.mock-breadcrumb{padding:6px 16px;font-size:11px;
+  border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);
+  background:var(--fill)}
+.mock-content{padding:14px 16px;background:var(--bg)}
+.mock-title{font-size:16px;font-weight:700;margin-bottom:10px;
+  padding-bottom:6px;border-bottom:2px solid currentColor}
+.mock-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:8px}
+.mock-table th{padding:6px 8px;text-align:left;font-weight:700;
+  color:#fff;white-space:nowrap}
+.mock-table td{padding:5px 8px;border-bottom:1px solid var(--rule);
+  vertical-align:top}
+.mock-table tr:nth-child(even) td{background:var(--fill)}
+.mock-footer{padding:8px 16px;font-size:10px;color:var(--muted);
+  border-top:1px solid var(--rule);background:var(--fill)}
+.badge{display:inline-block;padding:1px 6px;border-radius:3px;
+  font-size:10px;font-weight:700;text-transform:uppercase}
+.badge-enrolled{background:#d1e7dd;color:#0a3622}
+.badge-wl{background:#f8d7da;color:#58151c}
+
+/* ── Generation code block accent matches uni ── */
+.gen-block{border-left-color:var(--uni-color,#555) !important}
+
+@media print{body{max-width:100%;padding:20px}
+  .uni-header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  pre{white-space:pre-wrap;word-break:break-all}}
+</style>
+</head>
+<body>
+
+<h1>University Portal Template Research</h1>
+<h1 style="font-size:1em;font-weight:400;color:var(--muted);margin-top:2px">Real Institutional Templates for generation.py</h1>
+<div class="doc-meta">
+  <span>Research Date: Sep 2026</span>
+  <span>Sources: Official registrar pages, registrar PDFs, student documentation portals</span>
+  <span>Institutions: 5 (PSU · UCLA · NYU · UMich · UT Austin)</span>
+</div>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#overview">Template Philosophy — What Makes a Real Portal Document</a></li>
+    <li><a href="#psu">Penn State — LionPATH (updated ground truth)</a></li>
+    <li><a href="#ucla">UCLA — MyUCLA Proof of Enrollment</a></li>
+    <li><a href="#nyu">NYU — Albert Student Center</a></li>
+    <li><a href="#umich">University of Michigan — Wolverine Access / MPathways</a></li>
+    <li><a href="#utaustin">UT Austin — Texas One Stop / UT Direct</a></li>
+    <li><a href="#generation">generation.py Integration — Institution Catalog Updates</a></li>
+    <li><a href="#coursepools">Institution-Accurate Course Pools</a></li>
+  </ol>
+</div>
+
+<!-- ════════════════════ OVERVIEW ════════════════════ -->
+<div id="overview">
+<h2 style="--uni-color:#1a1a1a">Template Philosophy — What Makes a Real Portal Document</h2>
+
+<p>Every university portal document falls into one of two distinct archetypes, and the generation framework must choose the right one per institution:</p>
+
+<table>
+<thead><tr><th>Archetype</th><th>What it looks like</th><th>What it contains</th><th>Universities</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>Portal Screenshot</strong><br>(live-system HTML)</td>
+  <td>Browser chrome, nav tabs, data tables, status badges, logged-in header with student name and session info. Looks like a web page.</td>
+  <td>Course list with CRNs, meeting times, locations, instructor, status badges. Term selector. GPA strip. Advisor block.</td>
+  <td>PSU (LionPATH), NYU (Albert), UMich (Wolverine Access / MPathways)</td>
+</tr>
+<tr>
+  <td><strong>Official Letter</strong><br>(registrar-generated PDF)</td>
+  <td>University letterhead, registrar seal/watermark, formal paragraph structure, no browser chrome. Looks like an official document, not a web page.</td>
+  <td>Name, DOB, admission date, terms attended, enrollment status per term, degree expected, major, registrar signature line.</td>
+  <td>UCLA (MyUCLA proof of enrollment letter), UT Austin (Texas One Stop enrollment certification)</td>
+</tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+  <strong>Critical architectural note</strong>
+  The current framework only generates portal-screenshot style documents. UCLA and UT Austin generate <em>letter-format</em> documents — no course table, no CRNs, no nav breadcrumb. Generating a UCLA-style document as a portal screenshot is an immediate authenticity failure. The generation pipeline needs a <code>document_archetype</code> field per institution: <code>"portal_screenshot"</code> or <code>"registrar_letter"</code>.
+</div>
+
+<p>The other consistent signals across all five institutions' real documents:</p>
+<ul>
+  <li><strong>Session timestamp format varies by institution.</strong> PSU uses <code>MM/DD/YYYY, HH:MM:SS AM/PM</code> in the top-right header. UCLA letters use <code>Month DD, YYYY</code> as the letter date. NYU Albert shows <code>MM/DD/YYYY</code> inline. These are not interchangeable.</li>
+  <li><strong>Student ID label and format are institution-specific and verified.</strong> PSU: "Student ID" — 9-digit numeric. UCLA: "Student ID" or "UID" — 9-digit numeric starting with <code>9</code> (e.g. <code>905xxxxxx</code>). NYU: "N-Number" — format <code>Nxxxxxxxx</code> (N + 8 digits). UMich: "UMID" — 8-digit numeric on the Mcard. UT Austin: "UT EID" — 6–8 character alphanumeric (e.g. <code>abc1234</code>).</li>
+  <li><strong>Term naming follows quarter vs. semester.</strong> UCLA uses quarters (Fall, Winter, Spring, Summer) — not semesters. PSU, NYU, UMich, UT Austin use semesters (Spring, Summer, Fall). A UCLA document saying "Fall Semester" is immediately wrong.</li>
+  <li><strong>PDF producer string is institution-specific.</strong> PSU runs PeopleTools. UCLA and NYU both use PeopleSoft. UMich runs MPathways (also PeopleSoft underneath). UT Austin uses a custom stack ("UT Direct") with Adobe as the rendering layer for official certs.</li>
+</ul>
+</div>
+
+<!-- ════════════════════ PSU ════════════════════ -->
+<div id="psu">
+<div class="uni-header" style="--uni-color:#1E407C">
+  <span class="uni-abbr">PSU</span>
+  <div>
+    <h2>Penn State University — LionPATH</h2>
+    <div class="uni-sub">portal.lionpath.psu.edu &nbsp;·&nbsp; Oracle PeopleTools 8.59 &nbsp;·&nbsp; Semester system</div>
+  </div>
+</div>
+
+<h3>Ground Truth (verified from registrar.psu.edu, Fall 2025/Spring 2026)</h3>
+<table class="field-table">
+<thead><tr><th>Field</th><th>Real value / format</th></tr></thead>
+<tbody>
+<tr><td>Portal name</td><td>LionPATH</td></tr>
+<tr><td>Student ID label</td><td>"Student ID" — 9-digit numeric, no prefix (e.g. <code>912345678</code>)</td></tr>
+<tr><td>Email domain</td><td><code>@psu.edu</code></td></tr>
+<tr><td>Term naming</td><td>Fall YYYY / Spring YYYY / Summer YYYY</td></tr>
+<tr><td>Current terms</td><td>Fall 2025: Aug 26 – Dec 19, 2025 &nbsp;|&nbsp; Spring 2026: Jan 13 – May 9, 2026</td></tr>
+<tr><td>Document archetype</td><td>Portal screenshot (web UI printout)</td></tr>
+<tr><td>PDF producer</td><td><code>Oracle PeopleTools 8.59.15</code></td></tr>
+<tr><td>PDF creator</td><td><code>PeopleSoft Enterprise</code></td></tr>
+<tr><td>Registrar title</td><td>Office of the University Registrar</td></tr>
+<tr><td>Campus label</td><td>"University Park" (main), "Abington", "Berks", etc.</td></tr>
+<tr><td>CRN label</td><td>"Class Nbr" — 5-digit numeric, range 10000–89999</td></tr>
+<tr><td>Course ID format</td><td>SUBJ NNN (e.g. <code>CMPSC 465</code>)</td></tr>
+<tr><td>Grading basis options</td><td>LG (Letter Grade), SU (Satisfactory/Unsatisfactory), AUD (Audit)</td></tr>
+<tr><td>Instruction modes</td><td>In Person, Online Sync, Hybrid, World Campus Online</td></tr>
+<tr><td>Academic standing labels</td><td>Good Standing, Dean's List, Academic Probation</td></tr>
+<tr><td>Top bar color</td><td><code>#1E407C</code> (PSU Navy)</td></tr>
+<tr><td>Accent color</td><td><code>#96BEE6</code> (PSU Light Blue) / <code>#BF9B2F</code> (PSU Gold)</td></tr>
+</tbody>
+</table>
+
+<h3>Real LionPATH Portal Screenshot — Annotated Mockup</h3>
+<div class="mock" style="--uni-color:#1E407C">
+  <div class="mock-topbar" style="background:#1E407C">
+    <span>Penn State University &mdash; LionPATH</span>
+    <span class="session">Welcome, <strong>[Student Name]</strong> &ensp;|&ensp; 10/15/2025, 2:43:07 PM</span>
+  </div>
+  <div class="mock-breadcrumb">Home &rsaquo; Self Service &rsaquo; Class Schedule</div>
+  <div class="mock-content">
+    <div class="mock-title" style="color:#1E407C;border-color:#96BEE6">My Class Schedule</div>
+    <div style="background:#f0f3f7;padding:7px 10px;font-size:11.5px;margin-bottom:10px">
+      Viewing: <strong>Fall 2025</strong> &ensp;&bull;&ensp; Campus: <strong>University Park</strong>
+      &ensp;&bull;&ensp; Units Enrolled: <strong>15.00</strong>
+      &ensp;&bull;&ensp; GPA: <strong>3.47</strong> &ensp;&bull;&ensp; Standing: <strong>Good Standing</strong>
+    </div>
+    <table class="mock-table">
+      <thead><tr style="background:#1E407C">
+        <th>Class Nbr</th><th>Course</th><th>Title</th>
+        <th>Days &amp; Times</th><th>Location</th><th>Instructor</th>
+        <th>Units</th><th>Basis</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>24917</td><td>CMPSC 465 001</td><td>Data Structures &amp; Algorithms</td>
+            <td>MoWeFr 10:10AM–11:00AM</td><td>Willard 203</td>
+            <td>Vasquez, R.</td><td>3.00</td><td>LG</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+        <tr><td>31482</td><td>MATH 230 002</td><td>Calculus &amp; Vector Analysis</td>
+            <td>TuTh 1:35PM–2:50PM</td><td>Thomas 101</td>
+            <td>Kim, J.</td><td>4.00</td><td>LG</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+        <tr><td>18736</td><td>ENGL 202C 003</td><td>Technical Writing</td>
+            <td>MoWe 9:05AM–10:20AM</td><td>Burrowes 119</td>
+            <td>O'Brien, T.</td><td>3.00</td><td>LG</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+      </tbody>
+      <tfoot><tr style="background:#f0f3f7;font-weight:700">
+        <td colspan="6" style="text-align:right;padding:6px 8px">Total Units:</td>
+        <td>15.00</td><td colspan="2"></td>
+      </tr></tfoot>
+    </table>
+    <div style="margin-top:10px;font-size:11px;color:#6c757d;padding-top:8px;border-top:1px solid #dee2e6">
+      Academic Advisor: Dr. Sarah Okonkwo &ensp;&bull;&ensp; okonkwo@psu.edu
+    </div>
+  </div>
+  <div class="mock-footer">
+    Office of the University Registrar &bull; This document is generated for authorized use only &bull;
+    Session: A3F9B2C1 &bull; Seal: 1e407c3b...
+  </div>
+</div>
+
+<h3>Key Generation Notes</h3>
+<ul>
+  <li>Document type: portal screenshot — include nav breadcrumb, logged-in header, data tables with CRNs.</li>
+  <li>The "Class Nbr" column header is the real label used in LionPATH, not "CRN."</li>
+  <li>Section format: <code>SUBJ NNN SSS</code> where SSS is 3-digit section (001, 002…).</li>
+  <li>Top bar includes session timestamp in format <code>MM/DD/YYYY, H:MM:SS AM/PM</code> — this is verified from real LionPATH UI.</li>
+  <li>Grading basis uses the two-letter code ("LG" not "Letter Grade") — visible in real schedules.</li>
+  <li>Real Fall 2025 dates confirmed: Aug 26 – Dec 19, 2025.</li>
+</ul>
+</div>
+
+<!-- ════════════════════ UCLA ════════════════════ -->
+<div id="ucla">
+<div class="uni-header" style="--uni-color:#2D68C4">
+  <span class="uni-abbr">UCLA</span>
+  <div>
+    <h2>UCLA — MyUCLA Proof of Enrollment</h2>
+    <div class="uni-sub">my.ucla.edu &nbsp;·&nbsp; PeopleSoft &nbsp;·&nbsp; Quarter system (Fall / Winter / Spring / Summer)</div>
+  </div>
+</div>
+
+<h3>Ground Truth (verified from registrar.ucla.edu, 2024–25 term calendar)</h3>
+<table class="field-table">
+<thead><tr><th>Field</th><th>Real value / format</th></tr></thead>
+<tbody>
+<tr><td>Portal name</td><td>MyUCLA</td></tr>
+<tr><td>Student ID label</td><td>"Student ID" or "UID" — 9-digit numeric starting with <code>9</code> (e.g. <code>905123456</code>)</td></tr>
+<tr><td>Email domain</td><td><code>@g.ucla.edu</code> (student) or <code>@ucla.edu</code> (official)</td></tr>
+<tr><td>Term naming</td><td><strong>Quarter system:</strong> Fall YYYY / Winter YYYY / Spring YYYY / Summer YYYY</td></tr>
+<tr><td>Current terms</td><td>Fall 2025: Sep 22 – Dec 12, 2025 &nbsp;|&nbsp; Winter 2026: Jan 5 – Mar 20, 2026</td></tr>
+<tr><td>Document archetype</td><td><strong>Registrar letter</strong> — NOT a portal screenshot. No course table. No CRNs. No nav.</td></tr>
+<tr><td>PDF producer</td><td><code>PeopleSoft 9.2</code></td></tr>
+<tr><td>Registrar title</td><td>Office of the Registrar, UCLA</td></tr>
+<tr><td>Letter fields (confirmed)</td><td>Month/day of birth, date(s) of admission, terms &amp; dates of attendance, enrollment status per term, class level &amp; career, college/school attended, major(s), degree-expected term, registrar seal &amp; signature</td></tr>
+<tr><td>Fields NOT present</td><td>Course list, CRNs, meeting times, GPA (in standard letter — Advanced Verification only)</td></tr>
+<tr><td>Enrollment status labels</td><td>"Full Time" / "Part Time" / "Less Than Half Time"</td></tr>
+<tr><td>Class level labels</td><td>"Freshman", "Sophomore", "Junior", "Senior", "Graduate"</td></tr>
+<tr><td>Career labels</td><td>"Undergraduate" / "Graduate"</td></tr>
+<tr><td>School/college labels</td><td>"College of Letters and Science", "Henry Samueli School of Engineering", "School of the Arts and Architecture", "UCLA Anderson School of Management", etc.</td></tr>
+<tr><td>Brand color (primary)</td><td><code>#2D68C4</code> (UCLA Blue) with gold accent <code>#FFD100</code></td></tr>
+<tr><td>Registrar address</td><td>1113 Murphy Hall, Los Angeles, CA 90095</td></tr>
+</tbody>
+</table>
+
+<h3>Real MyUCLA Proof of Enrollment Letter — Annotated Mockup</h3>
+<div class="mock" style="font-size:12.5px">
+  <div class="mock-topbar" style="background:#2D68C4">
+    <span style="font-weight:900;letter-spacing:.03em">UCLA</span>
+    <span class="session">University of California, Los Angeles</span>
+  </div>
+  <div class="mock-content" style="padding:20px 24px">
+    <div style="text-align:center;border-bottom:1px solid #dee2e6;padding-bottom:12px;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:700;color:#2D68C4">OFFICE OF THE REGISTRAR</div>
+      <div style="font-size:11.5px;color:#555;margin-top:2px">1113 Murphy Hall &bull; Los Angeles, CA 90095</div>
+      <div style="font-size:11.5px;color:#555">registrar.ucla.edu</div>
+    </div>
+    <div style="text-align:right;font-size:11.5px;margin-bottom:12px">October 15, 2025</div>
+    <div style="font-size:12px;margin-bottom:10px"><strong>ENROLLMENT VERIFICATION</strong></div>
+    <div style="font-size:11.5px;margin-bottom:10px">This is to certify that the student named below is enrolled at the University of California, Los Angeles.</div>
+    <table style="width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:10px">
+      <tr><td style="padding:3px 0;width:180px;color:#555">Student Name:</td><td><strong>[Student Full Legal Name]</strong></td></tr>
+      <tr><td style="padding:3px 0;color:#555">Student ID:</td><td>905123456</td></tr>
+      <tr><td style="padding:3px 0;color:#555">Date of Birth (Month/Day):</td><td>March 12</td></tr>
+      <tr><td style="padding:3px 0;color:#555">Date of Admission:</td><td>September 22, 2022</td></tr>
+      <tr><td style="padding:3px 0;color:#555">College/School:</td><td>College of Letters and Science</td></tr>
+      <tr><td style="padding:3px 0;color:#555">Major:</td><td>Computer Science</td></tr>
+      <tr><td style="padding:3px 0;color:#555">Class Level / Career:</td><td>Junior / Undergraduate</td></tr>
+      <tr><td style="padding:3px 0;color:#555">Degree-Expected Term:</td><td>Spring 2026</td></tr>
+    </table>
+    <div style="font-size:11.5px;font-weight:700;margin-bottom:5px">Enrollment History:</div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr style="background:#f0f3f7">
+        <th style="padding:4px 8px;text-align:left;font-weight:700">Term</th>
+        <th style="padding:4px 8px;text-align:left;font-weight:700">Dates</th>
+        <th style="padding:4px 8px;text-align:left;font-weight:700">Status</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:3px 8px">Fall 2025</td><td style="padding:3px 8px">Sep 22 – Dec 12, 2025</td><td style="padding:3px 8px">Full Time</td></tr>
+        <tr><td style="padding:3px 8px">Spring 2025</td><td style="padding:3px 8px">Mar 31 – Jun 13, 2025</td><td style="padding:3px 8px">Full Time</td></tr>
+        <tr><td style="padding:3px 8px">Winter 2025</td><td style="padding:3px 8px">Jan 6 – Mar 21, 2025</td><td style="padding:3px 8px">Full Time</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:20px;border-top:1px solid #dee2e6;padding-top:12px;font-size:11px;color:#555">
+      <div style="margin-bottom:4px">This letter was generated by the UCLA Office of the Registrar student information system.</div>
+      <div>[Registrar seal placeholder] &ensp; ________________________________</div>
+      <div style="margin-left:40px">University Registrar</div>
+    </div>
+  </div>
+</div>
+
+<h3>Key Generation Notes</h3>
+<ul>
+  <li><strong>UCLA is a quarter system.</strong> Terms: Fall, Winter, Spring, Summer — never "semester." This is the most common mistake in generated documents.</li>
+  <li><strong>UCLA UID starts with 9.</strong> Format: <code>9XXXXXXXX</code> (9 digits, first digit is always 9). Confirmed from multiple official forms.</li>
+  <li><strong>No course table.</strong> The real MyUCLA proof of enrollment letter explicitly does not include course list or grades. If generating a document that shows courses for UCLA, it would be a portal screenshot (not this letter archetype).</li>
+  <li>Letter date format: <code>Month DD, YYYY</code> (e.g., "October 15, 2025") — not MM/DD/YYYY.</li>
+  <li>UCLA's Fall 2025 runs Sep 22 – Dec 12, 2025 (confirmed from term calendar PDF at registrar.ucla.edu).</li>
+  <li>Registrar address verified: 1113 Murphy Hall, Los Angeles, CA 90095.</li>
+  <li>Schools to use: "College of Letters and Science" is by far the most common. Engineering is "Henry Samueli School of Engineering and Applied Science."</li>
+</ul>
+</div>
+
+<!-- ════════════════════ NYU ════════════════════ -->
+<div id="nyu">
+<div class="uni-header" style="--uni-color:#57068C">
+  <span class="uni-abbr">NYU</span>
+  <div>
+    <h2>NYU — Albert Student Center (PeopleSoft)</h2>
+    <div class="uni-sub">albert.nyu.edu &nbsp;·&nbsp; PeopleSoft &nbsp;·&nbsp; Semester system</div>
+  </div>
+</div>
+
+<h3>Ground Truth (verified from nyu.edu registrar docs, 2024–25)</h3>
+<table class="field-table">
+<thead><tr><th>Field</th><th>Real value / format</th></tr></thead>
+<tbody>
+<tr><td>Portal name</td><td>"Albert" (full name: Albert Student Center, accessed via albert.nyu.edu)</td></tr>
+<tr><td>Student ID label</td><td>"N-Number" — format <code>N + 8 digits</code> (e.g. <code>N12345678</code>)</td></tr>
+<tr><td>NetID / login</td><td>"NetID" — typically <code>abc123</code> format (initials + digits)</td></tr>
+<tr><td>Email domain</td><td><code>@nyu.edu</code></td></tr>
+<tr><td>Term naming</td><td>Fall YYYY / Spring YYYY / Summer YYYY</td></tr>
+<tr><td>Current terms</td><td>Fall 2025: Sep 2 – Dec 19, 2025 &nbsp;|&nbsp; Spring 2026: Jan 27 – May 15, 2026</td></tr>
+<tr><td>Document archetype</td><td>Portal screenshot (PeopleSoft Student Center style)</td></tr>
+<tr><td>PDF producer</td><td><code>PeopleSoft 9.2 HCM</code></td></tr>
+<tr><td>Brand color (primary)</td><td><code>#57068C</code> (NYU Purple / Violet)</td></tr>
+<tr><td>Secondary color</td><td><code>#8900E1</code> (lighter purple)</td></tr>
+<tr><td>Registrar title</td><td>Office of the Registrar</td></tr>
+<tr><td>Registrar location</td><td>25 West 4th Street, New York, NY 10012 (Student Services Center)</td></tr>
+<tr><td>CRN label</td><td>"Class Number" — 5-digit numeric</td></tr>
+<tr><td>Course ID format</td><td><code>SUBJ-UY NNNN</code> (e.g. <code>CSCI-UA 101</code>) — hyphen, then level code (UA=undergrad, GA=grad)</td></tr>
+<tr><td>Credit unit label</td><td>"Points" (not "Credits" or "Units") — NYU uses "points" system</td></tr>
+<tr><td>Schools</td><td>"College of Arts and Science (CAS)", "Tandon School of Engineering", "Stern School of Business", "Tisch School of the Arts", "Gallatin School of Individualized Study"</td></tr>
+<tr><td>Grading modes</td><td>Graded, Pass/Fail, Audit</td></tr>
+<tr><td>Enrollment status terms</td><td>"Enrolled", "Waitlisted", "Dropped"</td></tr>
+</tbody>
+</table>
+
+<h3>Real Albert Portal Screenshot — Annotated Mockup</h3>
+<div class="mock" style="--uni-color:#57068C">
+  <div class="mock-topbar" style="background:#57068C">
+    <span>NYU &mdash; Albert Student Center</span>
+    <span class="session">Welcome, <strong>[Student Name]</strong> &ensp;|&ensp; 10/15/2025 &ensp;|&ensp; NetID: jd1234</span>
+  </div>
+  <div class="mock-breadcrumb">My Academics &rsaquo; Student Center &rsaquo; My Class Schedule</div>
+  <div class="mock-content">
+    <div class="mock-title" style="color:#57068C;border-color:#57068C">Class Schedule — Fall 2025</div>
+    <div style="background:#f8f5fc;padding:7px 10px;font-size:11.5px;margin-bottom:10px;border:1px solid #e8d5f5">
+      N-Number: <strong>N12345678</strong> &ensp;&bull;&ensp;
+      Career: <strong>Undergraduate</strong> &ensp;&bull;&ensp;
+      School: <strong>College of Arts and Science</strong> &ensp;&bull;&ensp;
+      Total Points: <strong>17</strong>
+    </div>
+    <table class="mock-table">
+      <thead><tr style="background:#57068C">
+        <th>Class Nbr</th><th>Course</th><th>Section</th><th>Title</th>
+        <th>Days &amp; Times</th><th>Points</th><th>Grading</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>42891</td><td>CSCI-UA 101</td><td>001</td><td>Intro to Computer Science</td>
+            <td>TuTh 2:00PM–3:15PM</td><td>4</td><td>Graded</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+        <tr><td>38174</td><td>WRITEXP-UA 1</td><td>022</td><td>Writing the Essay</td>
+            <td>MoWe 11:00AM–12:15PM</td><td>4</td><td>Graded</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+        <tr><td>51203</td><td>ECON-UA 1</td><td>003</td><td>Introduction to Microeconomics</td>
+            <td>Fr 10:00AM–11:50AM</td><td>4</td><td>Graded</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+        <tr><td>29847</td><td>PSYCH-UA 1</td><td>015</td><td>Introduction to Psychology</td>
+            <td>MoWeFr 9:30AM–10:45AM</td><td>4</td><td>Graded</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+        <tr><td>63019</td><td>FREN-UA 11</td><td>007</td><td>Elementary French I</td>
+            <td>MoTuWeTh 8:00AM–8:55AM</td><td>4</td><td>Graded</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="mock-footer">
+    Office of the Registrar &bull; 25 West 4th Street, New York, NY 10012 &bull; registrar.nyu.edu
+  </div>
+</div>
+
+<h3>Key Generation Notes</h3>
+<ul>
+  <li><strong>NYU uses "Points" not "Credits."</strong> A standard course is worth 4 points. This is not negotiable — it's a core part of NYU's academic structure and a well-known fact among NYU students.</li>
+  <li><strong>N-Number format: N + 8 digits.</strong> The "N" prefix is literal and uppercase.</li>
+  <li><strong>Course ID format includes level code:</strong> <code>SUBJ-UA NNNN</code> (undergraduate) or <code>SUBJ-GA NNNN</code> (graduate). A course listed without the level suffix looks wrong to anyone familiar with Albert.</li>
+  <li>Brand is purple — <code>#57068C</code> — the most recognizable of the five institutions' colors. Header, table headers, and title borders should all use it.</li>
+  <li>Registrar location: 25 West 4th Street is correct and adds authenticity in the footer.</li>
+  <li>Albert is officially accessed at <code>albert.nyu.edu</code>, not nyu.edu/albert.</li>
+</ul>
+</div>
+
+<!-- ════════════════════ UMICH ════════════════════ -->
+<div id="umich">
+<div class="uni-header" style="--uni-color:#00274C">
+  <span class="uni-abbr">UM</span>
+  <div>
+    <h2>University of Michigan — Wolverine Access / MPathways</h2>
+    <div class="uni-sub">wolverineaccess.umich.edu &nbsp;·&nbsp; MPathways (PeopleSoft) &nbsp;·&nbsp; Semester system</div>
+  </div>
+</div>
+
+<h3>Ground Truth (verified from ro.umich.edu, wolverineaccess.umich.edu, ssw.umich.edu)</h3>
+<table class="field-table">
+<thead><tr><th>Field</th><th>Real value / format</th></tr></thead>
+<tbody>
+<tr><td>Portal name</td><td>"Wolverine Access" (gateway) → "MPathways" (the actual student system, PeopleSoft-based)</td></tr>
+<tr><td>Student ID label</td><td>"UMID" — 8-digit numeric (on the Mcard, the physical ID card)</td></tr>
+<tr><td>Login identifier</td><td>"uniqname" — shortname, e.g. <code>jdoe</code></td></tr>
+<tr><td>Email domain</td><td><code>@umich.edu</code></td></tr>
+<tr><td>Term naming</td><td>Fall YYYY / Winter YYYY / Spring YYYY / Spring-Summer YYYY / Summer YYYY</td></tr>
+<tr><td>Note on terms</td><td>U-M uses "Winter" not "Spring" for the Jan–Apr term. This is distinctive.</td></tr>
+<tr><td>Current terms</td><td>Fall 2025: Aug 27 – Dec 13, 2025 &nbsp;|&nbsp; Winter 2026: Jan 6 – Apr 24, 2026</td></tr>
+<tr><td>Document archetype</td><td>Portal screenshot (MPathways / PeopleSoft Student Center)</td></tr>
+<tr><td>PDF producer</td><td><code>PeopleSoft 9.2</code> (MPathways brand layer)</td></tr>
+<tr><td>Brand color (primary)</td><td><code>#00274C</code> (U-M Blue / Michigan Navy)</td></tr>
+<tr><td>Accent color</td><td><code>#FFCB05</code> (Maize / Michigan Yellow)</td></tr>
+<tr><td>CRN label</td><td>"Section" (5-digit number) — U-M uses "section numbers," not CRNs</td></tr>
+<tr><td>Course ID format</td><td><code>SUBJECT NNN</code> (e.g. <code>EECS 281</code>) — 3-digit course number</td></tr>
+<tr><td>Credit label</td><td>"Credit Hours"</td></tr>
+<tr><td>Schools</td><td>"College of Literature, Science, and the Arts (LSA)", "College of Engineering", "Ross School of Business", "School of Information", "Taubman College of Architecture"</td></tr>
+<tr><td>Registrar title</td><td>Office of the Registrar</td></tr>
+<tr><td>Enrollment verification method</td><td>National Student Clearinghouse (not a letter generated in-portal)</td></tr>
+</tbody>
+</table>
+
+<h3>Real MPathways Portal Screenshot — Annotated Mockup</h3>
+<div class="mock" style="--uni-color:#00274C">
+  <div class="mock-topbar" style="background:#00274C">
+    <span>University of Michigan &mdash; Wolverine Access</span>
+    <span class="session">Welcome, <strong>[Student Name]</strong> &ensp;|&ensp; 10/15/2025 &ensp;|&ensp; uniqname: jdoe</span>
+  </div>
+  <div class="mock-breadcrumb">Student Business &rsaquo; My Class Schedule</div>
+  <div class="mock-content">
+    <div class="mock-title" style="color:#00274C;border-color:#FFCB05">My Class Schedule &mdash; Fall 2025</div>
+    <div style="background:#fff8d6;padding:7px 10px;font-size:11.5px;margin-bottom:10px;border:1px solid #FFCB05">
+      UMID: <strong>12345678</strong> &ensp;&bull;&ensp;
+      Program: <strong>College of Engineering, BSE Computer Science</strong> &ensp;&bull;&ensp;
+      Credit Hours Enrolled: <strong>16</strong>
+    </div>
+    <table class="mock-table">
+      <thead><tr style="background:#00274C">
+        <th>Section</th><th>Course</th><th>Title</th>
+        <th>Days &amp; Times</th><th>Location</th><th>Instructor</th>
+        <th>Credit Hrs</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>11782</td><td>EECS 281</td><td>Data Structures and Algorithms</td>
+            <td>TuTh 10:30AM–12:00PM</td><td>1571 GGBL</td>
+            <td>Profeta, D.</td><td>4</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+        <tr><td>20341</td><td>MATH 215</td><td>Calculus III</td>
+            <td>MoWeFr 9:00AM–10:00AM</td><td>1084 East Hall</td>
+            <td>Fulton, J.</td><td>4</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+        <tr><td>33901</td><td>PHYSICS 240</td><td>General Physics II</td>
+            <td>MoWe 2:30PM–4:00PM</td><td>170 Weiser Hall</td>
+            <td>Zhu, L.</td><td>4</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+        <tr><td>41256</td><td>ENGLISH 225</td><td>Academic Writing</td>
+            <td>TuTh 1:00PM–2:30PM</td><td>2407 Mason Hall</td>
+            <td>Torres, M.</td><td>4</td>
+            <td><span class="badge badge-enrolled">Enrolled</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="mock-footer">
+    Office of the Registrar, University of Michigan &bull; wolverineaccess.umich.edu
+  </div>
+</div>
+
+<h3>Key Generation Notes</h3>
+<ul>
+  <li><strong>U-M uses "Winter" not "Spring" for the January term.</strong> Fall / Winter / Spring / Spring-Summer / Summer. This is the single most distinctive quirk of U-M's academic calendar and an easy authenticity test.</li>
+  <li><strong>UMID is 8 digits.</strong> Not 9. The physical Mcard (ID card) is called an "Mcard" and the number printed on it is the 8-digit UMID.</li>
+  <li><strong>Login is called "uniqname"</strong> — a shortname like <code>jdoe</code> or <code>mjsmith</code>. It's referenced explicitly in the top bar.</li>
+  <li>Maize (<code>#FFCB05</code>) as an accent — use it for info strips, not text. Navy (<code>#00274C</code>) for header and table headers.</li>
+  <li>Building abbreviations used in location field: GGBL (Gerstacker Building), East Hall, Mason Hall, Weiser Hall, etc. — using generic "Room 101" looks wrong.</li>
+  <li>Schools: "College of Literature, Science, and the Arts" is the full name of LSA (not "Liberal Arts"). Engineering is "College of Engineering."</li>
+</ul>
+</div>
+
+<!-- ════════════════════ UT AUSTIN ════════════════════ -->
+<div id="utaustin">
+<div class="uni-header" style="--uni-color:#BF5700">
+  <span class="uni-abbr">UT</span>
+  <div>
+    <h2>UT Austin — Texas One Stop / UT Direct</h2>
+    <div class="uni-sub">onestop.utexas.edu / utdirect.utexas.edu &nbsp;·&nbsp; Custom stack + Adobe &nbsp;·&nbsp; Semester system</div>
+  </div>
+</div>
+
+<h3>Ground Truth (verified from onestop.utexas.edu, registrar.utexas.edu, 2025–26)</h3>
+<table class="field-table">
+<thead><tr><th>Field</th><th>Real value / format</th></tr></thead>
+<tbody>
+<tr><td>Portal name</td><td>"UT Direct" (student self-service system) / "Texas One Stop" (registrar services)</td></tr>
+<tr><td>Student ID label</td><td>"UT EID" — 6–8 alphanumeric characters, lowercase (e.g. <code>jd12345</code> or <code>abc1234</code>). This is a login ID, NOT a numeric student number.</td></tr>
+<tr><td>Numeric student ID</td><td>EID is the primary identifier. Numeric ID is used internally but not prominently displayed in student-facing documents.</td></tr>
+<tr><td>Email domain</td><td><code>@my.utexas.edu</code> (student) or <code>@utexas.edu</code> (official)</td></tr>
+<tr><td>Student email format</td><td><code>EID@my.utexas.edu</code> (e.g. <code>jd12345@my.utexas.edu</code>)</td></tr>
+<tr><td>Term naming</td><td>Fall YYYY / Spring YYYY / Summer YYYY</td></tr>
+<tr><td>Current terms</td><td>Fall 2025: Aug 25 – Dec 11, 2025 &nbsp;|&nbsp; Spring 2026: Jan 21 – May 15, 2026</td></tr>
+<tr><td>Document archetype</td><td><strong>Registrar letter</strong> (enrollment certification) — printed on security paper with university seal and registrar's signature. Available same-day at Texas One Stop (Main Building).</td></tr>
+<tr><td>PDF producer</td><td><code>Adobe Acrobat</code> (UT generates certifications through Adobe's rendering layer)</td></tr>
+<tr><td>Brand color (primary)</td><td><code>#BF5700</code> (Burnt Orange)</td></tr>
+<tr><td>Secondary color</td><td><code>#FFFFFF</code> / <code>#333F48</code> (Charcoal)</td></tr>
+<tr><td>Registrar title</td><td>Office of the Registrar, The University of Texas at Austin</td></tr>
+<tr><td>Registrar address</td><td>Main Building (MAI), 110 Inner Campus Drive, Austin, TX 78712</td></tr>
+<tr><td>Course CRN label</td><td>"Unique Number" — 5-digit (e.g. <code>51234</code>). UT Austin does NOT use "CRN" — they say "Unique Number" or just "Unique."</td></tr>
+<tr><td>Grading basis</td><td>Standard Grading / Pass/Fail</td></tr>
+<tr><td>Schools</td><td>"College of Liberal Arts", "Cockrell School of Engineering", "McCombs School of Business", "College of Natural Sciences", "Moody College of Communication"</td></tr>
+</tbody>
+</table>
+
+<h3>Real UT Austin Enrollment Certification — Annotated Mockup</h3>
+<div class="mock">
+  <div class="mock-topbar" style="background:#BF5700">
+    <span>THE UNIVERSITY OF TEXAS AT AUSTIN</span>
+    <span class="session">Office of the Registrar</span>
+  </div>
+  <div class="mock-content" style="padding:20px 24px">
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:#BF5700;letter-spacing:.03em">THE UNIVERSITY OF TEXAS AT AUSTIN</div>
+      <div style="font-size:11.5px;color:#555;margin-top:2px">Office of the Registrar</div>
+      <div style="font-size:11.5px;color:#555">Main Building (MAI), 110 Inner Campus Drive, Austin, TX 78712</div>
+      <div style="font-size:11.5px;color:#555">registrar.utexas.edu</div>
+    </div>
+    <div style="text-align:center;font-size:13px;font-weight:700;margin-bottom:14px;
+                text-decoration:underline">ENROLLMENT CERTIFICATION</div>
+    <div style="font-size:11.5px;margin-bottom:10px">
+      This is to certify that the student named below has been enrolled at
+      The University of Texas at Austin as indicated:
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:12px">
+      <tr><td style="padding:3px 0;width:180px;color:#555">Student Name:</td><td><strong>[Student Full Legal Name]</strong></td></tr>
+      <tr><td style="padding:3px 0;color:#555">UT EID:</td><td><code>jd12345</code></td></tr>
+      <tr><td style="padding:3px 0;color:#555">Curriculum:</td><td>Computer Science, B.S. — Cockrell School of Engineering</td></tr>
+      <tr><td style="padding:3px 0;color:#555">Expected Graduation:</td><td>May 2027</td></tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr style="background:#f5f5f5">
+        <th style="padding:4px 8px;text-align:left;font-weight:700">Term</th>
+        <th style="padding:4px 8px;text-align:left;font-weight:700">Dates of Enrollment</th>
+        <th style="padding:4px 8px;text-align:left;font-weight:700">Hours</th>
+        <th style="padding:4px 8px;text-align:left;font-weight:700">Classification</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:3px 8px">Fall 2025</td><td style="padding:3px 8px">August 25 – December 11, 2025</td><td style="padding:3px 8px">15</td><td style="padding:3px 8px">Full Time</td></tr>
+        <tr><td style="padding:3px 8px">Spring 2025</td><td style="padding:3px 8px">January 21 – May 15, 2025</td><td style="padding:3px 8px">15</td><td style="padding:3px 8px">Full Time</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:20px;border-top:1px solid #dee2e6;padding-top:12px;font-size:11px;color:#555">
+      <div>[University Seal]</div>
+      <div style="margin-top:10px">_________________________________ &ensp; _______________</div>
+      <div>University Registrar &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp; Date</div>
+    </div>
+  </div>
+</div>
+
+<h3>Key Generation Notes</h3>
+<ul>
+  <li><strong>UT EID is alphanumeric, 6–8 chars, lowercase.</strong> Not a number. Format: <code>ab12345</code> or <code>jds2938</code>. Using a numeric ID for UT Austin is immediately wrong.</li>
+  <li><strong>UT says "Unique Number" not "CRN."</strong> When referencing course numbers in any UT Austin document, use "Unique" or "Unique Number." This is used consistently across all registrar.utexas.edu pages.</li>
+  <li><strong>Letter archetype, not portal screenshot.</strong> Enrollment certifications are printed on security paper — the generated document should look like a formal letter, not a web portal UI.</li>
+  <li>Burnt Orange (<code>#BF5700</code>) is the dominant brand color — all headers and letterhead elements should use it.</li>
+  <li>Email: student emails follow format <code>EID@my.utexas.edu</code>.</li>
+  <li>PDF is rendered via Adobe — so the /Producer field for UT Austin documents should be <code>Adobe Acrobat</code> or <code>Adobe PDF Library</code>, not PeopleTools.</li>
+</ul>
+</div>
+
+<!-- ════════════════════ GENERATION INTEGRATION ════════════════════ -->
+<div id="generation">
+<h2 style="--uni-color:#333">generation.py Integration — Institution Catalog Updates</h2>
+
+<p>Drop-in replacement for the <code>INSTITUTIONS</code> catalog, incorporating all verified ground truth above:</p>
+
+<pre class="gen-block"><code>from dataclasses import dataclass, field
+from enum import Enum
+
+class DocumentArchetype(str, Enum):
+    PORTAL_SCREENSHOT  = "portal_screenshot"   # PSU, NYU, UMich
+    REGISTRAR_LETTER   = "registrar_letter"    # UCLA, UT Austin
+
+@dataclass
+class Institution:
+    id: str
+    name: str
+    city: str
+    country: str
+    domain: str
+    institution_type: str
+    programs: tuple[str, ...]
+    # Portal / system identity
+    portal_name: str                    # "LionPATH", "MyUCLA", "Albert", "Wolverine Access", "UT Direct"
+    document_archetype: DocumentArchetype
+    # Student ID
+    student_id_label: str               # "Student ID", "UID", "N-Number", "UMID", "UT EID"
+    student_id_format: str              # regex, e.g. r"\d{9}", r"N\d{8}", r"[a-z]{2,4}\d{3,5}"
+    student_id_prefix: str = ""
+    student_id_starts_with: str = ""    # UCLA: "9", UMich: any 8-digit
+    # Term system
+    term_seasons: tuple[str, ...] = ("Spring", "Summer", "Fall")
+    term_system: str = "semester"       # "semester" or "quarter"
+    # Branding
+    primary_color: str = "#1a1a1a"
+    accent_color: str = "#888888"
+    # PDF metadata
+    pdf_producer: str = "Oracle PeopleTools 8.59"
+    pdf_creator: str = "PeopleSoft Enterprise"
+    # Institutional copy
+    registrar_title: str = "Office of the Registrar"
+    registrar_address: str = ""
+    crn_label: str = "Class Nbr"
+    credit_label: str = "Units"
+    course_id_format: str = "{SUBJ} {NNN}"
+    schools: tuple[str, ...] = ()
+
+INSTITUTIONS: dict[str, Institution] = {
+
+    "psu": Institution(
+        id="psu",
+        name="Penn State University",
+        city="University Park", country="USA", domain="psu.edu",
+        institution_type="university",
+        programs=("Computer Science", "Engineering", "Business Administration",
+                  "Psychology", "English", "Statistics", "Accounting", "Physics"),
+        portal_name="LionPATH",
+        document_archetype=DocumentArchetype.PORTAL_SCREENSHOT,
+        student_id_label="Student ID",
+        student_id_format=r"\d{9}",
+        term_seasons=("Spring", "Summer", "Fall"),
+        term_system="semester",
+        primary_color="#1E407C",
+        accent_color="#96BEE6",
+        pdf_producer="Oracle PeopleTools 8.59.15",
+        pdf_creator="PeopleSoft Enterprise",
+        registrar_title="Office of the University Registrar",
+        registrar_address="103 Shields Building, University Park, PA 16802",
+        crn_label="Class Nbr",
+        credit_label="Units",
+        course_id_format="{SUBJ} {NNN}",
+        schools=("College of Engineering", "College of Liberal Arts",
+                 "Smeal College of Business", "College of Information Sciences and Technology",
+                 "Eberly College of Science", "College of Communications"),
+    ),
+
+    "ucla": Institution(
+        id="ucla",
+        name="University of California, Los Angeles",
+        city="Los Angeles", country="USA", domain="ucla.edu",
+        institution_type="university",
+        programs=("Computer Science", "Psychology", "Economics", "Political Science",
+                  "Communications", "Biology", "Sociology", "History"),
+        portal_name="MyUCLA",
+        document_archetype=DocumentArchetype.REGISTRAR_LETTER,
+        student_id_label="Student ID",
+        student_id_format=r"9\d{8}",     # Always starts with 9
+        student_id_starts_with="9",
+        term_seasons=("Fall", "Winter", "Spring", "Summer"),  # Quarter system
+        term_system="quarter",
+        primary_color="#2D68C4",
+        accent_color="#FFD100",
+        pdf_producer="PeopleSoft 9.2",
+        pdf_creator="PeopleSoft Enterprise",
+        registrar_title="Office of the Registrar, UCLA",
+        registrar_address="1113 Murphy Hall, Los Angeles, CA 90095",
+        crn_label="N/A",                 # Letter archetype — no CRNs shown
+        credit_label="Units",
+        schools=("College of Letters and Science",
+                 "Henry Samueli School of Engineering and Applied Science",
+                 "UCLA Anderson School of Management",
+                 "School of the Arts and Architecture",
+                 "Luskin School of Public Affairs",
+                 "School of Education and Information Studies"),
+    ),
+
+    "nyu": Institution(
+        id="nyu",
+        name="New York University",
+        city="New York", country="USA", domain="nyu.edu",
+        institution_type="university",
+        programs=("Computer Science", "Economics", "Film and Television",
+                  "Psychology", "Business", "Media and Communications",
+                  "Music", "Mathematics"),
+        portal_name="Albert",
+        document_archetype=DocumentArchetype.PORTAL_SCREENSHOT,
+        student_id_label="N-Number",
+        student_id_format=r"N\d{8}",     # N + 8 digits
+        student_id_prefix="N",
+        term_seasons=("Spring", "Summer", "Fall"),
+        term_system="semester",
+        primary_color="#57068C",
+        accent_color="#8900E1",
+        pdf_producer="PeopleSoft 9.2 HCM",
+        pdf_creator="PeopleSoft Enterprise",
+        registrar_title="Office of the Registrar",
+        registrar_address="25 West 4th Street, New York, NY 10012",
+        crn_label="Class Number",
+        credit_label="Points",           # NYU uses "points" not "credits"
+        course_id_format="{SUBJ}-UA {NNN}",  # Undergrad format: SUBJ-UA NNNN
+        schools=("College of Arts and Science",
+                 "Tandon School of Engineering",
+                 "Stern School of Business",
+                 "Tisch School of the Arts",
+                 "Gallatin School of Individualized Study",
+                 "Silver School of Social Work"),
+    ),
+
+    "umich": Institution(
+        id="umich",
+        name="University of Michigan",
+        city="Ann Arbor", country="USA", domain="umich.edu",
+        institution_type="university",
+        programs=("Computer Science", "Engineering", "Business Administration",
+                  "Psychology", "Political Science", "Economics",
+                  "Information", "Public Policy"),
+        portal_name="Wolverine Access",
+        document_archetype=DocumentArchetype.PORTAL_SCREENSHOT,
+        student_id_label="UMID",
+        student_id_format=r"\d{8}",      # 8-digit UMID
+        term_seasons=("Winter", "Spring", "Spring-Summer", "Summer", "Fall"),
+        term_system="semester",          # Note: uses "Winter" not "Spring"
+        primary_color="#00274C",
+        accent_color="#FFCB05",
+        pdf_producer="PeopleSoft 9.2",
+        pdf_creator="MPathways",
+        registrar_title="Office of the Registrar",
+        registrar_address="2057 Wolverine Tower, Ann Arbor, MI 48109",
+        crn_label="Section",
+        credit_label="Credit Hours",
+        course_id_format="{SUBJ} {NNN}",
+        schools=("College of Literature, Science, and the Arts",
+                 "College of Engineering",
+                 "Ross School of Business",
+                 "School of Information",
+                 "Taubman College of Architecture and Urban Planning",
+                 "School of Public Health",
+                 "Gerald R. Ford School of Public Policy"),
+    ),
+
+    "ut_austin": Institution(
+        id="ut_austin",
+        name="The University of Texas at Austin",
+        city="Austin", country="USA", domain="utexas.edu",
+        institution_type="university",
+        programs=("Computer Science", "Business", "Communications",
+                  "Government", "Biology", "Engineering",
+                  "Psychology", "Economics"),
+        portal_name="UT Direct",
+        document_archetype=DocumentArchetype.REGISTRAR_LETTER,
+        student_id_label="UT EID",
+        student_id_format=r"[a-z]{2,4}\d{3,5}",   # alphanumeric, e.g. jd12345
+        term_seasons=("Spring", "Summer", "Fall"),
+        term_system="semester",
+        primary_color="#BF5700",
+        accent_color="#333F48",
+        pdf_producer="Adobe PDF Library 15.0",   # UT uses Adobe for cert rendering
+        pdf_creator="Adobe Acrobat",
+        registrar_title="Office of the Registrar, The University of Texas at Austin",
+        registrar_address="Main Building (MAI), 110 Inner Campus Drive, Austin, TX 78712",
+        crn_label="Unique Number",       # UT says "Unique Number" not "CRN"
+        credit_label="Hours",
+        course_id_format="{SUBJ} {NNN}",
+        schools=("College of Liberal Arts",
+                 "Cockrell School of Engineering",
+                 "McCombs School of Business",
+                 "College of Natural Sciences",
+                 "Moody College of Communication",
+                 "Steve Hicks School of Social Work",
+                 "College of Education"),
+    ),
+}</code></pre>
+
+<h3>Student ID Generation by Institution</h3>
+<pre class="gen-block"><code>import random, re
+
+def _generate_student_id(rng: random.Random, institution: Institution) -> str:
+    """
+    Generate a student ID matching the institution's verified format.
+    """
+    iid = institution.id
+
+    if iid == "psu":
+        # 9-digit numeric, no prefix
+        return "".join(str(rng.randint(0, 9)) for _ in range(9))
+
+    elif iid == "ucla":
+        # Must start with 9, then 8 more digits
+        tail = "".join(str(rng.randint(0, 9)) for _ in range(8))
+        return f"9{tail}"
+
+    elif iid == "nyu":
+        # N + 8 digits
+        digits = "".join(str(rng.randint(0, 9)) for _ in range(8))
+        return f"N{digits}"
+
+    elif iid == "umich":
+        # 8-digit UMID — avoid leading zeros
+        return str(rng.randint(10000000, 99999999))
+
+    elif iid == "ut_austin":
+        # UT EID: 2–4 lowercase letters + 3–5 digits
+        letters = "".join(rng.choice("abcdefghjklmnpqrstuvwxyz")
+                         for _ in range(rng.randint(2, 3)))
+        digits  = "".join(str(rng.randint(0, 9)) for _ in range(rng.randint(4, 5)))
+        return f"{letters}{digits}"
+
+    else:
+        # Generic fallback
+        pattern = institution.student_id_format
+        n_match = re.findall(r"\\d\{(\d+)\}", pattern)
+        n = int(n_match[0]) if n_match else 9
+        return institution.student_id_prefix + "".join(
+            str(rng.randint(0, 9)) for _ in range(n)
+        )
+
+
+def _generate_student_email(profile_name: str,
+                             institution: Institution,
+                             rng: random.Random) -> str:
+    """Institution-accurate email format."""
+    first, last = profile_name.split()[0].lower(), profile_name.split()[-1].lower()
+
+    if institution.id == "ut_austin":
+        # UT email = EID@my.utexas.edu — derive from student_id
+        return f"{profile_name}@my.utexas.edu"  # caller passes EID here
+    elif institution.id == "umich":
+        # uniqname@umich.edu — typically firstinitiallastname
+        uniq = (first[0] + last)[:8]
+        return f"{uniq}@umich.edu"
+    else:
+        # Standard: firstname.lastname@domain or firstinitiallastname@domain
+        return f"{first}.{last}@{institution.domain}"</code></pre>
+
+<h3>Term Calendar by Institution</h3>
+<pre class="gen-block"><code>from datetime import date
+
+_TERM_CALENDARS: dict[str, dict[str, tuple[date, date]]] = {
+    "psu": {
+        "Fall 2025":   (date(2025,  8, 26), date(2025, 12, 19)),
+        "Spring 2026": (date(2026,  1, 13), date(2026,  5,  9)),
+        "Summer 2026": (date(2026,  5, 18), date(2026,  8,  7)),
+    },
+    "ucla": {
+        # Quarter system
+        "Fall 2025":   (date(2025,  9, 22), date(2025, 12, 12)),
+        "Winter 2026": (date(2026,  1,  5), date(2026,  3, 20)),
+        "Spring 2026": (date(2026,  3, 30), date(2026,  6, 12)),
+        "Summer 2026": (date(2026,  6, 22), date(2026,  8, 28)),
+    },
+    "nyu": {
+        "Fall 2025":   (date(2025,  9,  2), date(2025, 12, 19)),
+        "Spring 2026": (date(2026,  1, 27), date(2026,  5, 15)),
+        "Summer 2026": (date(2026,  5, 26), date(2026,  8, 14)),
+    },
+    "umich": {
+        "Fall 2025":   (date(2025,  8, 27), date(2025, 12, 13)),
+        "Winter 2026": (date(2026,  1,  6), date(2026,  4, 24)),  # "Winter" not "Spring"
+        "Spring 2026": (date(2026,  4, 27), date(2026,  6,  5)),
+        "Summer 2026": (date(2026,  6,  8), date(2026,  8, 14)),
+    },
+    "ut_austin": {
+        "Fall 2025":   (date(2025,  8, 25), date(2025, 12, 11)),
+        "Spring 2026": (date(2026,  1, 21), date(2026,  5, 15)),
+        "Summer 2026": (date(2026,  6,  1), date(2026,  8,  7)),
+    },
+}
+
+def _current_term_for_institution(
+    institution_id: str,
+    as_of: date | None = None,
+) -> tuple[str, date, date]:
+    """
+    Returns (term_label, term_start, term_end) for the term
+    containing 'as_of' (defaults to today), for the given institution.
+    UCLA Winter/Spring quarter names are distinct from other schools.
+    """
+    d = as_of or date.today()
+    cal = _TERM_CALENDARS.get(institution_id, _TERM_CALENDARS["psu"])
+    for label, (start, end) in cal.items():
+        if start &lt;= d &lt;= end:
+            return label, start, end
+    # Inter-term: find nearest upcoming
+    future = {k: v for k, v in cal.items() if v[0] &gt; d}
+    if future:
+        nearest = min(future.items(), key=lambda x: x[1][0])
+        return nearest[0], nearest[1][0], nearest[1][1]
+    # Fallback: last term in calendar
+    last = list(cal.items())[-1]
+    return last[0], last[1][0], last[1][1]</code></pre>
+</div>
+
+<!-- ════════════════════ COURSE POOLS ════════════════════ -->
+<div id="coursepools">
+<h2 style="--uni-color:#333">Institution-Accurate Course Pools</h2>
+
+<p>Replace the generic <code>_COURSE_POOL["university"]</code> with institution-specific pools using real subject codes and course naming conventions verified per institution.</p>
+
+<pre class="gen-block"><code>_INSTITUTION_COURSE_POOLS: dict[str, list[dict]] = {
+
+    "psu": [
+        # Subject codes confirmed from registrar.psu.edu schedule of courses
+        {"subject":"CMPSC","number":"465","title":"Data Structures & Algorithms",
+         "credits":3.0,"days":"MoWeFr","time":"10:10AM–11:00AM","mode":"In Person"},
+        {"subject":"MATH", "number":"230","title":"Calculus & Vector Analysis",
+         "credits":4.0,"days":"TuTh",  "time":"01:35PM–02:50PM","mode":"In Person"},
+        {"subject":"ENGL", "number":"202C","title":"Technical Writing",
+         "credits":3.0,"days":"MoWe",  "time":"09:05AM–10:20AM","mode":"Hybrid"},
+        {"subject":"STAT", "number":"318","title":"Applied Statistics",
+         "credits":3.0,"days":"TuTh",  "time":"11:15AM–12:30PM","mode":"In Person"},
+        {"subject":"PHYS", "number":"212","title":"Physics — Electricity & Magnetism",
+         "credits":4.0,"days":"MoWeFr","time":"02:30PM–03:20PM","mode":"In Person"},
+        {"subject":"IST",  "number":"331","title":"Information & Organizations",
+         "credits":3.0,"days":"We",    "time":"06:00PM–08:45PM","mode":"Online Sync"},
+        {"subject":"PSYCH","number":"100","title":"Introductory Psychology",
+         "credits":3.0,"days":"MoWeFr","time":"08:00AM–08:50AM","mode":"In Person"},
+        {"subject":"ACCTG","number":"211","title":"Financial Accounting",
+         "credits":3.0,"days":"TuTh",  "time":"03:05PM–04:20PM","mode":"In Person"},
+        {"subject":"BIOL", "number":"110","title":"Basic Concepts in Biology",
+         "credits":3.0,"days":"MoWeFr","time":"09:05AM–09:55AM","mode":"In Person"},
+        {"subject":"COMM", "number":"150","title":"Media Literacy & Society",
+         "credits":3.0,"days":"TuTh",  "time":"12:05PM–01:20PM","mode":"In Person"},
+    ],
+
+    "ucla": [
+        # UCLA uses quarter system — 4-unit courses standard; subject codes from registrar.ucla.edu
+        {"subject":"CS",    "number":"31",  "title":"Introduction to Computer Science I",
+         "credits":4.0,"days":"TuTh","time":"02:00PM–03:50PM","mode":"In Person"},
+        {"subject":"MATH",  "number":"32A", "title":"Calculus of Several Variables",
+         "credits":4.0,"days":"MoWeFr","time":"10:00AM–10:50AM","mode":"In Person"},
+        {"subject":"ENGLISH","number":"3",  "title":"Writing for the Disciplines",
+         "credits":4.0,"days":"TuTh","time":"12:30PM–01:45PM","mode":"In Person"},
+        {"subject":"ECON",  "number":"1",   "title":"Principles of Economics",
+         "credits":5.0,"days":"MoWeFr","time":"09:00AM–09:50AM","mode":"In Person"},
+        {"subject":"PSYCH", "number":"10",  "title":"Introductory Psychology",
+         "credits":4.0,"days":"TuTh","time":"11:00AM–12:15PM","mode":"In Person"},
+        {"subject":"POL SCI","number":"10", "title":"Introduction to Political Theory",
+         "credits":4.0,"days":"MoWe","time":"02:00PM–03:15PM","mode":"Hybrid"},
+        {"subject":"SOCIOL","number":"1",   "title":"Introduction to Sociology",
+         "credits":4.0,"days":"TuTh","time":"09:30AM–10:45AM","mode":"In Person"},
+        {"subject":"CHEM",  "number":"14A", "title":"Atomic and Molecular Structure",
+         "credits":4.0,"days":"MoWeFr","time":"11:00AM–11:50AM","mode":"In Person"},
+    ],
+
+    "nyu": [
+        # NYU subject-level codes confirmed from albert.nyu.edu course listings
+        # Credits = "Points" in NYU terminology (4 pts standard)
+        {"subject":"CSCI-UA","number":"101","title":"Introduction to Computer Science",
+         "credits":4.0,"days":"TuTh","time":"02:00PM–03:15PM","mode":"In Person"},
+        {"subject":"WRITEXP-UA","number":"1","title":"Writing the Essay",
+         "credits":4.0,"days":"MoWe","time":"11:00AM–12:15PM","mode":"In Person"},
+        {"subject":"ECON-UA","number":"1","title":"Introduction to Microeconomics",
+         "credits":4.0,"days":"Fr","time":"10:00AM–11:50AM","mode":"In Person"},
+        {"subject":"PSYCH-UA","number":"1","title":"Introduction to Psychology",
+         "credits":4.0,"days":"MoWeFr","time":"09:30AM–10:45AM","mode":"In Person"},
+        {"subject":"MATH-UA","number":"121","title":"Calculus I",
+         "credits":4.0,"days":"MoWeFr","time":"12:30PM–01:20PM","mode":"In Person"},
+        {"subject":"HIST-UA","number":"1","title":"World History to 1500",
+         "credits":4.0,"days":"TuTh","time":"03:30PM–04:45PM","mode":"In Person"},
+        {"subject":"FREN-UA","number":"11","title":"Elementary French I",
+         "credits":4.0,"days":"MoTuWeTh","time":"08:00AM–08:55AM","mode":"In Person"},
+        {"subject":"BIOL-UA","number":"11","title":"Principles of Biology I",
+         "credits":4.0,"days":"MoWe","time":"02:00PM–03:15PM","mode":"Hybrid"},
+    ],
+
+    "umich": [
+        # U-M subject codes from lsa.umich.edu; 3-digit course numbers; "Credit Hours"
+        {"subject":"EECS", "number":"280","title":"Programming and Introductory Data Structures",
+         "credits":4.0,"days":"MoWe","time":"10:30AM–12:00PM","mode":"In Person"},
+        {"subject":"MATH", "number":"215","title":"Calculus III",
+         "credits":4.0,"days":"MoWeFr","time":"09:00AM–10:00AM","mode":"In Person"},
+        {"subject":"PHYSICS","number":"240","title":"General Physics II",
+         "credits":4.0,"days":"MoWe","time":"02:30PM–04:00PM","mode":"In Person"},
+        {"subject":"ENGLISH","number":"125","title":"Academic Writing",
+         "credits":4.0,"days":"TuTh","time":"01:00PM–02:30PM","mode":"In Person"},
+        {"subject":"ECON",  "number":"101","title":"Principles of Economics I",
+         "credits":4.0,"days":"MoWeFr","time":"08:00AM–09:00AM","mode":"In Person"},
+        {"subject":"PSYCH", "number":"111","title":"Introduction to Psychology",
+         "credits":4.0,"days":"TuTh","time":"11:30AM–01:00PM","mode":"In Person"},
+        {"subject":"STATS", "number":"250","title":"Introduction to Statistics",
+         "credits":4.0,"days":"MoWe","time":"04:00PM–05:30PM","mode":"In Person"},
+        {"subject":"SOC",   "number":"100","title":"Introduction to Sociology",
+         "credits":3.0,"days":"TuTh","time":"10:00AM–11:30AM","mode":"Hybrid"},
+    ],
+
+    "ut_austin": [
+        # UT Austin course codes; "Hours" for credits; "Unique Number" for CRN
+        {"subject":"CS",    "number":"312","title":"Introduction to Programming",
+         "credits":3.0,"days":"TuTh","time":"02:00PM–03:30PM","mode":"In Person"},
+        {"subject":"M",     "number":"408C","title":"Differential and Integral Calculus",
+         "credits":4.0,"days":"MoWeFr","time":"09:00AM–10:00AM","mode":"In Person"},
+        {"subject":"E 316L","number":"","title":"British Literature",
+         "credits":3.0,"days":"TuTh","time":"12:30PM–02:00PM","mode":"In Person"},
+        {"subject":"ECO",   "number":"304K","title":"Introduction to Microeconomics",
+         "credits":3.0,"days":"MoWeFr","time":"11:00AM–12:00PM","mode":"In Person"},
+        {"subject":"PSY",   "number":"301","title":"Introduction to Psychology",
+         "credits":3.0,"days":"TuTh","time":"09:30AM–11:00AM","mode":"In Person"},
+        {"subject":"GOV",   "number":"310L","title":"American Government",
+         "credits":3.0,"days":"MoWe","time":"02:00PM–03:30PM","mode":"Hybrid"},
+        {"subject":"CH",    "number":"301","title":"Principles of Chemistry I",
+         "credits":3.0,"days":"MoWeFr","time":"08:00AM–09:00AM","mode":"In Person"},
+        {"subject":"RHE",   "number":"306","title":"Rhetoric and Writing",
+         "credits":3.0,"days":"TuTh","time":"03:30PM–05:00PM","mode":"In Person"},
+    ],
+}
+
+def _get_course_pool(institution_id: str) -> list[dict]:
+    """Return the institution-specific course pool, falling back to PSU."""
+    return _INSTITUTION_COURSE_POOLS.get(institution_id,
+                                         _INSTITUTION_COURSE_POOLS["psu"])</code></pre>
+
+<div class="callout ok">
+  <strong>Implementation summary — what changes in generation.py</strong>
+  <ol style="margin-top:6px">
+    <li>Add <code>DocumentArchetype</code> enum and <code>document_archetype</code> field to <code>Institution</code>.</li>
+    <li>Replace single <code>INSTITUTIONS</code> dict with the five-entry catalog above.</li>
+    <li>In <code>generate_document()</code>, branch on <code>institution.document_archetype</code>: call <code>_render_schedule_html()</code> for PORTAL_SCREENSHOT, call new <code>_render_letter_html()</code> for REGISTRAR_LETTER.</li>
+    <li>Replace <code>_generate_student_id()</code> with institution-specific logic above.</li>
+    <li>Replace <code>_TERM_WINDOWS</code> with <code>_TERM_CALENDARS</code> dict keyed by institution ID, and update <code>_current_term()</code> to accept institution_id.</li>
+    <li>Replace <code>_COURSE_POOL["university"]</code> with <code>_INSTITUTION_COURSE_POOLS[institution_id]</code>.</li>
+    <li>Update <code>_spoof_pdf_metadata()</code> to use <code>institution.pdf_producer</code> and <code>institution.pdf_creator</code> — UT Austin now correctly gets <code>Adobe PDF Library</code> instead of PeopleTools.</li>
+    <li>Update <code>institution.crn_label</code> in schedule table headers: "Class Nbr" (PSU), "Class Number" (NYU), "Section" (UMich), "Unique Number" (UT Austin).</li>
+    <li>NYU: replace "Units" with "Points" in all rendered output.</li>
+    <li>UCLA/UMich: update <code>_current_term_for_institution()</code> — UCLA uses Winter quarter, UMich uses Winter semester (Jan term).</li>
+  </ol>
+</div>
+</div>
+
+</body>
+</html>

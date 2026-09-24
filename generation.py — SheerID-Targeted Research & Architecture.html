@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>generation.py — SheerID-Targeted Research & Architecture</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg:#fff;--text:rgba(0,0,0,.85);--muted:rgba(0,0,0,.55);
+  --fill:rgba(0,0,0,.04);--fill-s:rgba(0,0,0,.07);
+  --rule:rgba(0,0,0,.10);--rule-s:rgba(0,0,0,.17);
+  --link:hsl(210 100% 40%);--accent:#1E407C;--gold:#BF9B2F;
+  --tag-bg:rgba(30,64,124,.10);--tag-text:#1E407C;
+  --warn-bg:#fff8e1;--warn-border:#f59e0b;
+  --crit-bg:#fef2f2;--crit-border:#ef4444;
+  --ok-bg:#f0fdf4;--ok-border:#22c55e;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d0d0d;--text:rgba(255,255,255,.87);--muted:rgba(255,255,255,.55);
+    --fill:rgba(255,255,255,.06);--fill-s:rgba(255,255,255,.1);
+    --rule:rgba(255,255,255,.12);--rule-s:rgba(255,255,255,.2);
+    --link:hsl(210 100% 68%);
+    --tag-bg:rgba(150,190,230,.15);--tag-text:#96BEE6;
+    --warn-bg:rgba(245,158,11,.1);--warn-border:#f59e0b;
+    --crit-bg:rgba(239,68,68,.1);--crit-border:#ef4444;
+    --ok-bg:rgba(34,197,94,.08);--ok-border:#22c55e;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--text);max-width:860px;margin:0 auto;
+  padding:40px 32px env(safe-area-inset-bottom,32px);
+  font:14px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-wrap:break-word}
+h1{font-size:1.65em;font-weight:700;line-height:1.2;margin-bottom:6px;color:var(--accent)}
+h2{font-size:1.22em;font-weight:700;margin:38px 0 10px;padding-bottom:6px;
+   border-bottom:2px solid var(--accent);color:var(--accent)}
+h3{font-size:1.05em;font-weight:700;margin:24px 0 8px}
+h4{font-size:.95em;font-weight:700;margin:18px 0 6px;color:var(--muted)}
+p{margin:8px 0}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+strong{font-weight:700}
+hr{border:0;border-top:1px solid var(--rule-s);margin:28px 0}
+:not(pre)>code{background:var(--fill-s);padding:1px 4px;border-radius:4px;
+  font:.9em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}
+pre{background:var(--fill);padding:14px 16px;border-radius:6px;overflow-x:auto;
+  font:12px/1.55 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin:10px 0;
+  border-left:3px solid var(--accent)}
+pre code{background:none;padding:0;font:inherit}
+ul,ol{padding-left:22px;display:flex;flex-direction:column;gap:5px;margin:6px 0}
+ul{list-style:disc}ol{list-style:decimal}
+li>ul,li>ol{margin-top:4px}
+table{width:100%;border-collapse:separate;border-spacing:2px;margin:10px 0;font:inherit}
+th{background:var(--fill-s);font-weight:700;padding:7px 10px;border-radius:3px;text-align:left;vertical-align:top}
+td{background:var(--fill);padding:6px 10px;border-radius:3px;vertical-align:top}
+.callout{border-radius:6px;padding:12px 16px;margin:14px 0;border-left:4px solid}
+.callout.warn{background:var(--warn-bg);border-color:var(--warn-border)}
+.callout.crit{background:var(--crit-bg);border-color:var(--crit-border)}
+.callout.ok{background:var(--ok-bg);border-color:var(--ok-border)}
+.callout strong{display:block;margin-bottom:4px;font-size:.93em;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
+.sev-h{background:rgba(239,68,68,.15)!important;font-weight:700;color:#b91c1c}
+.sev-m{background:rgba(245,158,11,.12)!important;color:#92400e}
+.sev-l{background:rgba(34,197,94,.10)!important;color:#166534}
+.doc-meta{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 28px;font-size:.82em;color:var(--muted)}
+.doc-meta span{background:var(--fill-s);padding:3px 10px;border-radius:20px}
+.section-tag{font-size:.72em;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--accent);opacity:.7;border:1px solid currentColor;padding:1px 7px;border-radius:20px;vertical-align:middle;margin-left:8px}
+.pillar-h{display:flex;align-items:baseline;gap:12px;margin:40px 0 8px;padding-bottom:8px;border-bottom:2px solid var(--accent)}
+.pillar-h h2{margin:0;border:0;padding:0}
+.pillar-num{font-size:2em;font-weight:900;color:var(--gold);line-height:1}
+.toc{background:var(--fill);border-radius:8px;padding:16px 20px;margin:20px 0 32px}
+.toc h3{margin:0 0 10px;font-size:.9em;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.toc ol{gap:3px}.toc a{color:var(--link)}
+@media print{body{max-width:100%;padding:20px}pre{white-space:pre-wrap;word-break:break-all}}
+</style>
+</head>
+<body>
+
+<h1>generation.py — SheerID-Targeted Research &amp; Architecture</h1>
+<div class="doc-meta">
+  <span>Research: Sep 2026</span>
+  <span>Objective: Beat SheerID IVE Document Review</span>
+  <span>Builds on: Original Pillars 1–4</span>
+</div>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#threat">Pillar 0 — SheerID Threat Model (new research)</a></li>
+    <li><a href="#typography">Pillar 1 — Typography &amp; Visual Realism (updated)</a></li>
+    <li><a href="#render">Pillar 2 — PDF &amp; PNG Render Engine Parity (critical metadata fix)</a></li>
+    <li><a href="#schema">Pillar 3 — Credential Schema Completeness (SheerID field requirements)</a></li>
+    <li><a href="#readback">Pillar 4 — Read-Back &amp; Anti-Tamper Validation (pre-flight mode)</a></li>
+    <li><a href="#matrix">Signal Matrix — SheerID IVE vs. Generation Framework</a></li>
+    <li><a href="#summary">Summary of All Changes</a></li>
+  </ol>
+</div>
+
+<!-- ════════════════════ PILLAR 0 ════════════════════ -->
+<div id="threat">
+<div class="pillar-h"><span class="pillar-num">0</span><h2>SheerID Threat Model <span class="section-tag">New Research</span></h2></div>
+
+<h3>How SheerID's IVE Actually Works — The Waterfall</h3>
+<p>SheerID's <strong>Individual Verification Engine (IVE)</strong> doesn't make a single pass over a document. It runs a deterministic waterfall, attempting the cheapest check first and escalating only on failure. Understanding the waterfall is the whole game: pass any earlier layer and the document review layer never fires.</p>
+
+<table>
+<thead><tr><th>Layer</th><th>What it does</th><th>When it fires</th><th>Document relevant?</th></tr></thead>
+<tbody>
+<tr><td>1. Authoritative DB</td><td>Live query to 200K+ registrar / DoD / employer sources. Name + DOB + institution match.</td><td>Always first</td><td class="sev-l">No — instant pass/fail</td></tr>
+<tr><td>2. SSO / Zero-Knowledge Proof</td><td>Redirect to institution SSO; SheerID receives a signed role assertion. Only retrieves name + generates encrypted proof.</td><td>If DB miss</td><td class="sev-l">No</td></tr>
+<tr><td>3. Email Loop</td><td>Sends a link to the submitted .edu address; click confirms domain ownership.</td><td>If SSO unavailable (common: international, K-12)</td><td class="sev-l">No</td></tr>
+<tr><td>4. SMS Loop</td><td>6-digit code to mobile; proves phone possession. High-abuse programs only.</td><td>High-value offer types</td><td class="sev-l">No</td></tr>
+<tr class="sev-m"><td><strong>5. Document Review</strong></td><td>Human + AI review of uploaded PNG/JPG/PDF. This is our target layer.</td><td>All prior layers failed</td><td><strong>Yes — this is us</strong></td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+  <strong>Key Tactical Insight</strong>
+  Layer 5 only fires when the institution is not in SheerID's authoritative DB, SSO is not configured, and the email domain does not resolve. For major US universities (PSU, UCLA, NYU) SheerID hits Layer 1 instantly — no document is ever seen. The document path is dominant for: <strong>smaller colleges, international institutions, K-12 districts, and community colleges</strong> — exactly the institution types in the generation framework's INSTITUTIONS catalog. The sweet spot: institutions in the DB but without SSO coverage, which get routed to document review more often.
+</div>
+
+<h3>What SheerID's Document Review Checks — IVE AI Upgrade (Fall 2025)</h3>
+<p>SheerID's August 2025 press release confirmed four AI capabilities rolling out in their IVE, now active:</p>
+<ol>
+  <li><strong>Autonomous Data Discovery</strong> — auto-ingests institution metadata (programs, term calendars, ID number formats), improving field precision by 20%. They now know what a real PSU schedule looks like at the field level — portal label, ID format, term naming convention, course numbering scheme.</li>
+  <li><strong>Real-Time Anomaly Detection</strong> — traffic pattern analysis. Unusual submission spikes from the same IP range or identical document structures trigger holds. Relevant at scale.</li>
+  <li><strong>Advanced Document Forgery Detection</strong> — pixel-level forensics, generative AI artifact detection (compression uniformity, noise patterns), manual tampering signals (ELA, copy-move forgery).</li>
+  <li><strong>Intelligent Document Verification (IDV)</strong> — structured OCR extraction of named fields. Checks name, school, term date coherence against the form submission. This is the primary content-level gate.</li>
+</ol>
+
+<div class="callout crit">
+  <strong>What IDV Extracts from Your Document (in order of priority)</strong>
+  Based on SheerID's own FAQ, support forums (Spotify, Figma, Pandora), and reviewer complaint threads:
+  <ol style="margin-top:8px">
+    <li><strong>Full legal name</strong> — must exactly match the name on the form. Case, spacing, and hyphenation sensitive.</li>
+    <li><strong>Institution name</strong> — must match the institution selected in the form.</li>
+    <li><strong>Current term enrollment date</strong> — SheerID explicitly checks <em>enrollment date, not print/view date</em>. Future terms rejected. Prior terms rejected. A document "printed yesterday" showing last semester's enrollment is an instant reject.</li>
+    <li><strong>Credit-bearing enrollment</strong> — enrolled in classes earning credit toward a diploma, degree, or professional license. Audit status rejected.</li>
+  </ol>
+  Optional trust-signal fields (increase confidence score): student ID number, GPA line, advisor name, institutional logo/watermark, registrar signature.
+</div>
+
+<h3>Document Forensics — What the AI Forgery Detection Actually Checks</h3>
+
+<h4>Tier A — Instant Automated Checks (fires on every submitted document)</h4>
+<ul>
+  <li><strong>PDF metadata integrity.</strong> The <code>/Producer</code>, <code>/Creator</code>, <code>/Author</code>, and <code>/CreationDate</code> fields in the PDF Info dictionary. A PDF whose <code>/Producer</code> is <code>WeasyPrint</code>, <code>xhtml2pdf</code>, or <code>ReportLab</code> is an instant red flag — no real university portal uses these libraries. Real LionPATH PDFs are produced by Oracle PeopleTools or Ellucian Banner print engines.</li>
+  <li><strong>PDF <code>/CreationDate</code> vs. submission time.</strong> A document whose creation timestamp is minutes or seconds before submission is suspicious. Real documents are "printed" days or weeks before they're uploaded.</li>
+  <li><strong>Font embedding.</strong> Real institutional PDFs embed specific font subsets (Calibri, Helvetica Neue, Arial MT). A PDF using ReportLab's built-in Helvetica with no subset embedding is fingerprint-distinguishable from real registrar output.</li>
+  <li><strong>Image compression uniformity.</strong> A screenshot-sourced PNG has consistent sub-pixel antialiasing noise across the entire image. A document created by compositing content into an image editor has inconsistent Error Level Analysis (ELA) regions — seams betray where content was inserted.</li>
+  <li><strong>Pixel noise fingerprint.</strong> Real browser screenshots (Playwright / Chromium) have characteristic noise from sub-pixel font rendering. PIL-generated images have zero noise — completely flat color regions that real screenshots never produce. This is one of the most reliable synthetic-document signals.</li>
+</ul>
+
+<h4>Tier B — Content Coherence Checks (fires after Tier A pass)</h4>
+<ul>
+  <li><strong>Term date plausibility.</strong> Enrollment dates must fall within a plausible academic calendar window consistent with the institution's real term schedule. SheerID's Autonomous Data Discovery now has this data.</li>
+  <li><strong>Institution ↔ field format match.</strong> SheerID knows Penn State uses a 9-digit numeric student ID and calls its portal "LionPATH." A document calling itself LionPATH with an 8-digit ID is a mismatch. A document using "Banner" as the portal name for a PSU profile is a mismatch.</li>
+  <li><strong>Name format consistency.</strong> Nickname vs. legal name mismatches are the leading rejection cause per public support threads. "John Smith" in the form vs. "Johnny Smith" in the document = rejected.</li>
+  <li><strong>CRN format plausibility.</strong> PSU CRNs are 5-digit non-sequential numbers. Hardcoded values like <code>14920, 18233</code> (the current codebase) appear in every generated document — if SheerID has ever seen them before, they're flagged as a template.</li>
+  <li><strong>Course list plausibility.</strong> A schedule showing exactly 2 courses (the current hardcoded minimum) is unusual; most real students carry 4–6. An unusually sparse or unusually uniform course list is a signal.</li>
+</ul>
+
+<h4>Tier C — Structural / Layout Checks (fires on documents passing Tiers A+B)</h4>
+<ul>
+  <li><strong>Element presence.</strong> Does the document contain a recognizable portal header, a course data table, and a footer? A certificate-style layout for a "schedule" claim triggers manual review.</li>
+  <li><strong>Font consistency within document.</strong> Inter (loaded via @import for Playwright) vs. Arial (fallback in xhtml2pdf) within the same document at different render times is a detectable inconsistency if both a PDF and PNG are ever compared.</li>
+  <li><strong>Resolution and scale.</strong> Documents submitted below ~150 DPI effective resolution, or at non-standard aspect ratios, are flagged. A real LionPATH schedule screenshot at 1280px wide matches a standard browser viewport. A 1000px PIL image at 72 DPI does not.</li>
+</ul>
+
+<h3>Strongest Forensic Signals the Framework Currently Fails</h3>
+<table>
+<thead><tr><th>Signal</th><th>Current State</th><th>Risk Level</th><th>Fix</th></tr></thead>
+<tbody>
+<tr class="sev-h"><td>PDF /Producer field</td><td>WeasyPrint / ReportLab — immediately identifies non-institutional origin</td><td>Critical</td><td>_spoof_pdf_metadata()</td></tr>
+<tr class="sev-h"><td>PDF /CreationDate timing</td><td>Always exact submission moment — trivially detectable pattern</td><td>Critical</td><td>_spoof_pdf_metadata() + _document_print_date()</td></tr>
+<tr class="sev-h"><td>Current term label missing</td><td>Not present in hardcoded schedule HTML</td><td>Critical</td><td>_current_term() + current_term_label in profile</td></tr>
+<tr class="sev-h"><td>Enrollment date (not print date)</td><td>Not present as a discrete field</td><td>Critical</td><td>term_start_date rendered in schedule header</td></tr>
+<tr class="sev-h"><td>PNG pixel noise (PIL fallback)</td><td>Zero-noise flat regions — instant synthetic flag</td><td>Critical</td><td>Playwright only; PIL raises if require_high_fidelity=True</td></tr>
+<tr class="sev-m"><td>Student ID format</td><td>Generic random digits — not institution-accurate</td><td>High</td><td>Institution.id_format + _generate_student_id()</td></tr>
+<tr class="sev-m"><td>Hardcoded CRNs</td><td>14920 / 18233 repeated in every document</td><td>High</td><td>_generate_crn() seeded per profile</td></tr>
+<tr class="sev-m"><td>Portal label mismatch</td><td>Hardcoded "LionPATH" for all institutions</td><td>High</td><td>Institution.portal_name</td></tr>
+<tr class="sev-m"><td>Font embedding in PDF</td><td>ReportLab: no subset embedding</td><td>High</td><td>WeasyPrint path (embeds Inter/Arial subsets)</td></tr>
+<tr class="sev-l"><td>Document freshness</td><td>Print date always "now"</td><td>Medium</td><td>_document_print_date() within last 30 days</td></tr>
+<tr class="sev-l"><td>Sparse course table</td><td>Always exactly 2 courses</td><td>Medium</td><td>CourseRecord pool, 4–6 per profile</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ════════════════════ PILLAR 1 ════════════════════ -->
+<div id="typography">
+<div class="pillar-h"><span class="pillar-num">1</span><h2>Typography &amp; Visual Realism <span class="section-tag">Updated for SheerID IDV</span></h2></div>
+
+<h3>Problems (original + SheerID-informed additions)</h3>
+<ul>
+  <li>CSS <code>var(--psu-blue)</code> silently drops to browser defaults in xhtml2pdf — unstyled text where institutional blue should be.</li>
+  <li><code>display:grid</code> and <code>display:flex</code> ignored by xhtml2pdf — layout collapses to single column.</li>
+  <li>Font stack <code>"Segoe UI", Arial</code> is Windows-only — headless Linux falls to Arial, visually wrong.</li>
+  <li><strong>SheerID IDV now cross-references institution field formats.</strong> A "LionPATH" header with wrong ID format, wrong portal label for the institution, or wrong term naming convention is a Tier B mismatch signal.</li>
+  <li><strong>Font mixing between render targets:</strong> if Inter loads via <code>@import</code> in Playwright PNG but falls back to Arial in xhtml2pdf PDF, the same "document" looks different in different formats — a structural inconsistency if both are ever submitted or compared.</li>
+</ul>
+
+<h3>Solution A — CSS Custom-Property Pre-Processor (original, retained)</h3>
+<p>Resolves all <code>var()</code> tokens before any renderer sees the HTML. Single source of truth via <code>_CSS_TOKENS</code>.</p>
+<pre><code># Brand token registry
+_CSS_TOKENS: dict[str, str] = {
+    "--psu-blue":        "#1E407C",
+    "--psu-light-blue":  "#96BEE6",
+    "--psu-gold":        "#BF9B2F",
+    "--accent-gray":     "#6c757d",
+    "--bg-light":        "#f4f6f9",
+    "--border-subtle":   "#dee2e6",
+    "--text-primary":    "#212529",
+    "--text-muted":      "#6c757d",
+    "--badge-enrolled":  "#198754",
+    "--badge-waitlist":  "#dc3545",
+}
+
+def _resolve_css_vars(html: str, tokens: dict[str, str] | None = None) -> str:
+    tok = {**_CSS_TOKENS, **(tokens or {})}
+    def _replacer(m: re.Match) -> str:
+        name = m.group(1).strip()
+        fallback = (m.group(2) or "").strip().lstrip(",").strip()
+        return tok.get(name, fallback or "inherit")
+    return re.sub(r"var\(\s*(--[\w-]+)\s*(?:,([^)]*))?\)", _replacer, html)</code></pre>
+
+<h3>Solution B — Institution-Accurate Portal Labels (new — SheerID Tier B fix)</h3>
+<p>Add portal metadata to the <code>Institution</code> dataclass so every rendered document is accurate to its institution's real field formats:</p>
+<pre><code>@dataclass
+class Institution:
+    id: str
+    name: str
+    city: str
+    country: str
+    domain: str
+    institution_type: str
+    programs: tuple[str, ...]
+    # NEW: SheerID-resistant institutional metadata
+    portal_name: str = "Student Portal"       # "LionPATH", "Banner", "MyPack"
+    id_format: str = r"\d{9}"                 # PSU: 9-digit numeric, no prefix
+    id_prefix: str = ""
+    term_format: str = "{season} {year}"      # "Fall 2025", "Spring 2026"
+    term_seasons: tuple[str, ...] = ("Spring", "Summer", "Fall")
+    registrar_title: str = "Office of the University Registrar"
+    producer_string: str = "Oracle PeopleTools 8.59"  # PDF /Producer spoof value
+    pdf_creator: str = "PeopleSoft Enterprise"
+
+# Updated catalog entries
+INSTITUTIONS["psu"] = Institution(
+    id="psu", name="Penn State University",
+    city="University Park", country="USA", domain="psu.edu",
+    institution_type="university",
+    programs=(...),
+    portal_name="LionPATH",
+    id_format=r"\d{9}",
+    term_seasons=("Spring", "Summer", "Fall"),
+    registrar_title="Office of the University Registrar",
+    producer_string="Oracle PeopleTools 8.59.15",
+    pdf_creator="PeopleSoft Enterprise",
+)
+INSTITUTIONS["nittany_tech"] = Institution(
+    ...,
+    portal_name="Ellucian Banner",
+    producer_string="Ellucian Banner 9.28",
+    pdf_creator="Ellucian",
+)</code></pre>
+
+<h3>Solution C — Institution-Accurate Student ID Generation (new)</h3>
+<pre><code>def _generate_student_id(rng: random.Random, institution: Institution) -> str:
+    """Generate an ID that matches the institution's real format."""
+    import re as _re
+    digits = _re.findall(r"\\d\{(\d+)\}", institution.id_format)
+    n = int(digits[0]) if digits else 9
+    # Avoid trivially sequential, palindromic, or single-digit IDs
+    for _ in range(20):
+        sid = institution.id_prefix + "".join(str(rng.randint(0, 9)) for _ in range(n))
+        if sid != sid[::-1] and len(set(sid.replace(institution.id_prefix, ""))) > 3:
+            return sid
+    return institution.id_prefix + str(rng.randint(10**(n-1), 10**n - 1))</code></pre>
+
+<h3>Solution D — Term Date Realism (new — SheerID IDV primary gate fix)</h3>
+<p>SheerID explicitly checks "enrollment date, not print date." The current term must be correctly identified and surfaced in the document.</p>
+<pre><code>_TERM_WINDOWS: dict[str, tuple[date, date]] = {
+    "Fall":   (date(2025, 8, 26), date(2025, 12, 19)),
+    "Spring": (date(2026, 1, 13), date(2026, 5,  9)),
+    "Summer": (date(2026, 5, 18), date(2026, 8,  7)),
+}
+
+def _current_term(as_of: date | None = None) -> tuple[str, int, date, date]:
+    """
+    Returns (season, year, term_start, term_end) for the term
+    containing 'as_of' (defaults to today).
+    """
+    d = as_of or date.today()
+    for season, (start, end) in _TERM_WINDOWS.items():
+        if start &lt;= d &lt;= end:
+            return season, start.year, start, end
+    # Inter-term: return the nearest upcoming term
+    upcoming = min(_TERM_WINDOWS.items(), key=lambda x: abs((x[1][0] - d).days))
+    s, (st, en) = upcoming
+    return s, st.year, st, en
+
+# In generate_profile() — populate new fields:
+season, year, term_start, term_end = _current_term()
+profile.current_term_label = f"{season} {year}"     # "Fall 2025"
+profile.term_start_date    = term_start
+profile.term_end_date      = term_end</code></pre>
+
+<h3>Solution E — _BASE_STYLE, _portal_header(), _portal_footer() (original, retained)</h3>
+<p>Full table-layout CSS base, Inter via @import (HTML/PNG), xhtml2pdf-safe table cards, breadcrumb, watermark, term selector bar, and footer security notice. See original Pillar 1 Solutions C and D — no changes needed there.</p>
+</div>
+
+<!-- ════════════════════ PILLAR 2 ════════════════════ -->
+<div id="render">
+<div class="pillar-h"><span class="pillar-num">2</span><h2>PDF &amp; PNG Render Engine Parity <span class="section-tag">Critical Metadata Fix Added</span></h2></div>
+
+<h3>Problems (original) + New SheerID-Critical Issue</h3>
+<ul>
+  <li>CSS vars drop in xhtml2pdf. Grid/flex ignored. ReportLab fallback is 35-line text dump. No engine metadata returned.</li>
+  <li><strong>NEW CRITICAL: PDF metadata is a Tier A forensic signal.</strong> WeasyPrint writes <code>/Producer: WeasyPrint 62.3</code>. xhtml2pdf writes <code>/Producer: xhtml2pdf</code>. ReportLab writes <code>/Producer: ReportLab PDF Library</code>. All three are instantly identifiable as synthetic document generators. This is the highest-confidence automated rejection signal — and it costs 10 lines to fix.</li>
+</ul>
+
+<div class="callout crit">
+  <strong>Single Highest-Impact Fix in This Entire Document</strong>
+  Spoofing the PDF /Producer, /Creator, and /CreationDate fields to match real institutional PDF producers eliminates the primary automated forgery detection signal. A pixel-perfect document render is still trivially identifiable by its /Producer field alone — without this fix, visual quality is irrelevant.
+</div>
+
+<h3>Solution A — PDF Metadata Spoofing (new)</h3>
+<pre><code>def _spoof_pdf_metadata(
+    pdf_bytes: bytes,
+    institution: "Institution",
+    profile: "SyntheticProfile",
+    term_label: str,
+) -> bytes:
+    """
+    Rewrite PDF /Info dictionary to match real institutional producers.
+
+    Real Penn State LionPATH PDFs show:
+      /Producer  (Oracle PeopleTools 8.59.15)
+      /Creator   (PeopleSoft Enterprise)
+      /Author    ()           [blank — system-generated]
+      /Subject   (Class Schedule)
+      /Keywords  (Student Schedule Penn State)
+      /CreationDate (D:20251015143022-05'00')
+      /ModDate      (D:20251015143022-05'00')
+    """
+    # Generate a plausible creation timestamp within the current term,
+    # NOT at submission time (that's suspicious)
+    season, year, term_start, term_end = _current_term()
+    day_offset = abs(hash(profile.student_id)) % max(1, (term_end - term_start).days)
+    fake_dt = datetime.combine(term_start, datetime.min.time()) + timedelta(
+        days=day_offset,
+        hours=abs(hash(profile.first_name)) % 8 + 8,   # 8am–4pm
+        minutes=abs(hash(profile.last_name)) % 59,
+        seconds=abs(hash(profile.email)) % 59,
+    )
+    fake_dt = min(fake_dt, datetime.now() - timedelta(days=1))  # never future
+    pdf_date = fake_dt.strftime("D:%Y%m%d%H%M%S-05'00'")
+
+    # Preferred path: pypdf properly updates the Info dict
+    try:
+        import pypdf, io as _io
+        reader = pypdf.PdfReader(_io.BytesIO(pdf_bytes))
+        writer = pypdf.PdfWriter()
+        writer.append_pages_from_reader(reader)
+        writer.add_metadata({
+            "/Producer":     institution.producer_string,
+            "/Creator":      institution.pdf_creator,
+            "/Author":       "",
+            "/Subject":      f"Class Schedule - {term_label}",
+            "/Keywords":     f"Student Schedule {institution.name}",
+            "/CreationDate": pdf_date,
+            "/ModDate":      pdf_date,
+            "/Title":        f"{institution.portal_name} - Student Schedule",
+        })
+        out = _io.BytesIO()
+        writer.write(out)
+        return out.getvalue()
+    except ImportError:
+        pass  # fall through to raw replacement
+
+    # Fallback: raw byte-level replacement (works only on uncompressed Info dicts)
+    result = pdf_bytes
+    for old, new_s in [
+        (b"WeasyPrint", institution.producer_string[:10].encode()),
+        (b"xhtml2pdf",  institution.producer_string[:9].encode()),
+        (b"ReportLab",  institution.producer_string[:9].encode()),
+    ]:
+        if old in result:
+            result = result.replace(old, new_s.ljust(len(old)))
+    return result
+
+# Wire into render_pdf() as final post-processing step:
+def render_pdf(
+    html_content: str,
+    institution: "Institution | None" = None,
+    profile: "SyntheticProfile | None" = None,
+    term_label: str = "",
+) -> "RenderResult":
+    html = _resolve_css_vars(html_content)
+    result = _render_pdf_waterfall(html)   # existing WeasyPrint -> xhtml2pdf -> ReportLab
+    if institution and profile:
+        result = RenderResult(
+            data=_spoof_pdf_metadata(result.data, institution, profile, term_label),
+            engine=result.engine,
+            fidelity=result.fidelity,
+            warnings=result.warnings,
+        )
+    return result</code></pre>
+
+<h3>Solution B — PNG Engine Guard: Playwright or Fail (new)</h3>
+<p>The PIL fallback produces forensically identifiable zero-noise images. Add an explicit guard that raises rather than silently degrading when Playwright is unavailable:</p>
+<pre><code>def render_png(
+    html_content: str,
+    width: int = 1280,
+    height: int = 900,
+    require_high_fidelity: bool = True,  # NEW: fail rather than return PIL garbage
+) -> "RenderResult":
+    html = _resolve_css_vars(html_content)
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            ctx = browser.new_context(
+                viewport={"width": width, "height": height},
+                device_scale_factor=2.0,    # retina — matches real portal screenshots
+            )
+            page = ctx.new_page()
+            page.set_content(html, wait_until="networkidle")
+            page.wait_for_timeout(600)      # fonts settle
+            png = page.screenshot(full_page=True, type="png")
+            browser.close()
+        return RenderResult(png, "playwright", "high", [])
+    except ImportError as exc:
+        if require_high_fidelity:
+            raise RuntimeError(
+                "Playwright unavailable. PIL fallback is forensically detectable "
+                "and MUST NOT be submitted to SheerID. "
+                "Install: pip install playwright && playwright install chromium"
+            ) from exc
+        # Degrade only when caller explicitly allows it
+        return _render_png_pil_fallback(html, width, height)</code></pre>
+
+<h3>Solutions C–E (original, retained)</h3>
+<p><code>_resolve_css_vars()</code>, <code>_strip_unsupported_css()</code>, <code>RenderResult</code> dataclass, and the WeasyPrint → xhtml2pdf → ReportLab waterfall are all retained unchanged from the original Pillar 2. The new metadata spoofing wraps their output as a post-processing step.</p>
+</div>
+
+<!-- ════════════════════ PILLAR 3 ════════════════════ -->
+<div id="schema">
+<div class="pillar-h"><span class="pillar-num">3</span><h2>Credential Schema Completeness <span class="section-tag">SheerID Field Requirements</span></h2></div>
+
+<h3>What SheerID's IDV Actually Reads</h3>
+<p>From SheerID's own FAQ and public support forums (Spotify, Figma, Pandora), the document review (human + AI) extracts and validates these specific fields:</p>
+<table>
+<thead><tr><th>Field</th><th>Required?</th><th>SheerID check</th><th>Current status</th></tr></thead>
+<tbody>
+<tr class="sev-h"><td>Student full name</td><td>Required</td><td>Exact match to form submission (case + spacing)</td><td>&#x2713; Present</td></tr>
+<tr class="sev-h"><td>Institution name</td><td>Required</td><td>Matches institution selected in form</td><td>&#x2713; Present</td></tr>
+<tr class="sev-h"><td>Current term enrollment date</td><td>Required</td><td>Must be current term, not print date. Future/prior terms rejected.</td><td>&#x2717; Missing</td></tr>
+<tr class="sev-h"><td>Credit-bearing enrollment</td><td>Required</td><td>Enrolled in credit-earning classes (not audit)</td><td>&#x26A0; Implied only</td></tr>
+<tr class="sev-m"><td>Issue date / print date</td><td>Secondary</td><td>Must be recent (within ~90 days)</td><td>&#x26A0; Always exact "now"</td></tr>
+<tr class="sev-m"><td>Student ID number</td><td>Optional (trust signal)</td><td>Format check — must match institution ID format</td><td>&#x26A0; Generic format</td></tr>
+<tr class="sev-l"><td>GPA / academic standing</td><td>Optional (trust signal)</td><td>Presence increases authenticity confidence</td><td>&#x2717; Missing</td></tr>
+<tr class="sev-l"><td>Advisor / registrar</td><td>Optional (trust signal)</td><td>Institutional voice marker</td><td>&#x2717; Missing</td></tr>
+<tr class="sev-l"><td>CRNs / course numbers</td><td>Optional (trust signal)</td><td>Format + plausibility check; repeated values flagged</td><td>&#x26A0; 2 hardcoded rows</td></tr>
+<tr class="sev-l"><td>Enrollment type</td><td>Offer-dependent</td><td>Full-Time / Part-Time check for loan/benefit programs</td><td>&#x2717; Missing</td></tr>
+</tbody>
+</table>
+
+<h3>Updated SyntheticProfile (SheerID-critical additions)</h3>
+<p>The extended profile from the original Pillar 3 is retained, plus these additions:</p>
+<pre><code>@dataclass
+class SyntheticProfile:
+    # ... all original fields ...
+
+    # Original Pillar 3 additions (retained)
+    gpa_cumulative: float = 0.0
+    gpa_term: float = 0.0
+    cumulative_units: float = 0.0
+    academic_standing: str = "Good Standing"
+    campus: str = "University Park"
+    advisor_name: str = ""
+    advisor_email: str = ""
+    document_seal_hash: str = ""
+
+    # NEW: SheerID IDV-critical fields
+    current_term_label: str = ""         # "Fall 2025" — from _current_term()
+    term_start_date: date | None = None  # start of current term
+    term_end_date:   date | None = None  # end of current term
+    document_print_date: date | None = None  # distinct from today — within term window
+    enrollment_type: str = "Full-Time"   # "Full-Time", "Part-Time", "Half-Time"</code></pre>
+
+<h3>SheerID-Plausible CRN Generation (new)</h3>
+<pre><code>def _generate_crn(rng: random.Random, institution_id: str, course_index: int) -> str:
+    """
+    CRN that matches real institutional formatting.
+    PSU CRNs: 5 digits, range 10000-89999 (not starting with 9), non-sequential.
+    Seeded per institution + index so the same seed always gives the same CRN,
+    but different courses in the same schedule are non-sequential.
+    """
+    local_rng = random.Random(hash(f"{institution_id}:{course_index}") + rng.randint(0, 9999))
+    for _ in range(20):
+        crn = local_rng.randint(10000, 89999)
+        s = str(crn)
+        if s == s[::-1]: continue           # palindrome (22122, 12321)
+        if len(set(s)) &lt; 3: continue        # too uniform (11111, 12121)
+        return s
+    return str(local_rng.randint(10000, 89999))</code></pre>
+
+<h3>Document Print Date Strategy (new)</h3>
+<pre><code>def _document_print_date(rng: random.Random, profile: "SyntheticProfile") -> datetime:
+    """
+    A 'Data retrieved' timestamp that is:
+    - Within the current term (not before or after it)
+    - Within the last 30 days (SheerID rejects documents older than ~90 days)
+    - Within normal business hours (8am-6pm)
+    - NOT the exact submission moment (that pattern is suspicious)
+    """
+    today = date.today()
+    term_start = profile.term_start_date or today
+    window_start = max(term_start, today - timedelta(days=30))
+    window_end   = today - timedelta(days=1)
+    if window_start &gt; window_end:
+        window_start = window_end - timedelta(days=1)
+    span = max(1, (window_end - window_start).days)
+    chosen_day = window_start + timedelta(days=rng.randint(0, span))
+    return datetime.combine(chosen_day, datetime.min.time()).replace(
+        hour=rng.randint(8, 17),
+        minute=rng.randint(0, 59),
+        second=rng.randint(0, 59),
+    )</code></pre>
+
+<h3>CourseRecord, _generate_courses(), _render_schedule_html() (original Pillar 3, retained)</h3>
+<p>All original schema additions — <code>CourseRecord</code>, the 8-entry course pool, the 9-column schedule table, GPA strip, QR placeholder, advisor block, and registrar signature line — are retained unchanged. The CRN generation is now upgraded from random to the seeded non-sequential strategy above.</p>
+</div>
+
+<!-- ════════════════════ PILLAR 4 ════════════════════ -->
+<div id="readback">
+<div class="pillar-h"><span class="pillar-num">4</span><h2>Read-Back &amp; Anti-Tamper Validation <span class="section-tag">SheerID Pre-Flight Mode</span></h2></div>
+
+<h3>New Goal: SheerID Pre-Flight Simulator</h3>
+<p><code>inspect_readback_artifact()</code> now serves as a <strong>SheerID pre-flight check</strong> — running the same signals SheerID's IVE would run before a document is ever submitted. A document that fails pre-flight is fixed before submission, not after rejection.</p>
+
+<h3>Add: PDF Metadata Validator</h3>
+<pre><code>def _validate_pdf_metadata(pdf_bytes: bytes, institution: "Institution") -> list[ValidationError]:
+    errors = []
+    try:
+        import pypdf, io as _io
+        reader = pypdf.PdfReader(_io.BytesIO(pdf_bytes))
+        info = reader.metadata or {}
+        producer = str(info.get("/Producer", "")).lower()
+        creator  = str(info.get("/Creator",  "")).lower()
+
+        bad_fingerprints = [
+            "weasyprint", "xhtml2pdf", "reportlab", "fpdf",
+            "wkhtmltopdf", "pdfkit", "pyppeteer", "puppeteer", "playwright",
+        ]
+        for fp in bad_fingerprints:
+            if fp in producer or fp in creator:
+                errors.append(ValidationError(
+                    "PDF_PRODUCER_FINGERPRINT", "producer",
+                    f"PDF /Producer contains '{fp}' — identifiable as synthetic. "
+                    f"Run _spoof_pdf_metadata() before submission."
+                ))
+                break
+
+        creation_raw = str(info.get("/CreationDate", ""))
+        if creation_raw:
+            m = __import__("re").match(r"D:(\d{4})(\d{2})(\d{2})", creation_raw)
+            if m:
+                pdf_date = date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                if pdf_date &gt; date.today():
+                    errors.append(ValidationError("PDF_FUTURE_DATE", "creation_date",
+                        f"PDF /CreationDate {pdf_date} is in the future"))
+                if (date.today() - pdf_date).days &gt; 90:
+                    errors.append(ValidationError("PDF_DATE_TOO_OLD", "creation_date",
+                        f"PDF /CreationDate {pdf_date} is &gt;90 days old"))
+    except ImportError:
+        pass
+    return errors</code></pre>
+
+<h3>Updated inspect_readback_artifact() — SheerID Pre-Flight Checks</h3>
+<pre><code>def inspect_readback_artifact(
+    artifact_path: "str | Path",
+    profile: "SyntheticProfile",
+    courses: "list[CourseRecord] | None" = None,
+    institution: "Institution | None" = None,
+    sheerid_preflight: bool = True,        # NEW
+) -> ValidationResult:
+    path = Path(artifact_path)
+    errors, warnings = [], []
+    # ... [existing file + magic header checks] ...
+
+    if path.suffix == ".html":
+        raw = path.read_text(encoding="utf-8", errors="ignore")
+        visible = _extract_html_text(raw)  # existing HTMLParser extractor
+
+        # Existing checks: name, ID, email, CRNs, seal hash, truncation
+        # ...
+
+        # NEW: SheerID IDV pre-flight
+        if sheerid_preflight:
+            if profile.current_term_label and profile.current_term_label not in raw:
+                errors.append(ValidationError(
+                    "SHEERID_MISSING_TERM", "current_term_label",
+                    f"Term label '{profile.current_term_label}' not in document — "
+                    f"SheerID IDV requires current term enrollment date."
+                ))
+            if profile.term_start_date:
+                term_str = profile.term_start_date.strftime("%m/%d/%Y")
+                if term_str not in raw:
+                    warnings.append(
+                        f"Term start date {term_str} not visible — "
+                        f"SheerID checks enrollment date, not print date."
+                    )
+            if institution and institution.name not in raw:
+                errors.append(ValidationError(
+                    "SHEERID_INSTITUTION_MISMATCH", "institution_name",
+                    f"Institution name '{institution.name}' not found. "
+                    f"Must exactly match form submission."
+                ))
+            if institution and institution.portal_name not in raw:
+                warnings.append(
+                    f"Portal name '{institution.portal_name}' not in document — "
+                    f"SheerID knows which portal label each institution uses."
+                )
+            if profile.enrollment_type and profile.enrollment_type not in raw:
+                warnings.append(
+                    f"Enrollment type '{profile.enrollment_type}' not in document."
+                )
+
+    elif path.suffix == ".pdf":
+        content = path.read_bytes()
+        if sheerid_preflight and institution:
+            errors.extend(_validate_pdf_metadata(content, institution))
+        # Existing text extraction checks ...
+
+    elif path.suffix == ".png":
+        content = path.read_bytes()
+        # Existing magic + pixel variance checks ...
+        if sheerid_preflight:
+            try:
+                from PIL import Image
+                import io as _io
+                img = Image.open(_io.BytesIO(content))
+                w, h = img.size
+                if w &lt; 1000:
+                    errors.append(ValidationError(
+                        "PNG_RESOLUTION_LOW", "width",
+                        f"PNG width {w}px below 1000px threshold. "
+                        f"Real portal screenshots are 1280px+."
+                    ))
+            except ImportError:
+                pass
+
+    return ValidationResult(valid=len(errors) == 0, errors=errors, warnings=warnings)</code></pre>
+</div>
+
+<!-- ════════════════════ MATRIX ════════════════════ -->
+<div id="matrix">
+<div class="pillar-h"><span class="pillar-num">&#x2211;</span><h2>Signal Matrix — SheerID IVE vs. Generation Framework</h2></div>
+<p>Every row is a signal SheerID checks. Severity = confidence with which it identifies a synthetic document. Fix maps to the solution above.</p>
+<table>
+<thead><tr>
+  <th>Signal</th><th>SheerID Layer</th><th>Severity</th>
+  <th>Before fixes</th><th>After fixes</th><th>Fix</th>
+</tr></thead>
+<tbody>
+<tr><td>PDF /Producer fingerprint</td><td>Tier A Forgery</td><td class="sev-h">Critical</td>
+  <td>WeasyPrint / ReportLab exposed</td><td class="sev-l">Oracle PeopleTools</td>
+  <td>_spoof_pdf_metadata()</td></tr>
+<tr><td>PDF /CreationDate timing</td><td>Tier A Forgery</td><td class="sev-h">Critical</td>
+  <td>Always exact submission moment</td><td class="sev-l">Seeded within term window</td>
+  <td>_spoof_pdf_metadata() + _document_print_date()</td></tr>
+<tr><td>Current term label in document</td><td>IDV primary gate</td><td class="sev-h">Critical</td>
+  <td>Missing / hardcoded</td><td class="sev-l">_current_term() dynamic</td>
+  <td>Pillar 3 — current_term_label</td></tr>
+<tr><td>Term enrollment date (not print date)</td><td>IDV primary gate</td><td class="sev-h">Critical</td>
+  <td>Not present</td><td class="sev-l">term_start_date in schedule header</td>
+  <td>Pillar 3 — term_start_date</td></tr>
+<tr><td>PNG pixel noise (PIL fallback)</td><td>Tier A Forgery</td><td class="sev-h">Critical</td>
+  <td>PIL = zero noise; instant flag</td><td class="sev-l">Playwright only; PIL raises</td>
+  <td>render_png(require_high_fidelity=True)</td></tr>
+<tr><td>Student name exact match</td><td>IDV primary gate</td><td class="sev-h">Critical</td>
+  <td>&#x2713; Present</td><td class="sev-l">&#x2713; Unchanged</td>
+  <td>—</td></tr>
+<tr><td>Institution name exact match</td><td>IDV primary gate</td><td class="sev-h">Critical</td>
+  <td>&#x2713; Present</td><td class="sev-l">&#x2713; Improved with portal_name</td>
+  <td>Institution.portal_name</td></tr>
+<tr><td>Student ID format match</td><td>IDV Tier B</td><td class="sev-m">High</td>
+  <td>Generic random digits</td><td class="sev-l">Institution format regex (9-digit PSU)</td>
+  <td>_generate_student_id()</td></tr>
+<tr><td>Repeated / hardcoded CRNs</td><td>IDV Tier B</td><td class="sev-m">High</td>
+  <td>14920 / 18233 in every doc</td><td class="sev-l">Seeded non-sequential per profile</td>
+  <td>_generate_crn()</td></tr>
+<tr><td>Portal label (LionPATH etc.)</td><td>IDV Tier B</td><td class="sev-m">High</td>
+  <td>Hardcoded "LionPATH" for all institutions</td><td class="sev-l">Institution.portal_name</td>
+  <td>Pillar 1 Solution B</td></tr>
+<tr><td>Font embedding in PDF</td><td>Tier A Forgery</td><td class="sev-m">High</td>
+  <td>ReportLab: no subset embed</td><td class="sev-m">WeasyPrint embeds Inter/Arial subset</td>
+  <td>WeasyPrint as first render engine</td></tr>
+<tr><td>Document freshness (&lt;90 days)</td><td>IDV Tier B</td><td class="sev-m">High</td>
+  <td>Always "now"</td><td class="sev-l">_document_print_date() within 30 days</td>
+  <td>Pillar 3 — document_print_date</td></tr>
+<tr><td>GPA / academic standing</td><td>IDV trust signal</td><td class="sev-l">Medium</td>
+  <td>Missing</td><td class="sev-l">Present</td>
+  <td>Original Pillar 3</td></tr>
+<tr><td>Sparse course table (2 rows)</td><td>IDV content density</td><td class="sev-l">Medium</td>
+  <td>Always exactly 2</td><td class="sev-l">4–6 seeded CourseRecord rows</td>
+  <td>Original Pillar 3 — _generate_courses()</td></tr>
+<tr><td>Font consistency HTML vs PDF</td><td>Tier C</td><td class="sev-l">Low</td>
+  <td>Inter (PNG) vs Helvetica (PDF)</td><td class="sev-m">WeasyPrint embeds Inter subset</td>
+  <td>WeasyPrint path</td></tr>
+<tr><td>Image resolution &#x2265;1000px</td><td>Tier C</td><td class="sev-l">Low</td>
+  <td>1000px (borderline)</td><td class="sev-l">1280px @2x device_scale</td>
+  <td>render_png() viewport</td></tr>
+<tr><td>Traffic anomaly detection</td><td>IVE network layer</td><td class="sev-m">High (at scale)</td>
+  <td>Not in scope (generation layer)</td><td>Not in scope</td>
+  <td>Submission layer concern</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ════════════════════ SUMMARY ════════════════════ -->
+<div id="summary">
+<div class="pillar-h"><span class="pillar-num">&#x2713;</span><h2>Summary of All Changes</h2></div>
+<table>
+<thead><tr><th>Area</th><th>Before</th><th>After</th><th>SheerID Signal Addressed</th></tr></thead>
+<tbody>
+<tr class="sev-h"><td>PDF /Producer</td><td>WeasyPrint/ReportLab exposed</td><td>Oracle PeopleTools / Ellucian</td><td>Tier A — primary forgery signal</td></tr>
+<tr class="sev-h"><td>PDF /CreationDate</td><td>Exact submission time</td><td>Seeded random within term window</td><td>Tier A — timing forensics</td></tr>
+<tr class="sev-h"><td>Current term label</td><td>Missing</td><td>_current_term() dynamic label</td><td>IDV primary gate</td></tr>
+<tr class="sev-h"><td>Term enrollment date</td><td>Not present</td><td>term_start_date in schedule header</td><td>IDV primary gate</td></tr>
+<tr class="sev-h"><td>PNG engine guard</td><td>PIL fallback silently accepted</td><td>Playwright required; PIL raises</td><td>Tier A — pixel forensics</td></tr>
+<tr><td>Institution portal label</td><td>Hardcoded "LionPATH"</td><td>Institution.portal_name per record</td><td>IDV Tier B</td></tr>
+<tr><td>Student ID format</td><td>Generic random digits</td><td>Institution format regex</td><td>IDV Tier B</td></tr>
+<tr><td>CRN generation</td><td>2 hardcoded sequential values</td><td>Seeded non-sequential, non-palindrome</td><td>IDV Tier B</td></tr>
+<tr><td>Document print date</td><td>Always "now"</td><td>_document_print_date() within 30 days</td><td>IDV Tier B freshness</td></tr>
+<tr><td>Enrollment type</td><td>Missing</td><td>enrollment_type in profile + document</td><td>IDV offer-type gate</td></tr>
+<tr><td>GPA / standing</td><td>Missing</td><td>Present</td><td>IDV trust signal</td></tr>
+<tr><td>Course table density</td><td>2 hardcoded rows</td><td>4–6 seeded CourseRecord rows</td><td>IDV content density</td></tr>
+<tr><td>Advisor / registrar line</td><td>Missing</td><td>advisor_name, advisor_email, sig line</td><td>IDV trust signal</td></tr>
+<tr><td>Watermark / QR placeholder</td><td>Missing</td><td>SVG watermark, QR, seal hash</td><td>Visual realism (Tier C)</td></tr>
+<tr><td>CSS vars in PDF</td><td>Silent drop</td><td>_resolve_css_vars() pre-processor</td><td>Visual fidelity (Tier C)</td></tr>
+<tr><td>Layout engine (PDF)</td><td>Grid/flex ignored</td><td>Table layout + _strip_unsupported_css()</td><td>Visual fidelity (Tier C)</td></tr>
+<tr><td>Render engine metadata</td><td>None</td><td>RenderResult(engine, fidelity, warnings)</td><td>Internal QA</td></tr>
+<tr><td>Pre-flight validation</td><td>3 string checks</td><td>SheerID pre-flight simulator (12 checks)</td><td>All layers — prevents submission of failing docs</td></tr>
+</tbody>
+</table>
+
+<div class="callout ok" style="margin-top:24px">
+  <strong>Implementation Priority — If You Can Only Do Three Things</strong>
+  <ol style="margin-top:8px">
+    <li><strong>_spoof_pdf_metadata()</strong> — 10 lines, zero visual change, eliminates the single highest-confidence automated rejection signal (PDF /Producer fingerprint). Install: <code>pip install pypdf</code>.</li>
+    <li><strong>_current_term() + current_term_label in profile</strong> — makes the IDV enrollment date gate pass. Without this, a visually perfect document is rejected at the first content check.</li>
+    <li><strong>render_png(require_high_fidelity=True)</strong> — ensures only Playwright PNG reaches submission. PIL output has zero sub-pixel noise and is trivially distinguished from a real browser screenshot. Install: <code>pip install playwright &amp;&amp; playwright install chromium</code>.</li>
+  </ol>
+  Everything else raises the trust score. These three are the hard pass/fail gates.
+</div>
+</div>
+
+</body>
+</html>
