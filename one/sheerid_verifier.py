@@ -5,6 +5,10 @@ import logging
 import httpx
 from typing import Dict, Optional, Tuple
 
+from sheerid_schools import (
+    generate_institutional_student_email,
+    resolve_sheerid_school,
+)
 from . import config
 from .name_generator import NameGenerator, generate_birth_date
 from .img_generator import generate_image, generate_psu_email
@@ -97,19 +101,22 @@ class SheerIDVerifier:
                 first_name = name["first_name"]
                 last_name = name["last_name"]
 
-            school_id = school_id or config.DEFAULT_SCHOOL_ID
-            school = config.SCHOOLS[school_id]
+            school_id_str, school = resolve_sheerid_school(school_id, config.SCHOOLS)
 
             if not email:
-                email = generate_psu_email(first_name, last_name)
+                email = generate_institutional_student_email(
+                    first_name, last_name, school.get("domain", "PSU.EDU")
+                )
             if not birth_date:
                 birth_date = generate_birth_date()
 
-            logger.info(f"开始验证流程 | 验证 ID: {self.verification_id} | 模块: one")
+            logger.info(
+                f"开始验证流程 | 验证 ID: {self.verification_id} | 学校: {school.get('name')} ({school_id_str})"
+            )
 
             # 生成学生证 PNG
             logger.info("步骤 1/4: 生成学生证 PNG...")
-            img_data = generate_image(first_name, last_name, school_id)
+            img_data = generate_image(first_name, last_name, school_id_str)
             file_size = len(img_data)
             logger.info(f"✅ PNG 大小: {file_size / 1024:.2f}KB")
 
@@ -122,8 +129,8 @@ class SheerIDVerifier:
                 "email": email,
                 "phoneNumber": "",
                 "organization": {
-                    "id": int(school_id),
-                    "idExtended": school["idExtended"],
+                    "id": int(school["id"]),
+                    "idExtended": str(school["idExtended"]),
                     "name": school["name"],
                 },
                 "deviceFingerprintHash": self.device_fingerprint,

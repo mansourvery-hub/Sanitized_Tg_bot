@@ -132,8 +132,21 @@ SCHOOLS = {
     }
 }
 
+from sheerid_schools import (
+    DEFAULT_SCHOOL_ID as CANONICAL_DEFAULT_SCHOOL_ID,
+    SCHOOL_ALIASES,
+    TARGET_INSTITUTION_SCHOOLS,
+    resolve_sheerid_school,
+)
+
+# Merge canonical target institutions and convenience aliases into SCHOOLS
+SCHOOLS.update(TARGET_INSTITUTION_SCHOOLS)
+for _alias, _target_id in SCHOOL_ALIASES.items():
+    if _target_id in SCHOOLS and _alias not in SCHOOLS:
+        SCHOOLS[_alias] = SCHOOLS[_target_id]
+
 # 默认学校
-DEFAULT_SCHOOL_ID = '2565'
+DEFAULT_SCHOOL_ID = CANONICAL_DEFAULT_SCHOOL_ID
 
 # UTM 参数（营销追踪参数）
 # 如果 URL 中没有这些参数，会自动添加

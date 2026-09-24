@@ -52,6 +52,7 @@ async def verify_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db:
         return
 
     url = context.args[0]
+    school_arg = context.args[1] if len(context.args) > 1 else None
     user = db.get_user(user_id)
     if user["balance"] < VERIFY_COST:
         await update.message.reply_text(
@@ -68,17 +69,18 @@ async def verify_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db:
         await update.message.reply_text(t("deduct_failed", lang=lang))
         return
 
+    school_display = f" | 学校: {school_arg.upper()}" if school_arg else ""
     if lang == "zh":
         start_text = (
             f"开始处理 Gemini One Pro 认证...\n"
-            f"验证ID: {verification_id}\n"
+            f"验证ID: {verification_id}{school_display}\n"
             f"已扣除 {VERIFY_COST} 积分\n\n"
             "请稍候，这可能需要 1-2 分钟..."
         )
     else:
         start_text = (
             f"Processing Gemini One Pro verification...\n"
-            f"Verification ID: {verification_id}\n"
+            f"Verification ID: {verification_id}{school_display}\n"
             f"Deducted {VERIFY_COST} point(s)\n\n"
             "Please wait, this may take 1-2 minutes..."
         )
@@ -87,7 +89,7 @@ async def verify_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db:
 
     try:
         verifier = OneVerifier(verification_id)
-        result = await asyncio.to_thread(verifier.verify)
+        result = await asyncio.to_thread(verifier.verify, school_id=school_arg)
 
         db.add_verification(
             user_id,
@@ -246,6 +248,7 @@ async def verify3_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
         return
 
     url = context.args[0]
+    school_arg = context.args[1] if len(context.args) > 1 else None
     user = db.get_user(user_id)
     if user["balance"] < VERIFY_COST:
         await update.message.reply_text(
@@ -262,17 +265,18 @@ async def verify3_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
         await update.message.reply_text(t("deduct_failed", lang=lang))
         return
 
+    school_display = f" | 学校: {school_arg.upper()}" if school_arg else ""
     if lang == "zh":
         start_text = (
             f"开始处理 Spotify Student 认证...\n"
-            f"验证ID: {verification_id}\n"
+            f"验证ID: {verification_id}{school_display}\n"
             f"已扣除 {VERIFY_COST} 积分\n\n"
             "请稍候，这可能需要 1-2 分钟..."
         )
     else:
         start_text = (
             f"Processing Spotify Student verification...\n"
-            f"Verification ID: {verification_id}\n"
+            f"Verification ID: {verification_id}{school_display}\n"
             f"Deducted {VERIFY_COST} point(s)\n\n"
             "Please wait, this may take 1-2 minutes..."
         )
@@ -281,7 +285,7 @@ async def verify3_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
 
     try:
         verifier = SpotifyVerifier(verification_id)
-        result = await asyncio.to_thread(verifier.verify)
+        result = await asyncio.to_thread(verifier.verify, school_id=school_arg)
 
         db.add_verification(
             user_id,
@@ -343,6 +347,7 @@ async def verify4_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
         return
 
     url = context.args[0]
+    school_arg = context.args[1] if len(context.args) > 1 else None
     user = db.get_user(user_id)
     if user["balance"] < VERIFY_COST:
         await update.message.reply_text(
@@ -359,15 +364,18 @@ async def verify4_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
         await update.message.reply_text(t("deduct_failed", lang=lang))
         return
 
+    school_display = f" | 学校: {school_arg.upper()}" if school_arg else ""
     if lang == "zh":
         start_text = (
             f"🚀 开始处理 Bolt.new Teacher 认证...\n"
+            f"{school_display}\n"
             f"已扣除 {VERIFY_COST} 积分\n\n"
             "📤 正在提交文档..."
         )
     else:
         start_text = (
             f"🚀 Processing Bolt.new Teacher verification...\n"
+            f"{school_display}\n"
             f"Deducted {VERIFY_COST} point(s)\n\n"
             "📤 Submitting documents..."
         )
@@ -381,7 +389,7 @@ async def verify4_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
         async with semaphore:
             # 第1步：提交文档
             verifier = BoltnewVerifier(url, verification_id=verification_id)
-            result = await asyncio.to_thread(verifier.verify)
+            result = await asyncio.to_thread(verifier.verify, school_id=school_arg)
 
         if not result.get("success"):
             # 提交失败，退款
@@ -538,6 +546,7 @@ async def verify5_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
         return
 
     url = context.args[0]
+    school_arg = context.args[1] if len(context.args) > 1 else None
     user = db.get_user(user_id)
     if user["balance"] < VERIFY_COST:
         await update.message.reply_text(
@@ -554,17 +563,18 @@ async def verify5_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
         await update.message.reply_text(t("deduct_failed", lang=lang))
         return
 
+    school_display = f" | 学校: {school_arg.upper()}" if school_arg else ""
     if lang == "zh":
         start_text = (
             f"开始处理 YouTube Student Premium 认证...\n"
-            f"验证ID: {verification_id}\n"
+            f"验证ID: {verification_id}{school_display}\n"
             f"已扣除 {VERIFY_COST} 积分\n\n"
             "请稍候，这可能需要 1-2 分钟..."
         )
     else:
         start_text = (
             f"Processing YouTube Student Premium verification...\n"
-            f"Verification ID: {verification_id}\n"
+            f"Verification ID: {verification_id}{school_display}\n"
             f"Deducted {VERIFY_COST} point(s)\n\n"
             "Please wait, this may take 1-2 minutes..."
         )
@@ -573,7 +583,7 @@ async def verify5_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db
 
     try:
         verifier = YouTubeVerifier(verification_id)
-        result = await asyncio.to_thread(verifier.verify)
+        result = await asyncio.to_thread(verifier.verify, school_id=school_arg)
 
         db.add_verification(
             user_id,

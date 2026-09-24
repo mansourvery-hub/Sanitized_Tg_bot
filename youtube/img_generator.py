@@ -353,12 +353,13 @@ def generate_image(first_name, last_name, school_id='2565'):
         bytes: PNG 图片数据
     """
     try:
-        from render_service import render_institutional_image
+        from render_service import PayloadTransformer, render_institutional_image
 
+        inst_id = PayloadTransformer.resolve_institution_id(str(school_id))
         return render_institutional_image(
             first_name=first_name,
             last_name=last_name,
-            institution_id='psu',
+            institution_id=inst_id,
             doc_kind='schedule',
         )
     except (ImportError, RuntimeError, OSError, ValueError):

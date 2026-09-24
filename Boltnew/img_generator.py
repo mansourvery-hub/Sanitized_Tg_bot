@@ -579,18 +579,19 @@ def generate_images(first_name: str, last_name: str, school_id: str = '2565'):
         list[dict]: [{"file_name": str, "data": bytes}]
     """
     try:
-        from render_service import render_institutional_image
+        from render_service import PayloadTransformer, render_institutional_image
 
+        inst_id = PayloadTransformer.resolve_institution_id(str(school_id))
         card_png = render_institutional_image(
             first_name=first_name,
             last_name=last_name,
-            institution_id="psu",
+            institution_id=inst_id,
             doc_kind="id_card",
         )
         letter_png = render_institutional_image(
             first_name=first_name,
             last_name=last_name,
-            institution_id="psu",
+            institution_id=inst_id,
             doc_kind="faculty_summary",
         )
         return [
