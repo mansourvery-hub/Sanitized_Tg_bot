@@ -8,15 +8,20 @@ read-back testing, fixture generation, batch generation, and multi-document bund
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import logging
+import os
 import random
 import re
+import urllib.parse
+import urllib.request
 import uuid
 from dataclasses import asdict, dataclass, field, fields, replace
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
+from html import escape as _html_escape
 from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path
@@ -1602,6 +1607,117 @@ def _document_print_date(
         minute=rng.randint(0, 59),
         second=rng.randint(0, 59),
     )
+
+
+# =====================================================================
+# OPTIONAL INSTITUTIONAL LOGO SUPPORT
+# =====================================================================
+# Logos are opt-in and user-supplied: nothing is hardcoded and no network
+# call happens unless a source is explicitly passed. Downloads are cached by
+# URL digest under XDG cache so repeated renders stay byte-identical.
+
+LOGO_CACHE_DIR = (
+    Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    / "sanitized_tg_bot"
+    / "logos"
+)
+
+_LOGO_MIME_BY_SUFFIX = {
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".gif": "image/gif",
+}
+
+
+class LogoSourceError(ValueError):
+    """Raised when a requested logo cannot be resolved to image bytes."""
+
+
+def _guess_logo_mime(source: str, data: bytes) -> str:
+    suffix = Path(
+        urllib.parse.urlparse(source).path if "://" in source else source
+    ).suffix.lower()
+    if suffix in _LOGO_MIME_BY_SUFFIX:
+        return _LOGO_MIME_BY_SUFFIX[suffix]
+    if data[:5] == b"<?xml" or b"<svg" in data[:512]:
+        return "image/svg+xml"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    return "application/octet-stream"
+
+
+def resolve_logo_bytes(source: str | Path | None) -> bytes | None:
+    """Resolve a logo from a local path or http(s) URL, caching URL downloads.
+
+    Returns ``None`` when no source is given. Raises :class:`LogoSourceError`
+    for an unreadable local file, a failed download, or a non-image payload.
+    """
+    if source is None:
+        return None
+    raw = str(source).strip()
+    if not raw:
+        return None
+
+    if "://" in raw:
+        parsed = urllib.parse.urlparse(raw)
+        if parsed.scheme not in ("http", "https"):
+            raise LogoSourceError(f"Unsupported logo URL scheme: {parsed.scheme}")
+        cache_key = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
+        for cached in sorted(LOGO_CACHE_DIR.glob(f"{cache_key}.*")):
+            logger.debug("logo cache hit: %s", cached)
+            return cached.read_bytes()
+        request = urllib.request.Request(
+            raw, headers={"User-Agent": "Sanitized_Tg_bot/1.0"}
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:
+                data = response.read()
+        except Exception as exc:
+            raise LogoSourceError(f"Could not download logo from {raw}: {exc}") from exc
+        if not data:
+            raise LogoSourceError(f"Empty response downloading logo from {raw}")
+        LOGO_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        suffix = Path(parsed.path).suffix.lower()
+        if suffix not in _LOGO_MIME_BY_SUFFIX:
+            suffix = (
+                ".png"
+                if not data.lstrip().startswith(b"<?xml") and b"<svg" not in data[:512]
+                else ".svg"
+            )
+        cached = LOGO_CACHE_DIR / f"{cache_key}{suffix}"
+        cached.write_bytes(data)
+        logger.info("cached logo %s -> %s", raw, cached)
+        return data
+
+    path = Path(raw).expanduser()
+    if not path.is_file():
+        raise LogoSourceError(f"Logo file not found: {path}")
+    data = path.read_bytes()
+    if not data:
+        raise LogoSourceError(f"Logo file is empty: {path}")
+    return data
+
+
+def build_logo_data_uri(source: str | Path | None) -> str | None:
+    """Return an ``<img src=...>``-ready data URI for a logo, or ``None``."""
+    data = resolve_logo_bytes(source)
+    if data is None:
+        return None
+    mime = _guess_logo_mime(str(source), data)
+    if not mime.startswith("image/"):
+        raise LogoSourceError(
+            f"Logo does not look like an image (detected {mime}); "
+            "supply an SVG, PNG, JPEG, WebP or GIF."
+        )
+    encoded = base64.b64encode(data).decode("ascii")
+    return f"data:{mime};base64,{encoded}"
 
 
 def _stable_hash_int(value: str) -> int:
@@ -4646,7 +4762,10 @@ def generate_registrar_letter_document(
 
 
 def generate_schedule_document(
-    profile: SyntheticProfile, academic_state: AcademicState, temporal: TemporalAnchor
+    profile: SyntheticProfile,
+    academic_state: AcademicState,
+    temporal: TemporalAnchor,
+    logo_data_uri: str | None = None,
 ) -> Document:
     # Route registrar letters (e.g. UCLA, UT Austin) to official letter renderer
     if profile.institution.document_archetype == DocumentArchetype.REGISTRAR_LETTER:
@@ -4672,15 +4791,11 @@ def generate_schedule_document(
     if inst.id == "psu":
         # Hardcoded brand hex: keeps saved HTML standalone (no var() dependency)
         brand_color = "#1E407C"
+        logo_html = _render_logo_img(logo_data_uri, inst.name)
         topbar_html = f"""
         <div class="topbar" style="background: {brand_color}; color: #ffffff; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 100 100" style="vertical-align: middle; margin-right: 10px; flex-shrink: 0;" aria-label="Penn State University">
-                    <circle cx="50" cy="38" r="26" fill="rgba(255,255,255,0.20)"/>
-                    <text x="50" y="48" text-anchor="middle" font-size="30" font-weight="900" font-family="Georgia,serif" fill="#ffffff">PS</text>
-                    <rect x="14" y="66" width="72" height="3" rx="1.5" fill="rgba(255,255,255,0.35)"/>
-                    <text x="50" y="86" text-anchor="middle" font-size="9" font-weight="700" font-family="Arial,sans-serif" fill="rgba(255,255,255,0.80)" letter-spacing="1">PENN STATE</text>
-                </svg>
+                {logo_html}
                 <span style="font-weight: 700; font-size: 16px;">{profile.institution_name} &mdash; LionPATH</span>
             </div>
             <div style="font-size: 12px;">Welcome, <strong>{name}</strong> &ensp;|&ensp; {print_date_str}</div>
@@ -5549,6 +5664,7 @@ def generate_document(
     profile: SyntheticProfile,
     doc_kind: DocumentKind = DocumentKind.SCHEDULE,
     seed: int = 42,
+    logo_source: str | Path | None = None,
 ) -> Document:
     rng = random.Random(seed)
     anchor_dt = profile.document_print_date or profile.enrollment_date
@@ -5562,7 +5678,12 @@ def generate_document(
     )
 
     if doc_kind == DocumentKind.SCHEDULE:
-        doc = generate_schedule_document(profile, academic_state, temporal)
+        doc = generate_schedule_document(
+            profile,
+            academic_state,
+            temporal,
+            logo_data_uri=build_logo_data_uri(logo_source) if logo_source else None,
+        )
     elif doc_kind == DocumentKind.TUITION_RECEIPT:
         doc = generate_tuition_receipt_document(profile, academic_state, temporal)
     elif doc_kind == DocumentKind.ID_CARD:
@@ -5572,7 +5693,12 @@ def generate_document(
     elif doc_kind == DocumentKind.ENROLLMENT_CERTIFICATE:
         doc = generate_enrollment_certificate_document(profile, temporal)
     else:
-        doc = generate_schedule_document(profile, academic_state, temporal)
+        doc = generate_schedule_document(
+            profile,
+            academic_state,
+            temporal,
+            logo_data_uri=build_logo_data_uri(logo_source) if logo_source else None,
+        )
 
     # Resolve CSS var() calls once at generation time so every consumer
     # (saved HTML, PNG, PDF) receives the same standalone markup.
@@ -6421,6 +6547,7 @@ def generate_fixture_bundle(
         ArtifactType.PDF,
         ArtifactType.PNG,
     ),
+    logo_source: str | Path | None = None,
 ) -> GenerationResult:
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -6430,7 +6557,9 @@ def generate_fixture_bundle(
         seed=seed,
         override_institution_id=override_institution_id,
     )
-    doc = generate_document(profile, doc_kind=doc_kind, seed=seed)
+    doc = generate_document(
+        profile, doc_kind=doc_kind, seed=seed, logo_source=logo_source
+    )
 
     profile_val = validate_profile(profile)
     doc_val = validate_document(doc)
@@ -6546,6 +6675,22 @@ def generate_fixture_bundle(
     )
 
 
+def _render_logo_img(logo_data_uri: str | None, alt_text: str) -> str:
+    """Render a user-supplied logo <img>, or nothing when no logo was chosen.
+
+    No placeholder mark is invented: a document with no logo simply shows the
+    institution name, which is what the verification requirements ask for.
+    """
+    if not logo_data_uri:
+        return ""
+    safe_alt = _html_escape(alt_text, quote=True)
+    return (
+        f'<img src="{logo_data_uri}" alt="{safe_alt}" '
+        'height="34" style="vertical-align: middle; margin-right: 10px; '
+        'flex-shrink: 0;" />'
+    )
+
+
 def _scenario_name_for_profile(profile: SyntheticProfile) -> str:
     """Recover the scenario label that matches a loaded profile's role/level."""
     for name, cfg in SCENARIOS.items():
@@ -6562,6 +6707,7 @@ def refresh_bundle(
         ArtifactType.PDF,
         ArtifactType.PNG,
     ),
+    logo_source: str | Path | None = None,
 ) -> GenerationResult:
     """Re-render artifacts in an existing bundle from its saved profile.
 
@@ -6585,7 +6731,7 @@ def refresh_bundle(
         raise ValueError(f"Could not parse {profile_path}: {exc}") from exc
 
     profile_val = validate_profile(profile)
-    doc = generate_document(profile, doc_kind=doc_kind, seed=0)
+    doc = generate_document(profile, doc_kind=doc_kind, seed=0, logo_source=logo_source)
     doc_val = validate_document(doc)
 
     artifacts: list[GeneratedArtifact] = []

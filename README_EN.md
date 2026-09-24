@@ -176,8 +176,28 @@ Or non-interactively specify a target and seed:
 - **Validate & Inspect**: `./venv/bin/python app.py validate output/`
 - **Institution Examples**: `./venv/bin/python app.py identity --institution up_diliman --seed 42 --json` · `./venv/bin/python app.py document --institution usp --seed 42 --json` · `./venv/bin/python app.py render --institution makerere --format pdf`
 - **Visual Regression**: `./venv/bin/python app.py visual-regression` · `./venv/bin/python app.py visual-regression --update-baselines`
+- **Refresh Existing Bundle**: `./venv/bin/python app.py refresh output/my-bundle`
 
 `--institution` accepts canonical IDs, numeric SheerID IDs and aliases (see table above) via `render_service.PayloadTransformer`. `--seed` guarantees cross-run determinism. Institutional emails are resolved via `sheerid_schools.generate_institutional_student_email()`. Golden visual baselines live in `tests/visual_baselines/` (12 PNGs + `manifest.json`).
+
+### Re-render an existing bundle (`refresh`)
+
+`refresh` reloads a bundle's saved `profile.json` and rewrites `document.html` / `document.pdf` / `document.png` in place. Use it to pick up template and renderer improvements **without changing the identity** — important when the name, DOB and email are already entered in a verification form.
+
+```bash
+./venv/bin/python app.py refresh output/my-bundle
+```
+
+Generation is deterministic: the same seed produces byte-identical HTML/PNG/PDF across runs, so `refresh` is safe to re-run.
+
+### Optional institutional logo
+
+No logo is hardcoded and no placeholder mark is invented. The document shows the institution name, which satisfies the "institution name **or** logo" requirement. To add a real mark, supply it yourself — the interactive wizard asks at runtime, or pass `--logo` non-interactively:
+
+- `--logo ~/path/to/logo.svg` — local file
+- `--logo https://example.org/logo.png` — downloaded once, then cached under `$XDG_CACHE_HOME/sanitized_tg_bot/logos` so later renders stay byte-identical
+
+Accepted formats: SVG, PNG, JPEG, WebP, GIF.
 
 
 ### User Commands

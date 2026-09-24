@@ -173,12 +173,34 @@ docker run -d --name tgbot-verify --env-file .env -v $(pwd)/logs:/app/logs tgbot
 ./venv/bin/python app.py validate output/
 ./venv/bin/python app.py visual-regression
 ./venv/bin/python app.py visual-regression --update-baselines
+./venv/bin/python app.py refresh output/my-bundle --logo ~/logos/institution.svg
 ```
 
 - `--institution` 支持院校 ID、数字 SheerID ID 与别名（见上表），由 `render_service.PayloadTransformer` 统一归一。
 - `--seed` 保证跨运行确定性（姓名、学号、GPA、学期标签均可复现）。
 - SheerID 邮箱通过 `sheerid_schools.generate_institutional_student_email()` 按院校域名生成。
 - 视觉回归基线位于 `tests/visual_baselines/`（含 `up_diliman_form5.png` 等 12 份金标），清单见 `manifest.json`。
+
+### 重新渲染已有生成物（`refresh`）
+
+`refresh` 读取生成目录中已保存的 `profile.json`，并原地重写 `document.html` / `document.pdf` / `document.png`。
+用于在**不改变身份信息**的前提下应用模板与渲染改进 —— 当姓名、生日、邮箱已填入认证表单时尤为重要。
+
+```bash
+./venv/bin/python app.py refresh output/my-bundle
+```
+
+生成过程是确定性的：相同 seed 会产出逐字节一致的 HTML/PNG/PDF，因此可安全重复执行 `refresh`。
+
+### 可选的院校 Logo
+
+代码不内置任何 Logo，也不会生成占位图形。文档中已包含院校全名，满足“院校名称**或** Logo”的要求。
+如需使用真实校徽，请自行提供 —— 交互向导会在运行时询问，或通过 `--logo` 非交互指定：
+
+- `--logo ~/path/to/logo.svg` — 本地文件
+- `--logo https://example.org/logo.png` — 首次下载后缓存至 `$XDG_CACHE_HOME/sanitized_tg_bot/logos`，保证后续渲染逐字节一致
+
+支持格式：SVG、PNG、JPEG、WebP、GIF。
 
 ---
 

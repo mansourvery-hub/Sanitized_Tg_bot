@@ -204,7 +204,7 @@ def cmd_render(args: argparse.Namespace) -> int:
             print(f"Error: Unknown document kind '{args.kind}'")
             return 1
 
-    doc = generate_document(profile, doc_kind=doc_kind)
+    doc = generate_document(profile, doc_kind=doc_kind, logo_source=args.logo)
     out_dir = (
         Path(args.output)
         if args.output
@@ -273,6 +273,7 @@ def cmd_fixture(args: argparse.Namespace) -> int:
         seed=args.seed if args.seed is not None else 12345,
         output_dir=output_dir,
         override_institution_id=args.institution,
+        logo_source=args.logo,
     )
 
     if args.json:
@@ -461,6 +462,33 @@ def cmd_inspect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _prompt_logo_source(interactive: bool = True) -> str | None:
+    """Ask at runtime which logo (if any) to place on the document.
+
+    Returns a local path, an http(s) URL, or None for no logo. Nothing is
+    hardcoded: the user supplies the source on every run.
+    """
+    if not interactive:
+        return None
+    print("\nInstitutional logo (optional):")
+    print("  [1] No logo                 (institution name only; default)")
+    print("  [2] Use a local image file  (SVG/PNG/JPEG/WebP/GIF)")
+    print("  [3] Download from a URL     (cached locally after first download)")
+    try:
+        choice = input("Choose [1]: ").strip() or "1"
+    except (KeyboardInterrupt, EOFError):
+        print()
+        return None
+    try:
+        if choice == "2":
+            return input("Local file path: ").strip() or None
+        if choice == "3":
+            return input("Logo URL (http/https): ").strip() or None
+    except (KeyboardInterrupt, EOFError):
+        print()
+    return None
+
+
 def cmd_refresh(args: argparse.Namespace) -> int:
     """Re-render an existing bundle in place from its saved profile.json."""
     target = Path(args.target)
@@ -477,7 +505,7 @@ def cmd_refresh(args: argparse.Namespace) -> int:
             return 1
 
     try:
-        res = refresh_bundle(target, doc_kind=doc_kind)
+        res = refresh_bundle(target, doc_kind=doc_kind, logo_source=args.logo)
     except (FileNotFoundError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
@@ -790,6 +818,10 @@ def cmd_wizard(args: argparse.Namespace) -> int:
                 print("Invalid seed integer, using random seed.")
                 seed_val = None
 
+        logo_source = getattr(args, "logo", None)
+        if logo_source is None and not getattr(args, "non_interactive", False):
+            logo_source = _prompt_logo_source(interactive=True)
+
         print(f"\n[+] Generating bundle for: {target_info['name']}")
         actual_seed = (
             seed_val if seed_val is not None else random.randint(10000, 999999)
@@ -802,6 +834,7 @@ def cmd_wizard(args: argparse.Namespace) -> int:
             seed=actual_seed,
             output_dir=target_dir,
             override_institution_id=target_info["institution"],
+            logo_source=logo_source,
         )
         print(
             "\n--------------------------------------------------------------------------"
@@ -933,6 +966,10 @@ def cmd_wizard(args: argparse.Namespace) -> int:
             print("Invalid seed integer, using random seed.")
             seed_val = None
 
+    logo_source = getattr(args, "logo", None)
+    if logo_source is None and not getattr(args, "non_interactive", False):
+        logo_source = _prompt_logo_source(interactive=True)
+
     print(f"\n[+] Generating bundle for: {target_info['name']}")
     actual_seed = seed_val if seed_val is not None else random.randint(10000, 999999)
 
@@ -942,6 +979,7 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         seed=actual_seed,
         output_dir=target_dir,
         override_institution_id=target_info["institution"],
+        logo_source=logo_source,
     )
 
     print(
@@ -1071,6 +1109,10 @@ def main() -> int:
     parser.add_argument(
         "--seed", type=int, help="Deterministic seed integer for wizard"
     )
+    parser.add_argument(
+        "--logo",
+        help="Optional institutional logo: local image path or http(s) URL",
+    )
 
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
@@ -1155,6 +1197,10 @@ def main() -> int:
         "--seed", type=int, default=None, help="Deterministic seed integer"
     )
     p_rnd.add_argument("--output", help="Custom output directory")
+    p_rnd.add_argument(
+        "--logo",
+        help="Optional institutional logo: local image path or http(s) URL",
+    )
     p_rnd.add_argument("--json", action="store_true", help="Format output as JSON")
 
     # Fixture command
@@ -1177,6 +1223,10 @@ def main() -> int:
         "--seed", type=int, default=12345, help="Deterministic seed integer"
     )
     p_fix.add_argument("--output", help="Custom target output directory")
+    p_fix.add_argument(
+        "--logo",
+        help="Optional institutional logo: local image path or http(s) URL",
+    )
     p_fix.add_argument("--json", action="store_true", help="Format output as JSON")
 
     # Batch command
@@ -1230,6 +1280,10 @@ def main() -> int:
         choices=[dk.value for dk in DocumentKind],
         default="schedule",
         help="Document kind to regenerate (default: schedule)",
+    )
+    p_ref.add_argument(
+        "--logo",
+        help="Optional institutional logo: local image path or http(s) URL (downloaded and cached)",
     )
 
     # Visual Regression command
@@ -1306,6 +1360,10 @@ def main() -> int:
         help="Wizard mode: 1/workflow or 2/service",
     )
     p_wiz.add_argument("--seed", type=int, help="Deterministic seed integer")
+    p_wiz.add_argument(
+        "--logo",
+        help="Optional institutional logo: local image path or http(s) URL",
+    )
 
     args = parser.parse_args()
 

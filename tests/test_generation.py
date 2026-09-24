@@ -10,6 +10,7 @@ import unittest
 from datetime import date
 from io import BytesIO
 from pathlib import Path
+from typing import Self
 
 import pypdf
 from PIL import Image
@@ -309,14 +310,100 @@ class TestGenerationSystem(unittest.TestCase):
                     f"famous-person instructor '{instructor}' found for {program}",
                 )
 
-    def test_psu_document_has_standalone_css_and_logo(self):
-        """Saved/generated HTML must have no raw var() and include a logo mark."""
+    def test_logo_is_opt_in_and_user_supplied(self):
+        """No logo unless one is supplied; the placeholder mark is gone."""
+        profile = generate_profile(
+            scenario_name="undergraduate", institution_id="psu", seed=42
+        )
+        without = generate_document(profile, doc_kind=DocumentKind.SCHEDULE)
+        self.assertNotIn("<img", without.html_content)
+        self.assertNotIn("data:image/", without.html_content)
+        # institution name alone must still be present
+        self.assertIn("Penn State University", without.html_content)
+
+    def test_logo_from_local_file_is_embedded_as_data_uri(self):
+        from generation import build_logo_data_uri
+
+        with tempfile.TemporaryDirectory() as tmp:
+            logo = Path(tmp) / "mark.svg"
+            logo.write_text(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>',
+                encoding="utf-8",
+            )
+            profile = generate_profile(
+                scenario_name="undergraduate", institution_id="psu", seed=42
+            )
+            doc = generate_document(
+                profile, doc_kind=DocumentKind.SCHEDULE, logo_source=logo
+            )
+            self.assertIn("<img", doc.html_content)
+            self.assertIn("data:image/svg+xml;base64,", doc.html_content)
+            self.assertIn(build_logo_data_uri(logo), doc.html_content)
+            # rendering must still succeed with the embedded logo
+            self.assertTrue(
+                render_png(doc.html_content).startswith(b"\x89PNG\r\n\x1a\n")
+            )
+
+    def test_logo_source_errors(self):
+        from generation import LogoSourceError, resolve_logo_bytes
+
+        self.assertIsNone(resolve_logo_bytes(None))
+        self.assertIsNone(resolve_logo_bytes("   "))
+        with self.assertRaises(LogoSourceError):
+            resolve_logo_bytes("/nonexistent/logo.png")
+        with self.assertRaises(LogoSourceError):
+            resolve_logo_bytes("file:///etc/passwd")
+
+    def test_logo_download_is_cached_and_deterministic(self):
+        """A downloaded logo is cached, so re-renders stay byte-identical."""
+        from unittest.mock import patch
+
+        import generation as gen_mod
+        from generation import build_logo_data_uri
+
+        payload = b"\x89PNG\r\n\x1a\n" + b"fake-png-payload-for-cache-test" * 8
+
+        class _FakeResponse:
+            def __init__(self, data: bytes) -> None:
+                self._data = data
+
+            def read(self) -> bytes:
+                return self._data
+
+            def __enter__(self) -> Self:
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+        url = "https://example.invalid/logo-test.png"
+        with (
+            tempfile.TemporaryDirectory() as cache_dir,
+            patch.object(gen_mod, "LOGO_CACHE_DIR", Path(cache_dir)),
+        ):
+            with patch.object(
+                gen_mod.urllib.request, "urlopen", return_value=_FakeResponse(payload)
+            ):
+                first = build_logo_data_uri(url)
+            downloaded = list(Path(cache_dir).iterdir())
+            self.assertEqual(len(downloaded), 1, "download should be cached on disk")
+
+            # second call must hit the cache and still work without network
+            with patch.object(
+                gen_mod.urllib.request,
+                "urlopen",
+                side_effect=AssertionError("cache miss: network was used again"),
+            ):
+                second = build_logo_data_uri(url)
+            self.assertEqual(first, second)
+
+    def test_psu_document_has_standalone_css(self):
+        """Saved/generated HTML must have no raw var() and keep brand color."""
         profile = generate_profile(
             scenario_name="undergraduate", institution_id="psu", seed=42
         )
         doc = generate_document(profile, doc_kind=DocumentKind.SCHEDULE)
         self.assertNotIn("var(--", doc.html_content)
-        self.assertIn("<svg", doc.html_content)
         self.assertIn("Penn State", doc.html_content)
         self.assertIn("#1E407C", doc.html_content)
 
