@@ -27,13 +27,13 @@ jobs:
           pip install ruff pyright
 
       - name: Check code formatting (ruff format)
-        run: ruff format --check generation.py app.py render_service.py sheerid_schools.py tests/
+        run: ruff format --check generation.py app.py render_service.py sheerid_schools.py visual_regression.py tests/
 
       - name: Lint code (ruff check)
-        run: ruff check generation.py app.py render_service.py sheerid_schools.py tests/
+        run: ruff check generation.py app.py render_service.py sheerid_schools.py visual_regression.py tests/
 
       - name: Static type check (pyright)
-        run: pyright generation.py app.py render_service.py sheerid_schools.py tests/
+        run: pyright generation.py app.py render_service.py sheerid_schools.py visual_regression.py tests/
 
   test:
     name: Test & Validate (${{ matrix.python-version }})
@@ -69,3 +69,15 @@ jobs:
           python app.py --target 3 --seed 42
           python app.py --target 4 --seed 42
           python app.py --target 5 --seed 42
+
+      - name: Visual regression suite
+        run: |
+          python app.py visual-regression
+
+      - name: Upload visual regression diffs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-diffs-${{ matrix.python-version }}
+          path: output/visual_regressions/
+          if-no-files-found: ignore

@@ -1,0 +1,150 @@
+{
+  "version": "1.0",
+  "baselines": {
+    "psu_portal_schedule": {
+      "spec": {
+        "name": "psu_portal_schedule",
+        "institution_id": "psu",
+        "document_kind": "schedule",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Jordan",
+          "last_name": "Miller",
+          "student_id": "987654321",
+          "term_label": "Fall 2026",
+          "document_print_date": "2026-09-01"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "Penn State University - LionPATH Class Schedule Portal View"
+      },
+      "file_name": "psu_portal_schedule.png",
+      "sha256": "864b3b79ba95e8580c21fdf6071f9a5d07c324c51c46f2dcfe320ef784b01e98",
+      "size_bytes": 277289
+    },
+    "ucla_registrar_letter": {
+      "spec": {
+        "name": "ucla_registrar_letter",
+        "institution_id": "ucla",
+        "document_kind": "verification_letter",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Elena",
+          "last_name": "Reyes",
+          "student_id": "105938472",
+          "term_label": "Fall Quarter 2026",
+          "document_print_date": "2026-09-01"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "UCLA - Office of the Registrar Enrollment Verification Letter"
+      },
+      "file_name": "ucla_registrar_letter.png",
+      "sha256": "4e83f69fdf62de7782097c56014b5d30ac4572a31e745c71904e4edd5123ea2a",
+      "size_bytes": 184803
+    },
+    "nyu_albert_schedule": {
+      "spec": {
+        "name": "nyu_albert_schedule",
+        "institution_id": "nyu",
+        "document_kind": "schedule",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Zachary",
+          "last_name": "Brooks",
+          "student_id": "N18294726",
+          "term_label": "Fall 2026",
+          "document_print_date": "2026-09-01"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "New York University - Albert Student Center Class Schedule"
+      },
+      "file_name": "nyu_albert_schedule.png",
+      "sha256": "25496da97f2cab39b58b2b2dd6a65a71ef3977ffefc03daabcee4201779cf4d7",
+      "size_bytes": 277245
+    },
+    "umich_wolverine_schedule": {
+      "spec": {
+        "name": "umich_wolverine_schedule",
+        "institution_id": "umich",
+        "document_kind": "schedule",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Samantha",
+          "last_name": "Chen",
+          "student_id": "48920183",
+          "term_label": "Fall 2026",
+          "document_print_date": "2026-09-01"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "University of Michigan - Wolverine Access Class Schedule"
+      },
+      "file_name": "umich_wolverine_schedule.png",
+      "sha256": "a8a028d76bcc00f6992ea901f6de154829d49e97765594e6e51a4e4ddb14c3e8",
+      "size_bytes": 275362
+    },
+    "ut_austin_enrollment_letter": {
+      "spec": {
+        "name": "ut_austin_enrollment_letter",
+        "institution_id": "ut_austin",
+        "document_kind": "verification_letter",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Marcus",
+          "last_name": "Vance",
+          "student_id": "893740128",
+          "term_label": "Fall 2026",
+          "document_print_date": "2026-09-01"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "UT Austin - Texas One Stop Enrollment Certification Letter"
+      },
+      "file_name": "ut_austin_enrollment_letter.png",
+      "sha256": "9f7ab3653c7e3b31fb7fd95deb532eed3a2f18018ac06dd5227dcae7209fb1e2",
+      "size_bytes": 154425
+    },
+    "springfield_faculty_summary": {
+      "spec": {
+        "name": "springfield_faculty_summary",
+        "institution_id": "springfield_k12",
+        "document_kind": "faculty_summary",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Patricia",
+          "last_name": "Holloway",
+          "student_id": "EMP-49201",
+          "document_print_date": "2026-09-01"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "Springfield K-12 - Employee Access Faculty Verification Summary"
+      },
+      "file_name": "springfield_faculty_summary.png",
+      "sha256": "ad51e8027155daaa976dddd4b1f878804a87121b370cd66494fdf09a301f245b",
+      "size_bytes": 163126
+    },
+    "nittany_tech_id_card": {
+      "spec": {
+        "name": "nittany_tech_id_card",
+        "institution_id": "nittany_tech",
+        "document_kind": "id_card",
+        "seed": 42,
+        "attributes": {
+          "first_name": "David",
+          "last_name": "Sterling",
+          "student_id": "902847192",
+          "document_print_date": "2026-09-01"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "Nittany Tech - Official Campus ID Card Visual"
+      },
+      "file_name": "nittany_tech_id_card.png",
+      "sha256": "7b753e4ffe608f6a20a0ff64cffae03c0b3e705c5586a391a37b41cd5867c324",
+      "size_bytes": 78371
+    }
+  }
+}

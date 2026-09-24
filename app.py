@@ -458,6 +458,108 @@ def cmd_inspect(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_visual_regression(args: argparse.Namespace) -> int:
+    """Run visual regression suite, update baselines, or compare individual images."""
+    from visual_regression import (
+        DEFAULT_BASELINES_DIR,
+        VisualRegressionSuite,
+        compare_images,
+    )
+
+    threshold = float(args.threshold)
+    color_tolerance = int(args.color_tolerance)
+
+    if args.compare:
+        base_path = Path(args.compare[0])
+        cand_path = Path(args.compare[1])
+        if not base_path.exists():
+            print(f"Error: Baseline image not found: {base_path}", file=sys.stderr)
+            return 1
+        if not cand_path.exists():
+            print(f"Error: Candidate image not found: {cand_path}", file=sys.stderr)
+            return 1
+
+        result = compare_images(
+            baseline=base_path,
+            candidate=cand_path,
+            threshold=threshold,
+            color_tolerance=color_tolerance,
+            generate_diff_image=bool(args.diff_out),
+        )
+
+        if args.diff_out and result.diff_image_bytes:
+            out_p = Path(args.diff_out)
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            out_p.write_bytes(result.diff_image_bytes)
+
+        if args.json:
+            _print_json(result.to_dict())
+        else:
+            print("=== VISUAL COMPARISON RESULT ===")
+            print(
+                f"Verdict:         {'MATCH (PASS)' if result.match else 'MISMATCH (FAIL)'}"
+            )
+            print(
+                f"Diff Ratio:      {result.diff_ratio * 100:.4f}% (Threshold: {threshold * 100:.2f}%)"
+            )
+            print(f"Diff Pixels:     {result.diff_pixels} / {result.total_pixels}")
+            print(f"RMSE:            {result.rmse:.4f}")
+            print(
+                f"Dimensions:      Baseline {result.baseline_size} vs Candidate {result.candidate_size}"
+            )
+            if args.diff_out:
+                print(f"Diff Artifact:   {args.diff_out}")
+
+        return 0 if result.match else 1
+
+    baselines_dir = (
+        Path(args.baselines_dir) if args.baselines_dir else DEFAULT_BASELINES_DIR
+    )
+    suite = VisualRegressionSuite(baselines_dir=baselines_dir)
+
+    if args.update_baselines:
+        res = suite.generate_baselines(force=True)
+        if args.json:
+            _print_json(res)
+        else:
+            print(
+                f"Updated {res['total_specs']} baseline snapshots in: {res['baselines_dir']}"
+            )
+            print(f"Manifest written to: {res['manifest_file']}")
+        return 0
+
+    diff_dir = (
+        Path(args.diff_dir) if args.diff_dir else Path("output") / "visual_regressions"
+    )
+    suite_res = suite.run_suite(
+        threshold=threshold,
+        color_tolerance=color_tolerance,
+        diff_dir=diff_dir,
+    )
+
+    if args.json:
+        _print_json(suite_res)
+    else:
+        print("=== VISUAL REGRESSION SUITE ===")
+        print(f"Total Specs:     {suite_res['total']}")
+        print(f"Passed:          {suite_res['passed']}")
+        print(f"Failed:          {suite_res['failed']}")
+        print(f"Overall Status:  {'PASSED' if suite_res['all_passed'] else 'FAILED'}\n")
+        print(f"{'Spec Name':<32} {'Verdict':<10} {'Diff %':<10} {'RMSE':<8}")
+        print("-" * 64)
+        for name, data in suite_res["results"].items():
+            verdict = "PASS" if data["match"] else "FAIL"
+            diff_pct = f"{data['diff_ratio'] * 100:.3f}%"
+            print(f"{name:<32} {verdict:<10} {diff_pct:<10} {data['rmse']:<8.2f}")
+
+        if not suite_res["all_passed"]:
+            print(
+                f"\n[!] Discrepancies detected. Diff artifacts written to: {diff_dir}"
+            )
+
+    return 0 if suite_res["all_passed"] else 1
+
+
 def cmd_wizard(args: argparse.Namespace) -> int:
     """Interactive wizard for choosing module target and generating everything in one command."""
     print("==========================================================================")
@@ -759,6 +861,49 @@ def main() -> int:
     p_ins.add_argument("target", help="Profile JSON file or fixture directory")
     p_ins.add_argument("--json", action="store_true", help="Format output as JSON")
 
+    # Visual Regression command
+    p_vis = subparsers.add_parser(
+        "visual-regression",
+        aliases=["visreg"],
+        help="Run visual regression suite, update baselines, or compare images",
+    )
+    p_vis.add_argument(
+        "--update-baselines",
+        action="store_true",
+        help="Regenerate golden baseline images and manifest.json",
+    )
+    p_vis.add_argument(
+        "--compare",
+        nargs=2,
+        metavar=("BASELINE", "CANDIDATE"),
+        help="Compare two specific image files directly",
+    )
+    p_vis.add_argument(
+        "--diff-out",
+        help="Output file path to save 3-panel diff PNG artifact",
+    )
+    p_vis.add_argument(
+        "--diff-dir",
+        help="Directory to save failed candidate and diff artifacts (default: output/visual_regressions)",
+    )
+    p_vis.add_argument(
+        "--baselines-dir",
+        help="Directory containing baseline golden images and manifest.json",
+    )
+    p_vis.add_argument(
+        "--threshold",
+        type=float,
+        default=0.005,
+        help="Maximum allowed differing pixel ratio (default: 0.005)",
+    )
+    p_vis.add_argument(
+        "--color-tolerance",
+        type=int,
+        default=15,
+        help="Per-channel color delta tolerance (0-255, default: 15)",
+    )
+    p_vis.add_argument("--json", action="store_true", help="Format output as JSON")
+
     # Wizard command (default)
     p_wiz = subparsers.add_parser(
         "wizard",
@@ -787,6 +932,8 @@ def main() -> int:
         "batch": cmd_batch,
         "validate": cmd_validate,
         "inspect": cmd_inspect,
+        "visual-regression": cmd_visual_regression,
+        "visreg": cmd_visual_regression,
     }
 
     return commands[args.command](args)
