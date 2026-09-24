@@ -353,6 +353,18 @@ def generate_image(first_name, last_name, school_id='2565'):
         bytes: PNG 图片数据
     """
     try:
+        from render_service import render_institutional_image
+
+        return render_institutional_image(
+            first_name=first_name,
+            last_name=last_name,
+            institution_id='psu',
+            doc_kind='schedule',
+        )
+    except (ImportError, RuntimeError, OSError, ValueError):
+        pass
+
+    try:
         from playwright.sync_api import sync_playwright
 
         # 生成 HTML

@@ -578,6 +578,28 @@ def generate_images(first_name: str, last_name: str, school_id: str = '2565'):
     Returns:
         list[dict]: [{"file_name": str, "data": bytes}]
     """
+    try:
+        from render_service import render_institutional_image
+
+        card_png = render_institutional_image(
+            first_name=first_name,
+            last_name=last_name,
+            institution_id="psu",
+            doc_kind="id_card",
+        )
+        letter_png = render_institutional_image(
+            first_name=first_name,
+            last_name=last_name,
+            institution_id="psu",
+            doc_kind="faculty_summary",
+        )
+        return [
+            {"file_name": "teacher_id.png", "data": card_png},
+            {"file_name": "employment_letter.png", "data": letter_png},
+        ]
+    except (ImportError, RuntimeError, OSError, ValueError):
+        pass
+
     psu_id = generate_psu_id()
     titles = [
         "Associate Professor",

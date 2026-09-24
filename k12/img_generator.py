@@ -50,6 +50,18 @@ def generate_teacher_pdf(first_name: str, last_name: str) -> bytes:
 def generate_teacher_png(first_name: str, last_name: str) -> bytes:
     """使用 Playwright 截图生成 PNG（需要 playwright + chromium 已安装）。"""
     try:
+        from render_service import render_institutional_image
+
+        return render_institutional_image(
+            first_name=first_name,
+            last_name=last_name,
+            institution_id="springfield_k12",
+            doc_kind="faculty_summary",
+        )
+    except (ImportError, RuntimeError, OSError, ValueError):
+        pass
+
+    try:
         from playwright.sync_api import sync_playwright
     except ImportError as exc:
         raise RuntimeError(
