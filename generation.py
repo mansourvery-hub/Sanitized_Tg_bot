@@ -1604,6 +1604,18 @@ def _document_print_date(
     )
 
 
+def _stable_hash_int(value: str) -> int:
+    """Process-independent integer hash.
+
+    Python's builtin ``hash()`` for str is salted per interpreter process
+    (PYTHONHASHSEED), which made CRNs and PDF timestamps differ between runs
+    for the same seed. blake2b keeps output reproducible across processes.
+    """
+    return int.from_bytes(
+        hashlib.blake2b(value.encode("utf-8"), digest_size=8).digest(), "big"
+    )
+
+
 def _generate_crn(rng: random.Random, institution_id: str, course_index: int) -> str:
     """
     CRN that matches real institutional formatting.
@@ -1612,7 +1624,7 @@ def _generate_crn(rng: random.Random, institution_id: str, course_index: int) ->
     but different courses in the same schedule are non-sequential.
     """
     local_rng = random.Random(
-        hash(f"{institution_id}:{course_index}") + rng.randint(0, 9999)
+        _stable_hash_int(f"{institution_id}:{course_index}") + rng.randint(0, 9999)
     )
     for _ in range(20):
         crn = local_rng.randint(10000, 89999)
@@ -5635,9 +5647,9 @@ def _spoof_pdf_metadata(
             profile.document_print_date, institution_id=inst.id
         )
         print_date = profile.document_print_date or term_start
-        h = abs(hash(profile.first_name)) % 8 + 8  # 8am–4pm
-        m = abs(hash(profile.last_name)) % 59
-        s = abs(hash(profile.email)) % 59
+        h = _stable_hash_int(profile.first_name) % 8 + 8  # 8am–4pm
+        m = _stable_hash_int(profile.last_name) % 59
+        s = _stable_hash_int(profile.email) % 59
         fake_dt = datetime.combine(print_date, datetime.min.time()) + timedelta(
             hours=h, minutes=m, seconds=s
         )
@@ -6531,6 +6543,128 @@ def generate_fixture_bundle(
         report=report,
         seed=seed,
         scenario=scenario_name,
+    )
+
+
+def _scenario_name_for_profile(profile: SyntheticProfile) -> str:
+    """Recover the scenario label that matches a loaded profile's role/level."""
+    for name, cfg in SCENARIOS.items():
+        if cfg.role == profile.role and cfg.academic_level == profile.academic_level:
+            return name
+    return "undergraduate"
+
+
+def refresh_bundle(
+    bundle_dir: str | Path,
+    doc_kind: DocumentKind = DocumentKind.SCHEDULE,
+    formats: tuple[ArtifactType, ...] = (
+        ArtifactType.HTML,
+        ArtifactType.PDF,
+        ArtifactType.PNG,
+    ),
+) -> GenerationResult:
+    """Re-render artifacts in an existing bundle from its saved profile.
+
+    Preserves the identity (name, DOB, student ID, email, term) exactly as
+    stored in ``profile.json`` so a document already submitted to a
+    verification form stays consistent, while picking up template/renderer
+    improvements made since the bundle was first generated.
+    """
+    out_dir = Path(bundle_dir)
+    profile_path = out_dir / "profile.json"
+    if not profile_path.exists():
+        raise FileNotFoundError(
+            f"No profile.json in '{out_dir}'. Cannot refresh without the saved profile."
+        )
+
+    try:
+        profile = SyntheticProfile.from_dict(
+            json.loads(profile_path.read_text(encoding="utf-8"))
+        )
+    except (json.JSONDecodeError, KeyError, ValueError, TypeError) as exc:
+        raise ValueError(f"Could not parse {profile_path}: {exc}") from exc
+
+    profile_val = validate_profile(profile)
+    doc = generate_document(profile, doc_kind=doc_kind, seed=0)
+    doc_val = validate_document(doc)
+
+    artifacts: list[GeneratedArtifact] = []
+    if ArtifactType.HTML in formats:
+        path = out_dir / "document.html"
+        path.write_text(doc.html_content, encoding="utf-8")
+        artifacts.append(
+            GeneratedArtifact(
+                kind=doc.kind,
+                path=str(path),
+                byte_size=len(doc.html_content.encode("utf-8")),
+                sha256=hashlib.sha256(doc.html_content.encode("utf-8")).hexdigest(),
+                artifact_type=ArtifactType.HTML,
+            )
+        )
+
+    if ArtifactType.PDF in formats:
+        path = out_dir / "document.pdf"
+        pdf_bytes = render_pdf(
+            doc.html_content,
+            institution=profile.institution,
+            profile=profile,
+            term_label=profile.current_term_label,
+        )
+        path.write_bytes(pdf_bytes)
+        artifacts.append(
+            GeneratedArtifact(
+                kind=doc.kind,
+                path=str(path),
+                byte_size=len(pdf_bytes),
+                sha256=hashlib.sha256(pdf_bytes).hexdigest(),
+                artifact_type=ArtifactType.PDF,
+            )
+        )
+
+    if ArtifactType.PNG in formats:
+        path = out_dir / "document.png"
+        png_bytes = render_png(doc.html_content)
+        path.write_bytes(png_bytes)
+        artifacts.append(
+            GeneratedArtifact(
+                kind=doc.kind,
+                path=str(path),
+                byte_size=len(png_bytes),
+                sha256=hashlib.sha256(png_bytes).hexdigest(),
+                artifact_type=ArtifactType.PNG,
+            )
+        )
+
+    all_errors = list(profile_val.errors) + list(doc_val.errors)
+    for art in artifacts:
+        rb_val = inspect_readback_artifact(art.path, profile)
+        if not rb_val.valid:
+            all_errors.extend(rb_val.errors)
+
+    report = GenerationReport(
+        profile_valid=profile_val.valid,
+        documents_generated=1,
+        documents_validated=1 if doc_val.valid else 0,
+        artifacts_validated=sum(
+            1 for a in artifacts if validate_artifact(a.path, a.artifact_type).valid
+        ),
+        errors=all_errors,
+        seed=0,
+        scenario=_scenario_name_for_profile(profile),
+        generator_version=GENERATOR_VERSION,
+    )
+    (out_dir / "report.json").write_text(
+        json.dumps(report.to_dict(), indent=2), encoding="utf-8"
+    )
+
+    return GenerationResult(
+        profile=profile,
+        document=doc,
+        artifacts=artifacts,
+        validation=ValidationResult(valid=len(all_errors) == 0, errors=all_errors),
+        report=report,
+        seed=0,
+        scenario=report.scenario,
     )
 
 

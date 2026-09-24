@@ -19,8 +19,8 @@
         "description": "Penn State University - LionPATH Class Schedule Portal View"
       },
       "file_name": "psu_portal_schedule.png",
-      "sha256": "c41cbaec270eb2d81c928ff4ea05d55652550b84fa60ca305bd637298e10dadf",
-      "size_bytes": 272813
+      "sha256": "0b7ca2054f134d5b9a46d08ceeabca43f741f4790b40f181ffbce5441906ec90",
+      "size_bytes": 274341
     },
     "ucla_registrar_letter": {
       "spec": {
@@ -61,8 +61,8 @@
         "description": "New York University - Albert Student Center Class Schedule"
       },
       "file_name": "nyu_albert_schedule.png",
-      "sha256": "b4532b8c97091724941081a5c75d524f8bec0a411d7b217e832d475472115d95",
-      "size_bytes": 271772
+      "sha256": "cc61a54735fd1de7c87f7dd6c3b47696540da33d35a8d12ccffdbcb50ebd169b",
+      "size_bytes": 271159
     },
     "umich_wolverine_schedule": {
       "spec": {
@@ -82,8 +82,8 @@
         "description": "University of Michigan - Wolverine Access Class Schedule"
       },
       "file_name": "umich_wolverine_schedule.png",
-      "sha256": "6a83cc3f3eac1dd45b7de5596b5b15fd177a5a5d0b949f74e8278d3e5779a2d5",
-      "size_bytes": 270231
+      "sha256": "f0a83e101a79fd0b29544e81da1ebc6e7bffcd93746e9e5472661a517939e5f1",
+      "size_bytes": 271035
     },
     "ut_austin_enrollment_letter": {
       "spec": {
@@ -164,8 +164,8 @@
         "description": "University of the Philippines Diliman - Form 5 Enrollment Certificate / Schedule"
       },
       "file_name": "up_diliman_form5.png",
-      "sha256": "3b395f0ced7e93bb78eefcb5ae74704435044d05c5ba691685e128167278df3a",
-      "size_bytes": 199190
+      "sha256": "3f782d66918c992f1f91f80621346554e7dd848998e2c8f7393d698e8291564d",
+      "size_bytes": 199359
     },
     "usp_atestado_matricula": {
       "spec": {

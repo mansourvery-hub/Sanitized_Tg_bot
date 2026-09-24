@@ -202,6 +202,73 @@ class TestGenerationSystem(unittest.TestCase):
         css_height = img.size[1] / 2  # device_scale_factor=2.0
         self.assertLess(css_height, 500, f"expected content crop, got {css_height}px")
 
+    def test_generation_is_deterministic_across_processes(self):
+        """Same seed must yield identical HTML (no salted hash() drift)."""
+        import subprocess
+        import sys
+
+        script = (
+            "import hashlib;"
+            "from generation import generate_profile, generate_document, DocumentKind;"
+            "p = generate_profile('undergraduate', seed=4242, override_institution_id='psu');"
+            "d = generate_document(p, doc_kind=DocumentKind.SCHEDULE, seed=4242);"
+            "print(hashlib.sha256(d.html_content.encode()).hexdigest())"
+        )
+        runs = [
+            subprocess.run(
+                [sys.executable, "-c", script],
+                capture_output=True,
+                text=True,
+                check=True,
+                cwd=str(Path(__file__).resolve().parent.parent),
+            ).stdout.strip()
+            for _ in range(2)
+        ]
+        self.assertEqual(
+            runs[0], runs[1], f"non-deterministic HTML across runs: {runs}"
+        )
+
+    def test_refresh_bundle_preserves_identity(self):
+        """refresh_bundle re-renders artifacts but keeps the saved identity."""
+        from generation import refresh_bundle
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = Path(tmp) / "bundle"
+            original = generate_fixture_bundle(
+                "undergraduate",
+                seed=777,
+                output_dir=bundle,
+                override_institution_id="psu",
+            )
+            before = original.profile
+
+            refreshed = refresh_bundle(bundle)
+            after = refreshed.profile
+
+            self.assertEqual(after.first_name, before.first_name)
+            self.assertEqual(after.last_name, before.last_name)
+            self.assertEqual(after.date_of_birth, before.date_of_birth)
+            self.assertEqual(after.student_id, before.student_id)
+            self.assertEqual(after.email, before.email)
+            self.assertEqual(after.institution_id, before.institution_id)
+
+            self.assertTrue((bundle / "document.html").exists())
+            self.assertTrue((bundle / "document.pdf").exists())
+            self.assertTrue((bundle / "document.png").exists())
+            self.assertNotIn(
+                "var(--", (bundle / "document.html").read_text(encoding="utf-8")
+            )
+            self.assertTrue(refreshed.validation.valid, refreshed.validation.errors)
+
+    def test_refresh_bundle_requires_profile(self):
+        from generation import refresh_bundle
+
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            self.assertRaises(FileNotFoundError),
+        ):
+            refresh_bundle(tmp)
+
     def test_curricula_have_no_famous_instructor_names(self):
         """Instructor names must be plausible academics, not famous figures."""
         forbidden = (

@@ -30,6 +30,7 @@ from generation import (
     generate_profile,
     get_best_institutions_for_service,
     inspect_readback_artifact,
+    refresh_bundle,
     render_pdf,
     render_png,
     validate_artifact,
@@ -458,6 +459,45 @@ def cmd_inspect(args: argparse.Namespace) -> int:
         print(f"Validation:      {'VALID' if val.valid else 'INVALID'}")
 
     return 0
+
+
+def cmd_refresh(args: argparse.Namespace) -> int:
+    """Re-render an existing bundle in place from its saved profile.json."""
+    target = Path(args.target)
+    if target.is_dir() and not (target / "profile.json").exists():
+        print(f"Error: No profile.json in '{target}'.", file=sys.stderr)
+        return 1
+
+    doc_kind = DocumentKind.SCHEDULE
+    if args.kind:
+        try:
+            doc_kind = DocumentKind(args.kind)
+        except ValueError:
+            print(f"Error: Unknown document kind '{args.kind}'", file=sys.stderr)
+            return 1
+
+    try:
+        res = refresh_bundle(target, doc_kind=doc_kind)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    p = res.profile
+    print("=== BUNDLE REFRESHED ===")
+    print(f"  Status:        {'VALID' if res.validation.valid else 'INVALID'}")
+    print(f"  Directory:     {target.resolve()}")
+    print(f"  Name (kept):   {p.first_name} {p.last_name}  (DOB {p.date_of_birth})")
+    print(f"  ID (kept):     {p.student_id}")
+    print(f"  Email (kept):  {p.email}")
+    print(f"  Institution:   {p.institution_name} ({p.institution_id})")
+    print("  Artifacts rewritten:")
+    for art in res.artifacts:
+        print(f"    - {Path(art.path).name} ({art.byte_size} bytes)")
+    if res.validation.errors:
+        print("  Errors:")
+        for err in res.validation.errors:
+            print(f"    - [{err.code}] {err.field}: {err.message}")
+    return 0 if res.validation.valid else 1
 
 
 def cmd_visual_regression(args: argparse.Namespace) -> int:
@@ -1177,6 +1217,21 @@ def main() -> int:
     p_ins.add_argument("target", help="Profile JSON file or fixture directory")
     p_ins.add_argument("--json", action="store_true", help="Format output as JSON")
 
+    # Refresh command
+    p_ref = subparsers.add_parser(
+        "refresh",
+        help="Re-render an existing bundle in place from its saved profile (keeps identity)",
+    )
+    p_ref.add_argument(
+        "target", help="Existing bundle directory containing profile.json"
+    )
+    p_ref.add_argument(
+        "--kind",
+        choices=[dk.value for dk in DocumentKind],
+        default="schedule",
+        help="Document kind to regenerate (default: schedule)",
+    )
+
     # Visual Regression command
     p_vis = subparsers.add_parser(
         "visual-regression",
@@ -1268,6 +1323,7 @@ def main() -> int:
         "batch": cmd_batch,
         "validate": cmd_validate,
         "inspect": cmd_inspect,
+        "refresh": cmd_refresh,
         "visual-regression": cmd_visual_regression,
         "visreg": cmd_visual_regression,
     }
