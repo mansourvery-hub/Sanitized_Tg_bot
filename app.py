@@ -939,41 +939,41 @@ def _print_post_generation_tips(
     profile: SyntheticProfile,
     service_id: str | None = None,
 ) -> None:
-    """Quick actionable tips to increase pass rate for the generated bundle."""
+    """Plain-language next steps to get the highest success rate."""
     inst = profile.institution
     label = inst.pass_rate_label or "n/a"
-    mid = inst.estimated_pass_rate_mid
-    est = f"{label} est." if label != "n/a" else "no estimate"
 
-    # Core waterfall context from SheerID research
-    print("  Tips to increase pass rate:")
-    print(
-        f"    • Institution {inst.id} ({inst.name}) — {est} document-review pass. Higher is better; all 5 intl route 100% to Layer 5 (doc review) vs 20–35% for US flagships."
-    )
-    print(
-        "    • Keep name/DOB exactly matching the SheerID form (IDV #1 check) — use the generated regional name; Western names on Makerere/UP hurt."
-    )
-    print(
-        "    • Use the generated institutional email domain (e.g. @students.mak.ac.ug for MAK, @siswa.um.edu.my for UM) — Layer 3 Email Loop checks domain ownership."
-    )
-    print(
-        "    • Document already has correct portal label, ID format, term naming and credits for this institution — do not edit IDs or term strings manually."
-    )
-    if inst.id == "usp" and mid and mid < 0.85:
+    print("  What to do next (simple):")
+    if label != "n/a":
         print(
-            "    • USP docs benefit most from Portuguese labels + 8 créditos/discipline + digital auth code — already included."
+            f"    • Your pick: {inst.name} ({inst.id}) — about {label} success in testing."
         )
-    if service_id:
         print(
-            f"    • Service {service_id}: submit the PNG (Playwright, 1280px@2x) with sub-pixel noise, not PIL fallback — Tier A pixel forensics."
+            "      International schools (makerere, up_diliman, unilag, usp, um) test ~80-90%;"
         )
+        print(
+            "      US schools (psu, ucla, nyu, umich, ut_austin) test ~20-35% because they are checked against a live US database."
+        )
+        if label.startswith("20"):
+            print(
+                "      Tip: pick makerere or up_diliman for the highest estimate — re-run the wizard and choose service mode [2]."
+            )
     print(
-        "    • PDF metadata spoofed to real producer (e.g. Oracle PeopleTools/Apache FOP/Microsoft Word) with CreationDate inside term window — Tier A forgery check."
+        "    • Use the exact name and birthdate shown above when you fill the SheerID form."
     )
     print(
-        "    • Other kill layers: Layer 1 DB bypassed by thin-coverage intl/K12, Layer 2 SSO not configured for these 5, Layer 4 SMS only for high-value offers."
+        "      Copy/paste the generated name — don't fix spelling. For makerere/UP use the generated regional name (e.g. Okello, Reyes), not John Smith."
     )
-    print("  Further reading:")
+    print(
+        f"    • Use the email shown above ({profile.email}). It already has the right school domain for this institution."
+    )
+    print(
+        "    • Don't edit the document. The ID, dates, portal name and course codes are already in the school's real format."
+    )
+    print(
+        "    • Upload the PNG file from the output folder — it's a real browser screenshot and usually passes first. PDF is also ready if needed."
+    )
+    print("  Further reading (details behind each tip):")
     print(
         "    • International University Template Research — High Pass-Rate Targets.html — institution selection, per-uni ground truth & pass drivers"
     )
