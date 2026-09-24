@@ -662,24 +662,24 @@ def cmd_wizard(args: argparse.Namespace) -> int:
                 service_id, {"name": service_id, "id": service_id}
             )
 
-        # Rank institutions for this service by pass rate
-        ranked = get_best_institutions_for_service(service_id, limit=5)
+        # Rank institutions for this service by pass rate — dynamic, no hardcoding
+        ranked = get_best_institutions_for_service(service_id, limit=len(INSTITUTIONS))
         recommended = ranked[0] if ranked else INSTITUTIONS["psu"]
         rec_label = recommended.pass_rate_label or "n/a"
-        # Show dynamic recommendation
+        # Show all ranked institutions (future-proof: adding/removing uni auto-appears)
         print(
-            f"\n[+] Recommended for {svc_info.get('name', service_id)} (highest pass estimate):"
+            f"\n[+] Recommended for {svc_info.get('name', service_id)} (ranked by estimated pass rate):"
         )
-        for i, inst in enumerate(ranked[:3], start=1):
-            marker = " ← recommended" if i == 1 else ""
+        for i, inst in enumerate(ranked, start=1):
+            marker = " ← recommended (press Enter)" if i == 1 else ""
             label = inst.pass_rate_label or "n/a"
-            print(f"    {i}. {inst.id:<20s} {inst.name:<45s} {label}{marker}")
+            print(f"    {i:>2}. {inst.id:<20s} {inst.name:<45s} {label}{marker}")
         print()
 
-        # Institution prompt with dynamic default
+        # Institution prompt with dynamic default — lists every uni
         default_inst = recommended.id
         if not preset_institution:
-            avail_hint = ", ".join(list(INSTITUTIONS.keys())[:6]) + ", ..."
+            avail_hint = ", ".join(sorted(INSTITUTIONS.keys()))
             prompt = f"Enter institution [{default_inst}] (press Enter for recommended {default_inst} — {rec_label} est., or choose from: {avail_hint}): "
             try:
                 inst_input = input(prompt).strip() or default_inst
