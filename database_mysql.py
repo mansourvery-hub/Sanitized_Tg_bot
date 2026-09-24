@@ -4,10 +4,10 @@
 """
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict, List
+
 import pymysql
-from pymysql.cursors import DictCursor
 from dotenv import load_dotenv
+from pymysql.cursors import DictCursor
 
 # 加载环境变量
 load_dotenv()
@@ -55,6 +55,7 @@ class MySQLDatabase:
                     balance INT DEFAULT 1,
                     is_blocked TINYINT(1) DEFAULT 0,
                     invited_by BIGINT,
+                    language VARCHAR(10) DEFAULT 'en',
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     last_checkin DATETIME NULL,
                     INDEX idx_username (username),
@@ -131,6 +132,15 @@ class MySQLDatabase:
                 """
             )
 
+            # 检查并自动升级 users 表结构（添加 language 字段）
+            try:
+                cursor.execute("SHOW COLUMNS FROM users LIKE 'language'")
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE users ADD COLUMN language VARCHAR(10) DEFAULT 'en' AFTER invited_by")
+                    logger.info("已为 users 表新增 language 字段")
+            except Exception as e:
+                logger.warning("检查/添加 language 字段时发生异常: %s", e)
+
             conn.commit()
             logger.info("MySQL 数据库表初始化完成")
 
@@ -143,7 +153,7 @@ class MySQLDatabase:
             conn.close()
 
     def create_user(
-        self, user_id: int, username: str, full_name: str, invited_by: Optional[int] = None
+        self, user_id: int, username: str, full_name: str, invited_by: int | None = None
     ) -> bool:
         """创建新用户"""
         conn = self.get_connection()
@@ -186,7 +196,7 @@ class MySQLDatabase:
             cursor.close()
             conn.close()
 
-    def get_user(self, user_id: int) -> Optional[Dict]:
+    def get_user(self, user_id: int) -> dict | None:
         """获取用户信息"""
         conn = self.get_connection()
         cursor = conn.cursor(DictCursor)
@@ -252,7 +262,45 @@ class MySQLDatabase:
             cursor.close()
             conn.close()
 
-    def get_blacklist(self) -> List[Dict]:
+    def get_user_language(self, user_id: int) -> str:
+        """获取用户语言偏好，默认 'en'"""
+        conn = self.get_connection()
+        cursor = conn.cursor(DictCursor)
+        try:
+            cursor.execute("SELECT language FROM users WHERE user_id = %s", (user_id,))
+            res = cursor.fetchone()
+            if res and res.get("language"):
+                return res["language"]
+            return "en"
+        except Exception as e:
+            logger.error(f"获取用户语言偏好失败: {e}")
+            return "en"
+        finally:
+            cursor.close()
+            conn.close()
+
+    def set_user_language(self, user_id: int, language: str) -> bool:
+        """设置用户语言偏好 ('en' 或 'zh')"""
+        if language not in ("en", "zh"):
+            return False
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "UPDATE users SET language = %s WHERE user_id = %s",
+                (language, user_id),
+            )
+            conn.commit()
+            return True
+        except Exception as e:
+            logger.error(f"设置用户语言偏好失败: {e}")
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_blacklist(self) -> list[dict]:
         """获取黑名单列表"""
         conn = self.get_connection()
         cursor = conn.cursor(DictCursor)
@@ -383,7 +431,7 @@ class MySQLDatabase:
             cursor.close()
             conn.close()
 
-    def get_user_verifications(self, user_id: int) -> List[Dict]:
+    def get_user_verifications(self, user_id: int) -> list[dict]:
         """获取用户的验证记录"""
         conn = self.get_connection()
         cursor = conn.cursor(DictCursor)
@@ -404,7 +452,7 @@ class MySQLDatabase:
 
     def create_card_key(
         self, key_code: str, balance: int, created_by: int,
-        max_uses: int = 1, expire_days: Optional[int] = None
+        max_uses: int = 1, expire_days: int | None = None
     ) -> bool:
         """创建卡密"""
         conn = self.get_connection()
@@ -437,7 +485,7 @@ class MySQLDatabase:
             cursor.close()
             conn.close()
 
-    def use_card_key(self, key_code: str, user_id: int) -> Optional[int]:
+    def use_card_key(self, key_code: str, user_id: int) -> int | None:
         """使用卡密，返回获得的积分数量"""
         conn = self.get_connection()
         cursor = conn.cursor(DictCursor)
@@ -499,7 +547,7 @@ class MySQLDatabase:
             cursor.close()
             conn.close()
 
-    def get_card_key_info(self, key_code: str) -> Optional[Dict]:
+    def get_card_key_info(self, key_code: str) -> dict | None:
         """获取卡密信息"""
         conn = self.get_connection()
         cursor = conn.cursor(DictCursor)
@@ -511,7 +559,7 @@ class MySQLDatabase:
             cursor.close()
             conn.close()
 
-    def get_all_card_keys(self, created_by: Optional[int] = None) -> List[Dict]:
+    def get_all_card_keys(self, created_by: int | None = None) -> list[dict]:
         """获取所有卡密（可按创建者筛选）"""
         conn = self.get_connection()
         cursor = conn.cursor(DictCursor)
@@ -530,7 +578,7 @@ class MySQLDatabase:
             cursor.close()
             conn.close()
 
-    def get_all_user_ids(self) -> List[int]:
+    def get_all_user_ids(self) -> list[int]:
         """获取所有用户ID"""
         conn = self.get_connection()
         cursor = conn.cursor()
