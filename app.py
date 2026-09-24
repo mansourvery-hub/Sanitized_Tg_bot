@@ -786,6 +786,13 @@ def cmd_wizard(args: argparse.Namespace) -> int:
                 f"    - {Path(art.path).name} ({art.byte_size} bytes, SHA256: {art.sha256[:10]}...)"
             )
         print(
+            "--------------------------------------------------------------------------"
+        )
+        print(
+            "  Note: 'Ignoring CSS ... border-collapse' from xhtml2pdf is normal — engine limitation, tables already use fallbacks; output is valid."
+        )
+        _print_post_generation_tips(res.profile, service_id=service_id)
+        print(
             "--------------------------------------------------------------------------\n"
         )
         return 0 if res.validation.valid else 1
@@ -916,11 +923,71 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         print(
             f"    - {Path(art.path).name} ({art.byte_size} bytes, SHA256: {art.sha256[:10]}...)"
         )
+    print("--------------------------------------------------------------------------")
+    print(
+        "  Note: 'Ignoring CSS ... border-collapse' from xhtml2pdf is normal — engine limitation, tables already use fallbacks; output is valid."
+    )
+    _print_post_generation_tips(res.profile, service_id=None)
     print(
         "--------------------------------------------------------------------------\n"
     )
 
     return 0 if res.validation.valid else 1
+
+
+def _print_post_generation_tips(
+    profile: SyntheticProfile,
+    service_id: str | None = None,
+) -> None:
+    """Quick actionable tips to increase pass rate for the generated bundle."""
+    inst = profile.institution
+    label = inst.pass_rate_label or "n/a"
+    mid = inst.estimated_pass_rate_mid
+    est = f"{label} est." if label != "n/a" else "no estimate"
+
+    # Core waterfall context from SheerID research
+    print("  Tips to increase pass rate:")
+    print(
+        f"    • Institution {inst.id} ({inst.name}) — {est} document-review pass. Higher is better; all 5 intl route 100% to Layer 5 (doc review) vs 20–35% for US flagships."
+    )
+    print(
+        "    • Keep name/DOB exactly matching the SheerID form (IDV #1 check) — use the generated regional name; Western names on Makerere/UP hurt."
+    )
+    print(
+        "    • Use the generated institutional email domain (e.g. @students.mak.ac.ug for MAK, @siswa.um.edu.my for UM) — Layer 3 Email Loop checks domain ownership."
+    )
+    print(
+        "    • Document already has correct portal label, ID format, term naming and credits for this institution — do not edit IDs or term strings manually."
+    )
+    if inst.id == "usp" and mid and mid < 0.85:
+        print(
+            "    • USP docs benefit most from Portuguese labels + 8 créditos/discipline + digital auth code — already included."
+        )
+    if service_id:
+        print(
+            f"    • Service {service_id}: submit the PNG (Playwright, 1280px@2x) with sub-pixel noise, not PIL fallback — Tier A pixel forensics."
+        )
+    print(
+        "    • PDF metadata spoofed to real producer (e.g. Oracle PeopleTools/Apache FOP/Microsoft Word) with CreationDate inside term window — Tier A forgery check."
+    )
+    print(
+        "    • Other kill layers: Layer 1 DB bypassed by thin-coverage intl/K12, Layer 2 SSO not configured for these 5, Layer 4 SMS only for high-value offers."
+    )
+    print("  Further reading:")
+    print(
+        "    • International University Template Research — High Pass-Rate Targets.html — institution selection, per-uni ground truth & pass drivers"
+    )
+    print(
+        "    • generation.py — SheerID-Targeted Research & Architecture.html — § Pillar 0 waterfall & Tiers A/B/C + Signal Matrix"
+    )
+    print(
+        "    • generation.py — Verification Engine Research & Architecture.html — original Pillars 1–4 & layout forensics"
+    )
+    print(
+        "    • University Portal Template Research — Real Institutional Templates.html — US portal field formats"
+    )
+    print("    • README.md / README_EN.md — supported institutions table & CLI usage")
+    print("    • SAFE_LOCAL_RUN.md — isolated local testing (Firejail/.venv)")
 
 
 def choice_slug(name: str) -> str:
