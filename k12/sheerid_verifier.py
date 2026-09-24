@@ -1,19 +1,31 @@
 """SheerID 教师验证主程序"""
-import re
-import random
 import logging
+import random
+import re
+
 import httpx
-from typing import Dict, Optional, Tuple
 
 # 支持既作为包导入又直接脚本运行
 try:
     from . import config  # type: ignore
-    from .name_generator import NameGenerator, generate_email, generate_birth_date  # type: ignore
-    from .img_generator import generate_teacher_pdf, generate_teacher_png  # type: ignore
+    from .img_generator import (  # type: ignore
+        generate_teacher_pdf,
+        generate_teacher_png,
+    )
+    from .name_generator import (  # type: ignore
+        NameGenerator,
+        generate_birth_date,
+        generate_email,
+    )
 except ImportError:
-    import config  # type: ignore
-    from name_generator import NameGenerator, generate_email, generate_birth_date  # type: ignore
     from img_generator import generate_teacher_pdf, generate_teacher_png  # type: ignore
+    from name_generator import (  # type: ignore
+        NameGenerator,
+        generate_birth_date,
+        generate_email,
+    )
+
+    import config  # type: ignore
 
 # 导入配置常量
 PROGRAM_ID = config.PROGRAM_ID
@@ -63,7 +75,7 @@ class SheerIDVerifier:
         return url
 
     @staticmethod
-    def parse_verification_id(url: str) -> Optional[str]:
+    def parse_verification_id(url: str) -> str | None:
         """从 URL 中解析验证 ID"""
         match = re.search(r'verificationId=([a-f0-9]+)', url, re.IGNORECASE)
         if match:
@@ -71,7 +83,7 @@ class SheerIDVerifier:
         return None
 
     def _sheerid_request(self, method: str, url: str,
-                         body: Optional[Dict] = None) -> Tuple[Dict, int]:
+                         body: dict | None = None) -> tuple[dict, int]:
         """
         发送 SheerID API 请求
         """
@@ -119,7 +131,7 @@ class SheerIDVerifier:
     def verify(self, first_name: str = None, last_name: str = None,
                email: str = None, birth_date: str = None,
                school_id: str = None,
-               hcaptcha_token: str = None, turnstile_token: str = None) -> Dict:
+               hcaptcha_token: str = None, turnstile_token: str = None) -> dict:
         """
         执行完整的验证流程，移除状态轮询以减少耗时
         """

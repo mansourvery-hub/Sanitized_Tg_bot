@@ -1,17 +1,18 @@
 """SheerID 学生验证主程序"""
-import re
-import random
 import logging
+import random
+import re
+
 import httpx
-from typing import Dict, Optional, Tuple
 
 from sheerid_schools import (
     generate_institutional_student_email,
     resolve_sheerid_school,
 )
+
 from . import config
-from .name_generator import NameGenerator, generate_email, generate_birth_date
-from .img_generator import generate_psu_email, generate_image
+from .img_generator import generate_image
+from .name_generator import NameGenerator, generate_birth_date
 
 # 配置日志
 logging.basicConfig(
@@ -45,15 +46,15 @@ class SheerIDVerifier:
         return url
 
     @staticmethod
-    def parse_verification_id(url: str) -> Optional[str]:
+    def parse_verification_id(url: str) -> str | None:
         match = re.search(r"verificationId=([a-f0-9]+)", url, re.IGNORECASE)
         if match:
             return match.group(1)
         return None
 
     def _sheerid_request(
-        self, method: str, url: str, body: Optional[Dict] = None
-    ) -> Tuple[Dict, int]:
+        self, method: str, url: str, body: dict | None = None
+    ) -> tuple[dict, int]:
         """发送 SheerID API 请求"""
         headers = {
             "Content-Type": "application/json",
@@ -91,7 +92,7 @@ class SheerIDVerifier:
         email: str = None,
         birth_date: str = None,
         school_id: str = None,
-    ) -> Dict:
+    ) -> dict:
         """执行验证流程，移除状态轮询以减少耗时"""
         try:
             current_step = "initial"

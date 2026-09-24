@@ -145,6 +145,111 @@
       "file_name": "nittany_tech_id_card.png",
       "sha256": "7b753e4ffe608f6a20a0ff64cffae03c0b3e705c5586a391a37b41cd5867c324",
       "size_bytes": 78371
+    },
+    "up_diliman_form5": {
+      "spec": {
+        "name": "up_diliman_form5",
+        "institution_id": "up_diliman",
+        "document_kind": "schedule",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Juan",
+          "last_name": "Dela Cruz",
+          "student_id": "2022-14920",
+          "term_label": "1st Semester AY 2025-2026",
+          "document_print_date": "2025-08-15"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "University of the Philippines Diliman - Form 5 Enrollment Certificate / Schedule"
+      },
+      "file_name": "up_diliman_form5.png",
+      "sha256": "5d5c31c42a7d5b41ff358e9a7983412b54dc5ede8b6da626132b7c08e5b80a78",
+      "size_bytes": 205151
+    },
+    "usp_atestado_matricula": {
+      "spec": {
+        "name": "usp_atestado_matricula",
+        "institution_id": "usp",
+        "document_kind": "schedule",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Lucas",
+          "last_name": "Silva",
+          "student_id": "11849201",
+          "term_label": "2\u00ba Semestre de 2025",
+          "document_print_date": "2025-08-04"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "Universidade de S\u00e3o Paulo - Atestado de Matr\u00edcula"
+      },
+      "file_name": "usp_atestado_matricula.png",
+      "sha256": "b04844659088cf19e3ebd9b63c842f437dcd95674e92dfb1647c6e94916ce0c8",
+      "size_bytes": 204304
+    },
+    "universiti_malaya_surat_pengesahan": {
+      "spec": {
+        "name": "universiti_malaya_surat_pengesahan",
+        "institution_id": "universiti_malaya",
+        "document_kind": "schedule",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Muhammad",
+          "last_name": "Razak",
+          "student_id": "S2023184920",
+          "term_label": "Semester 1, Session 2025/2026",
+          "document_print_date": "2025-09-01"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "Universiti Malaya - Surat Pengesahan Pendaftaran Pelajar"
+      },
+      "file_name": "universiti_malaya_surat_pengesahan.png",
+      "sha256": "14d2af5d5be30e4bd56aff4c7734faab10f0d7e3f883a0d68a1300c5bc4c75aa",
+      "size_bytes": 190768
+    },
+    "makerere_enrollment_letter": {
+      "spec": {
+        "name": "makerere_enrollment_letter",
+        "institution_id": "makerere",
+        "document_kind": "schedule",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Emmanuel",
+          "last_name": "Okello",
+          "student_id": "23/U/14920/EVE",
+          "term_label": "Semester I 2025/2026",
+          "document_print_date": "2025-08-18"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "Makerere University - Official Letter of Enrollment"
+      },
+      "file_name": "makerere_enrollment_letter.png",
+      "sha256": "11ff7f1c1878d681ee52d0dcfc67a4df723ebfcfbe888c86e3134baeb204224e",
+      "size_bytes": 208963
+    },
+    "unilag_enrollment_letter": {
+      "spec": {
+        "name": "unilag_enrollment_letter",
+        "institution_id": "unilag",
+        "document_kind": "schedule",
+        "seed": 42,
+        "attributes": {
+          "first_name": "Babatunde",
+          "last_name": "Adeyemi",
+          "student_id": "2023/1/14920",
+          "term_label": "First Semester 2025/2026 Session",
+          "document_print_date": "2025-10-06"
+        },
+        "viewport_width": 1200,
+        "viewport_height": 900,
+        "description": "University of Lagos - Letter of Student Enrollment"
+      },
+      "file_name": "unilag_enrollment_letter.png",
+      "sha256": "5939e6fc6f6001479f5fa4f640f2b7d5aeb87d6e2bbf0e0ddebf7201462989b1",
+      "size_bytes": 208055
     }
   }
 }

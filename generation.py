@@ -681,6 +681,200 @@ INSTITUTIONS: dict[str, Institution] = {
         credit_label="Credits",
         course_id_format="{SUBJ} {NNN}",
     ),
+    "up_diliman": Institution(
+        id="up_diliman",
+        name="University of the Philippines Diliman",
+        city="Quezon City",
+        country="Philippines",
+        domain="up.edu.ph",
+        institution_type="university",
+        programs=(
+            "BS Computer Science",
+            "BS Mathematics",
+            "BS Physics",
+            "AB Political Science",
+            "BS Chemistry",
+            "AB Economics",
+            "BS Statistics",
+            "AB Filipino",
+        ),
+        portal_name="CRS",
+        document_archetype=DocumentArchetype.REGISTRAR_LETTER,
+        student_id_label="Student Number",
+        student_id_format=r"20\d{2}-\d{5}",
+        term_seasons=("1st Semester", "2nd Semester", "Midyear"),
+        term_system="semester",
+        primary_color="#7B0027",
+        accent_color="#014421",
+        pdf_producer="Microsoft Word 16.0",
+        pdf_creator="Microsoft Office",
+        registrar_title="Office of the University Registrar (OUR)",
+        registrar_address="Diliman, Quezon City 1101, Philippines",
+        crn_label="Class Code",
+        credit_label="Units",
+        course_id_format="{SUBJ} {NNN}",
+        schools=(
+            "College of Engineering",
+            "College of Science",
+            "College of Social Sciences and Philosophy",
+            "College of Arts and Letters",
+            "Cesar E.A. Virata School of Business",
+            "College of Education",
+        ),
+    ),
+    "usp": Institution(
+        id="usp",
+        name="Universidade de São Paulo",
+        city="São Paulo",
+        country="Brazil",
+        domain="usp.br",
+        institution_type="university",
+        programs=(
+            "Mestrado em Ciência da Computação",
+            "Bacharelado em Engenharia Elétrica",
+            "Bacharelado em Administração",
+            "Bacharelado em Direito",
+            "Mestrado em Física",
+        ),
+        portal_name="Sistema Janus",
+        document_archetype=DocumentArchetype.REGISTRAR_LETTER,
+        student_id_label="Número USP",
+        student_id_format=r"\d{7,8}",
+        term_seasons=("1º Semestre", "2º Semestre"),
+        term_system="semester",
+        primary_color="#003366",
+        accent_color="#C9A227",
+        pdf_producer="Apache FOP Version 2.4",
+        pdf_creator="Apache Software Foundation",
+        registrar_title="Pró-Reitoria de Pós-Graduação",
+        registrar_address="Rua da Reitoria, 109, Cidade Universitária, São Paulo, SP 05508-220",
+        crn_label="Código",
+        credit_label="Créditos",
+        course_id_format="{SUBJ}{NNN}",
+        schools=(
+            "Instituto de Matemática e Estatística (IME)",
+            "Escola Politécnica (POLI)",
+            "Faculdade de Economia, Administração e Contabilidade (FEA)",
+            "Faculdade de Direito",
+            "Instituto de Física (IF)",
+        ),
+    ),
+    "universiti_malaya": Institution(
+        id="universiti_malaya",
+        name="Universiti Malaya",
+        city="Kuala Lumpur",
+        country="Malaysia",
+        domain="um.edu.my",
+        institution_type="university",
+        programs=(
+            "Bachelor of Computer Science (Hons)",
+            "Bachelor of Engineering (Electrical)",
+            "Bachelor of Economics (Hons)",
+            "Bachelor of Law (Hons)",
+            "Bachelor of Science (Hons)",
+        ),
+        portal_name="MAYA",
+        document_archetype=DocumentArchetype.REGISTRAR_LETTER,
+        student_id_label="Matric No.",
+        student_id_format=r"S20\d{2}\d{6}",
+        student_id_prefix="S",
+        term_seasons=("Semester 1", "Semester 2", "Special Semester"),
+        term_system="semester",
+        primary_color="#880000",
+        accent_color="#C9A227",
+        pdf_producer="Microsoft Word 16.0",
+        pdf_creator="Microsoft Office",
+        registrar_title="Pendaftar, Universiti Malaya",
+        registrar_address="50603 Kuala Lumpur, Malaysia",
+        crn_label="Kod Kursus",
+        credit_label="Jam Kredit",
+        course_id_format="{SUBJ}{NNN}",
+        schools=(
+            "Faculty of Computer Science and Information Technology",
+            "Faculty of Engineering",
+            "Faculty of Business and Economics",
+            "Faculty of Arts and Social Sciences",
+            "Faculty of Science",
+            "Faculty of Law",
+        ),
+    ),
+    "makerere": Institution(
+        id="makerere",
+        name="Makerere University",
+        city="Kampala",
+        country="Uganda",
+        domain="mak.ac.ug",
+        institution_type="university",
+        programs=(
+            "Bachelor of Science in Computer Science",
+            "Bachelor of Engineering (Electrical)",
+            "Bachelor of Business Administration",
+            "Bachelor of Arts (Social Sciences)",
+            "Bachelor of Laws (LLB)",
+        ),
+        portal_name="Student Portal",
+        document_archetype=DocumentArchetype.REGISTRAR_LETTER,
+        student_id_label="Student No.",
+        student_id_format=r"\d{2}/U/\d{5}/PS",
+        term_seasons=("Semester I", "Semester II"),
+        term_system="semester",
+        primary_color="#003087",
+        accent_color="#C9A227",
+        pdf_producer="Microsoft Word 16.0",
+        pdf_creator="Microsoft Office",
+        registrar_title="Academic Registrar",
+        registrar_address="P.O. Box 7062, Kampala, Uganda",
+        crn_label="Course Code",
+        credit_label="Credit Units",
+        course_id_format="{SUBJ} {NNN}",
+        schools=(
+            "College of Computing and Information Sciences (CoCIS)",
+            "College of Engineering, Design, Art and Technology (CEDAT)",
+            "College of Humanities and Social Sciences (CHUSS)",
+            "Makerere University Business School (MUBS)",
+            "College of Health Sciences (CHS)",
+        ),
+    ),
+    "unilag": Institution(
+        id="unilag",
+        name="University of Lagos",
+        city="Lagos",
+        country="Nigeria",
+        domain="unilag.edu.ng",
+        institution_type="university",
+        programs=(
+            "B.Sc. Computer Science",
+            "B.Eng. Electrical Engineering",
+            "B.Sc. Economics",
+            "LLB Law",
+            "B.Sc. Accounting",
+            "B.Ed. Education",
+        ),
+        portal_name="UNILAG Student Portal",
+        document_archetype=DocumentArchetype.REGISTRAR_LETTER,
+        student_id_label="Matriculation Number",
+        student_id_format=r"20\d{2}/1/\d{5}",
+        term_seasons=("First Semester", "Second Semester"),
+        term_system="semester",
+        primary_color="#800020",
+        accent_color="#C9A227",
+        pdf_producer="Microsoft Word 16.0",
+        pdf_creator="Microsoft Office",
+        registrar_title="Registrar and Secretary to Council",
+        registrar_address="University of Lagos, Akoka, Yaba, Lagos State, Nigeria",
+        crn_label="Course Code",
+        credit_label="Units",
+        course_id_format="{SUBJ} {NNN}",
+        schools=(
+            "Faculty of Science",
+            "Faculty of Engineering",
+            "Faculty of Social Sciences",
+            "Faculty of Law",
+            "Faculty of Arts",
+            "Faculty of Education",
+            "Faculty of Business Administration",
+        ),
+    ),
 }
 
 
@@ -766,7 +960,7 @@ def get_scenario(name: str) -> ScenarioConfig:
 
 
 class SeededNameGenerator:
-    """Deterministic English Name Generator supporting seeded Random instances."""
+    """Deterministic Name Generator supporting localized name pools and seeded Random instances."""
 
     FIRST_NAMES: ClassVar[list[str]] = [
         "Alexander",
@@ -830,8 +1024,195 @@ class SeededNameGenerator:
         "Kovacs",
     ]
 
+    LOCAL_NAMES: ClassVar[dict[str, tuple[list[str], list[str]]]] = {
+        "up_diliman": (
+            [
+                "Juan",
+                "Maria",
+                "Paolo",
+                "Angelo",
+                "Mark",
+                "Joshua",
+                "Christine",
+                "Bea",
+                "Angela",
+                "Gabriel",
+                "Miguel",
+                "Patricia",
+                "Katrina",
+                "Christian",
+                "Nicole",
+            ],
+            [
+                "Santos",
+                "Reyes",
+                "Cruz",
+                "Bautista",
+                "Ocampo",
+                "Garcia",
+                "Mendoza",
+                "Ramos",
+                "Aquino",
+                "Del Rosario",
+                "Tan",
+                "Villanueva",
+                "Castro",
+                "Dizon",
+                "Tolentino",
+            ],
+        ),
+        "usp": (
+            [
+                "Gabriel",
+                "Lucas",
+                "Matheus",
+                "Beatriz",
+                "Julia",
+                "Mariana",
+                "Rodrigo",
+                "Thiago",
+                "Felipe",
+                "Rafael",
+                "Larissa",
+                "Camila",
+                "Bruno",
+                "Vinicius",
+                "Isabella",
+            ],
+            [
+                "Silva",
+                "Santos",
+                "Oliveira",
+                "Souza",
+                "Pereira",
+                "Lima",
+                "Carvalho",
+                "Ferreira",
+                "Ribeiro",
+                "Alves",
+                "Rodrigues",
+                "Costa",
+                "Almeida",
+                "Nascimento",
+                "Araujo",
+            ],
+        ),
+        "universiti_malaya": (
+            [
+                "Muhammad",
+                "Ahmad",
+                "Nur",
+                "Siti",
+                "Wei",
+                "Jun",
+                "Priya",
+                "Daniel",
+                "Adam",
+                "Amirul",
+                "Aisyah",
+                "Farhan",
+                "Yi",
+                "Zhi",
+                "Haris",
+            ],
+            [
+                "Abdullah",
+                "Rahman",
+                "Tan",
+                "Lim",
+                "Lee",
+                "Wong",
+                "Subramaniam",
+                "Ismail",
+                "Razak",
+                "Othman",
+                "Ahmad",
+                "Cheong",
+                "Ng",
+                "Yusof",
+                "Ariffin",
+            ],
+        ),
+        "makerere": (
+            [
+                "Brian",
+                "Ronald",
+                "Ivan",
+                "Grace",
+                "Faith",
+                "Brenda",
+                "Emmanuel",
+                "Derrick",
+                "Joseph",
+                "Paul",
+                "Sharon",
+                "Sarah",
+                "Mercy",
+                "David",
+                "Fiona",
+            ],
+            [
+                "Okello",
+                "Kato",
+                "Mukasa",
+                "Namubiru",
+                "Tumusiime",
+                "Kigozi",
+                "Nabatanzi",
+                "Mugisha",
+                "Ochieng",
+                "Ssebuguzi",
+                "Musoke",
+                "Kiiza",
+                "Byaruhanga",
+                "Akello",
+            ],
+        ),
+        "unilag": (
+            [
+                "Babatunde",
+                "Oluwaseun",
+                "Chukwuma",
+                "Chioma",
+                "Ifeanyi",
+                "Aisha",
+                "Olumide",
+                "Folake",
+                "Tunde",
+                "Damilola",
+                "Femi",
+                "Chinedu",
+                "Zainab",
+                "Blessing",
+                "Adebayo",
+            ],
+            [
+                "Adebayo",
+                "Okafor",
+                "Balogun",
+                "Adeleke",
+                "Ibrahim",
+                "Okon",
+                "Eze",
+                "Danjuma",
+                "Alabi",
+                "Lawal",
+                "Ojo",
+                "Bello",
+                "Nwosu",
+                "Ogundipe",
+                "Bakare",
+            ],
+        ),
+    }
+
     @classmethod
-    def generate(cls, rng: random.Random) -> tuple[str, str]:
+    def generate(
+        cls, rng: random.Random, institution_id: str | None = None
+    ) -> tuple[str, str]:
+        if institution_id and institution_id in cls.LOCAL_NAMES:
+            first_pool, last_pool = cls.LOCAL_NAMES[institution_id]
+            return rng.choice(first_pool), rng.choice(last_pool)
         fn = rng.choice(cls.FIRST_NAMES)
         ln = rng.choice(cls.LAST_NAMES)
         return fn, ln
@@ -918,6 +1299,37 @@ _TERM_CALENDARS: dict[str, dict[str, tuple[date, date]]] = {
         "Spring 2027": (date(2027, 1, 19), date(2027, 5, 14)),
         "Summer 2027": (date(2027, 5, 31), date(2027, 8, 6)),
         "Fall 2027": (date(2027, 8, 23), date(2027, 12, 9)),
+    },
+    "up_diliman": {
+        "1st Semester AY 2025-2026": (date(2025, 8, 18), date(2025, 12, 20)),
+        "2nd Semester AY 2025-2026": (date(2026, 1, 19), date(2026, 5, 30)),
+        "1st Semester AY 2026-2027": (date(2026, 8, 17), date(2026, 12, 19)),
+        "2nd Semester AY 2026-2027": (date(2027, 1, 18), date(2027, 5, 29)),
+    },
+    "usp": {
+        "1º Semestre de 2025": (date(2025, 2, 17), date(2025, 6, 30)),
+        "2º Semestre de 2025": (date(2025, 8, 4), date(2025, 12, 12)),
+        "1º Semestre de 2026": (date(2026, 2, 16), date(2026, 6, 29)),
+        "2º Semestre de 2026": (date(2026, 8, 3), date(2026, 12, 11)),
+        "1º Semestre de 2027": (date(2027, 2, 15), date(2027, 6, 28)),
+    },
+    "universiti_malaya": {
+        "Semester 1, Session 2025/2026": (date(2025, 9, 1), date(2026, 1, 16)),
+        "Semester 2, Session 2025/2026": (date(2026, 2, 9), date(2026, 6, 19)),
+        "Semester 1, Session 2026/2027": (date(2026, 8, 31), date(2027, 1, 15)),
+        "Semester 2, Session 2026/2027": (date(2027, 2, 8), date(2027, 6, 18)),
+    },
+    "makerere": {
+        "Semester I 2025/2026": (date(2025, 8, 18), date(2025, 12, 19)),
+        "Semester II 2025/2026": (date(2026, 2, 9), date(2026, 6, 20)),
+        "Semester I 2026/2027": (date(2026, 8, 17), date(2026, 12, 18)),
+        "Semester II 2026/2027": (date(2027, 2, 8), date(2027, 6, 19)),
+    },
+    "unilag": {
+        "First Semester 2025/2026 Session": (date(2025, 10, 6), date(2026, 2, 13)),
+        "Second Semester 2025/2026 Session": (date(2026, 3, 2), date(2026, 7, 10)),
+        "First Semester 2026/2027 Session": (date(2026, 10, 5), date(2027, 2, 12)),
+        "Second Semester 2026/2027 Session": (date(2027, 3, 1), date(2027, 7, 9)),
     },
 }
 
@@ -1854,6 +2266,247 @@ _INSTITUTION_COURSE_POOLS: dict[str, list[dict[str, Any]]] = {
             "mode": "In-Person",
         },
     ],
+    "up_diliman": [
+        {
+            "subject": "CS",
+            "number": "132",
+            "title": "Data Science",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "02:30PM–04:00PM",
+            "location": "AECH 115",
+            "instructor": "Tan, M.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "Math",
+            "number": "114",
+            "title": "Linear Algebra",
+            "credits": 3.0,
+            "days": "MoWeFr",
+            "time": "08:30AM–09:30AM",
+            "location": "Math Bldg 204",
+            "instructor": "Reyes, J.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "CS",
+            "number": "140",
+            "title": "Operating Systems",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "10:00AM–11:30AM",
+            "location": "AECH 201",
+            "instructor": "Santos, P.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "Physics",
+            "number": "72",
+            "title": "Elementary Physics II",
+            "credits": 4.0,
+            "days": "MoWeFr",
+            "time": "10:00AM–11:00AM",
+            "location": "NIP Rm 102",
+            "instructor": "Aquino, C.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "Eng",
+            "number": "13",
+            "title": "Writing as Thinking",
+            "credits": 3.0,
+            "days": "TuTh",
+            "time": "01:00PM–02:30PM",
+            "location": "CAL 308",
+            "instructor": "Cruz, A.",
+            "mode": "In-Person",
+        },
+    ],
+    "usp": [
+        {
+            "subject": "SCC",
+            "number": "0103",
+            "title": "Algoritmos e Estruturas de Dados",
+            "credits": 4.0,
+            "days": "Seg/Qua",
+            "time": "08:00–10:00",
+            "location": "IME Sala 101",
+            "instructor": "Ferreira, C.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "MAC",
+            "number": "0110",
+            "title": "Introdução à Computação",
+            "credits": 4.0,
+            "days": "Ter/Qui",
+            "time": "10:00–12:00",
+            "location": "IME Sala 105",
+            "instructor": "Silva, M.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "MAT",
+            "number": "0111",
+            "title": "Cálculo Diferencial e Integral I",
+            "credits": 6.0,
+            "days": "Seg/Qua/Sex",
+            "time": "14:00–16:00",
+            "location": "IME Sala 202",
+            "instructor": "Oliveira, R.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "FAP",
+            "number": "0151",
+            "title": "Física Geral I",
+            "credits": 4.0,
+            "days": "Ter/Qui",
+            "time": "14:00–16:00",
+            "location": "IF Ed. Principal",
+            "instructor": "Souza, L.",
+            "mode": "In-Person",
+        },
+    ],
+    "universiti_malaya": [
+        {
+            "subject": "WIA",
+            "number": "1001",
+            "title": "Information Systems",
+            "credits": 3.0,
+            "days": "Isnin/Rabu",
+            "time": "09:00AM–10:30AM",
+            "location": "FSKTM DK1",
+            "instructor": "Ahmad, N.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "WIA",
+            "number": "1002",
+            "title": "Data Structures",
+            "credits": 4.0,
+            "days": "Selasa/Khamis",
+            "time": "11:00AM–01:00PM",
+            "location": "FSKTM Makmal 3",
+            "instructor": "Lim, W.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "WIA",
+            "number": "2001",
+            "title": "Database Systems",
+            "credits": 3.0,
+            "days": "Isnin/Rabu",
+            "time": "02:00PM–03:30PM",
+            "location": "FSKTM DK2",
+            "instructor": "Rahman, M.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "GIG",
+            "number": "1012",
+            "title": "Philosophy and Current Issues",
+            "credits": 2.0,
+            "days": "Jumaat",
+            "time": "09:00AM–11:00AM",
+            "location": "FASS Dewan Kuliah",
+            "instructor": "Ismail, S.",
+            "mode": "In-Person",
+        },
+    ],
+    "makerere": [
+        {
+            "subject": "CSC",
+            "number": "1100",
+            "title": "Computer Architecture",
+            "credits": 4.0,
+            "days": "Mon/Wed",
+            "time": "08:00AM–10:00AM",
+            "location": "CoCIS Block A",
+            "instructor": "Okello, P.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "CSC",
+            "number": "1200",
+            "title": "Data Communication & Networks",
+            "credits": 4.0,
+            "days": "Tue/Thu",
+            "time": "10:00AM–12:00PM",
+            "location": "CoCIS Lab 2",
+            "instructor": "Kato, B.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "MTH",
+            "number": "1101",
+            "title": "Calculus I",
+            "credits": 3.0,
+            "days": "Mon/Wed/Fri",
+            "time": "02:00PM–03:00PM",
+            "location": "Science Quad LT1",
+            "instructor": "Mukasa, E.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "ENG",
+            "number": "1101",
+            "title": "Communication Skills",
+            "credits": 3.0,
+            "days": "Fri",
+            "time": "09:00AM–12:00PM",
+            "location": "CHUSS Hall 4",
+            "instructor": "Namubiru, F.",
+            "mode": "In-Person",
+        },
+    ],
+    "unilag": [
+        {
+            "subject": "CSC",
+            "number": "311",
+            "title": "Algorithms & Complexity Analysis",
+            "credits": 3.0,
+            "days": "Mon/Wed",
+            "time": "10:00AM–11:30AM",
+            "location": "Faculty of Science LR1",
+            "instructor": "Dr. Babatunde, A.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "CSC",
+            "number": "313",
+            "title": "Database Design & Management",
+            "credits": 3.0,
+            "days": "Tue/Thu",
+            "time": "12:00PM–01:30PM",
+            "location": "Science Comp Lab 1",
+            "instructor": "Prof. Okafor, C.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "MAT",
+            "number": "311",
+            "title": "Numerical Analysis I",
+            "credits": 3.0,
+            "days": "Mon/Wed",
+            "time": "08:00AM–09:30AM",
+            "location": "Math Dept LT3",
+            "instructor": "Dr. Balogun, T.",
+            "mode": "In-Person",
+        },
+        {
+            "subject": "GST",
+            "number": "201",
+            "title": "Nigerian Peoples and Culture",
+            "credits": 2.0,
+            "days": "Fri",
+            "time": "09:00AM–11:00AM",
+            "location": "Arts Theatre",
+            "instructor": "Dr. Lawal, M.",
+            "mode": "In-Person",
+        },
+    ],
 }
 
 
@@ -1907,19 +2560,27 @@ def generate_academic_state(
             )
     else:
         raw_pool = _get_course_pool(institution_id)
-        target_count = 4 if institution_id == "ucla" else min(5, len(raw_pool))
+        target_count = (
+            4
+            if institution_id in ("ucla", "makerere", "unilag", "universiti_malaya")
+            else min(5, len(raw_pool))
+        )
         selected_raw = (
             rng.sample(raw_pool, target_count)
             if len(raw_pool) >= target_count
             else list(raw_pool)
         )
         courses = []
+        inst = INSTITUTIONS.get(institution_id)
         for idx, item in enumerate(selected_raw):
-            code = (
-                f"{item['subject']} {item['number']}".strip()
-                if item.get("number")
-                else item["subject"]
-            )
+            subj = item["subject"]
+            nbr = item.get("number", "")
+            if inst and "{SUBJ}{NNN}" in inst.course_id_format:
+                code = f"{subj}{nbr}".strip()
+            elif nbr:
+                code = f"{subj} {nbr}".strip()
+            else:
+                code = subj
             crn = _generate_crn(rng, institution_id, idx)
             credits = int(item["credits"])
             meeting = (
@@ -2013,6 +2674,34 @@ def _generate_student_id(rng: random.Random, institution: Institution) -> str:
         digits = "".join(str(rng.randint(0, 9)) for _ in range(rng.randint(4, 5)))
         return f"{letters}{digits}"
 
+    elif iid == "up_diliman":
+        # YYYY-NNNNN: admission year (2021-2025) + 5 digits
+        year = rng.randint(2021, 2025)
+        seq = rng.randint(10000, 99999)
+        return f"{year}-{seq:05d}"
+
+    elif iid == "usp":
+        # Número USP: 7-8 numeric digits
+        return str(rng.randint(1000000, 99999999))
+
+    elif iid == "universiti_malaya":
+        # S + 4-digit year + 6-digit sequence
+        year = rng.randint(2021, 2025)
+        seq = rng.randint(100000, 999999)
+        return f"S{year}{seq}"
+
+    elif iid == "makerere":
+        # YY/U/NNNNN/PS
+        year = rng.randint(22, 25)
+        seq = rng.randint(10000, 99999)
+        return f"{year:02d}/U/{seq:05d}/PS"
+
+    elif iid == "unilag":
+        # YYYY/1/NNNNN
+        year = rng.randint(2021, 2025)
+        seq = rng.randint(10000, 99999)
+        return f"{year}/1/{seq:05d}"
+
     else:
         pattern = institution.student_id_format or institution.id_format or r"\d{9}"
         digits = re.findall(r"\\d\{(\d+)\}", pattern)
@@ -2053,9 +2742,47 @@ def _generate_student_email(
     elif institution.id == "umich":
         uniq = login_id or (first[0] + last)[:8]
         return f"{uniq}@umich.edu"
+    elif institution.id == "makerere":
+        return f"{first}.{last}{rng.randint(10, 99)}@students.mak.ac.ug"
+    elif institution.id == "universiti_malaya":
+        return f"{first}.{last}{rng.randint(10, 99)}@siswa.um.edu.my"
     else:
         # Standard: first initial + up to 6 of last + 2 digits @ domain
         return f"{first[0]}{last[:6]}{rng.randint(10, 99)}@{institution.domain}"
+
+
+def _format_date_intl(dt: date, institution_id: str) -> str:
+    """Format a date according to the institution's real document convention."""
+    if institution_id in ("makerere", "unilag"):
+        # Ordinal English: "15th October, 2025"
+        day = dt.day
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(
+            day % 10 if day not in (11, 12, 13) else 0, "th"
+        )
+        return dt.strftime(f"%-d{suffix} %B, %Y")
+    elif institution_id == "usp":
+        # Brazilian: "15/10/2025"
+        return dt.strftime("%d/%m/%Y")
+    elif institution_id == "universiti_malaya":
+        # Malaysian: "15 Oktober 2025" (in Malay)
+        malay_months = [
+            "Januari",
+            "Februari",
+            "Mac",
+            "April",
+            "Mei",
+            "Jun",
+            "Julai",
+            "Ogos",
+            "September",
+            "Oktober",
+            "November",
+            "Disember",
+        ]
+        return f"{dt.day} {malay_months[dt.month - 1]} {dt.year}"
+    else:
+        # Philippine / US / default: "October 15, 2025"
+        return dt.strftime("%B %d, %Y")
 
 
 # =====================================================================
@@ -2075,7 +2802,9 @@ def generate_profile(
     inst_id = institution_id or override_institution_id or scen.institution_id
     institution = INSTITUTIONS.get(inst_id, INSTITUTIONS["psu"])
 
-    first_name, last_name = SeededNameGenerator.generate(rng)
+    first_name, last_name = SeededNameGenerator.generate(
+        rng, institution_id=institution.id
+    )
     program = rng.choice(institution.programs)
 
     temporal = get_temporal_anchor(rng)
@@ -2089,10 +2818,15 @@ def generate_profile(
 
     duration_years = rng.choice(scen.program_duration_years)
 
-    season, term_year, term_start, term_end = _current_term(
-        ref_date, institution_id=institution.id
-    )
-    current_term_label = f"{season} {term_year}"
+    if institution.id in _TERM_CALENDARS:
+        current_term_label, term_start, term_end = _current_term_for_institution(
+            institution.id, ref_date
+        )
+    else:
+        season, term_year, term_start, term_end = _current_term(
+            ref_date, institution_id=institution.id
+        )
+        current_term_label = f"{season} {term_year}"
     print_dt = _document_print_date(rng, term_start, ref_date)
 
     student_id = _generate_student_id(rng, institution)
@@ -2110,6 +2844,10 @@ def generate_profile(
         login_id = student_id
     elif institution.id == "ucla":
         login_id = f"{first_clean[0]}{last_clean[:7]}"
+    elif institution.id == "usp":
+        login_id = student_id
+    elif institution.id == "universiti_malaya":
+        login_id = student_id.lower()
     else:
         login_id = f"{first_clean[0]}{last_clean[:6]}"
 
@@ -2176,16 +2914,34 @@ def generate_profile(
         gpa_cum = acad_state.cumulative_gpa
         gpa_term = round(min(4.0, max(2.5, gpa_cum + rng.uniform(-0.25, 0.25))), 2)
         cum_units = float(rng.randint(28, 118))
-        academic_standing = "Good Standing"
-        advisor_name = acad_state.advisor
+        academic_standing = (
+            "Ativo"
+            if institution.id == "usp"
+            else ("Regular" if institution.id == "up_diliman" else "Good Standing")
+        )
+        if institution.id == "usp":
+            advisor_name = "Prof. Dr. Carlos Eduardo Ferreira"
+        elif institution.id == "unilag":
+            advisor_name = "Prof. A. O. Babatunde"
+        elif institution.id == "makerere":
+            advisor_name = "Dr. Paul Okello"
+        elif institution.id == "universiti_malaya":
+            advisor_name = "Prof. Madya Dr. Nor Azman Ismail"
+        else:
+            advisor_name = acad_state.advisor
         adv_clean = (
             advisor_name.lower()
             .replace("dr. ", "")
             .replace("prof. ", "")
+            .replace("madya ", "")
             .replace(" ", ".")
         )
         advisor_email = f"{adv_clean}@{institution.domain}"
-        enrollment_type = "Full-Time"
+        enrollment_type = (
+            "Regular"
+            if institution.id == "up_diliman"
+            else ("Ativo" if institution.id == "usp" else "Full-Time")
+        )
 
     campus = "University Park" if institution.id == "psu" else institution.city
     seal_mat = f"{institution.id}:{first_name}:{last_name}:{student_id}:{current_term_label}:{print_dt.date().isoformat()}"
@@ -2568,6 +3324,988 @@ def generate_registrar_letter_document(
 </body>
 </html>
 """
+    elif inst.id == "up_diliman":
+        # University of the Philippines Diliman — CRS Form 5 (Registration Form)
+        school_str = (
+            profile.college_or_school
+            or (inst.schools[0] if inst.schools else "")
+            or "College of Engineering"
+        )
+        diff_years = max(
+            1, min(4, (print_date.year - profile.enrollment_date.year) + 1)
+        )
+        year_suffix = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th"}.get(
+            diff_years, f"{diff_years}th"
+        )
+        year_level_str = f"{year_suffix} Year"
+        issued_date_str = _format_date_intl(print_date, "up_diliman")
+        ref_hash = profile.document_seal_hash[:7].upper()
+
+        course_rows = []
+        section_codes = ["THX", "WFX", "MHX", "TFX", "WFV", "THY"]
+        for idx, c in enumerate(academic_state.courses):
+            sec = section_codes[idx % len(section_codes)]
+            course_rows.append(
+                f"""<tr>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6;">{c.crn}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; font-weight: 600;">{c.code}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6;">{c.title}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; text-align: center;">{sec}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; text-align: center;">{c.credits}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6;">{c.meeting_pattern}</td>
+                </tr>"""
+            )
+        courses_table_body = "\n".join(course_rows)
+
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Registration Form (Form 5) - {name}</title>
+    <style>
+        body {{
+            font-family: Arial, Helvetica, sans-serif;
+            color: #212529;
+            margin: 0;
+            padding: 24px;
+            background: #ffffff;
+            font-size: 12px;
+        }}
+        .topbar {{
+            background: #7B0027;
+            color: #ffffff;
+            padding: 8px 18px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+        .topbar-brand {{
+            font-weight: 700;
+            letter-spacing: .02em;
+        }}
+        .letter-content {{
+            padding: 16px 20px;
+        }}
+        .header-block {{
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+        }}
+        .inst-title {{
+            font-size: 14px;
+            font-weight: 700;
+            color: #7B0027;
+            letter-spacing: .02em;
+        }}
+        .office-sub {{
+            font-size: 12px;
+            font-weight: 700;
+            color: #014421;
+            margin-top: 2px;
+        }}
+        .loc-sub {{
+            font-size: 11px;
+            color: #555555;
+            margin-top: 2px;
+        }}
+        .doc-title {{
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 10px;
+            text-decoration: underline;
+            color: #212529;
+        }}
+        .term-sub {{
+            font-size: 11px;
+            color: #555555;
+            margin-top: 3px;
+        }}
+        .info-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+            margin-bottom: 14px;
+        }}
+        .info-table td {{
+            padding: 3px 0;
+        }}
+        .info-table td.lbl {{
+            width: 180px;
+            color: #555555;
+        }}
+        .section-heading {{
+            font-size: 11.5px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #212529;
+        }}
+        .courses-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 14px;
+        }}
+        .courses-table th {{
+            background: #7B0027;
+            color: #ffffff;
+            padding: 6px 8px;
+            font-weight: 700;
+            text-align: left;
+        }}
+        .courses-table tfoot td {{
+            background: #f8f9fa;
+            border-top: 2px solid #dee2e6;
+            font-size: 11px;
+        }}
+        .footer-block {{
+            margin-top: 16px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 12px;
+            font-size: 11px;
+            color: #555555;
+        }}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <span class="topbar-brand">UNIVERSITY OF THE PHILIPPINES DILIMAN</span>
+        <span>Office of the University Registrar &bull; CRS</span>
+    </div>
+    <div class="letter-content">
+        <div class="header-block">
+            <div class="inst-title">UNIVERSITY OF THE PHILIPPINES DILIMAN</div>
+            <div class="office-sub">Office of the University Registrar</div>
+            <div class="loc-sub">Diliman, Quezon City 1101 &bull; our.upd.edu.ph &bull; University of the Philippines Diliman</div>
+            <div class="doc-title">REGISTRATION FORM (FORM 5)</div>
+            <div class="term-sub">{term_label}</div>
+        </div>
+
+        <table class="info-table">
+            <tr><td class="lbl">Student Number:</td><td><strong>{profile.student_id}</strong></td></tr>
+            <tr><td class="lbl">Student Name:</td><td><strong>{name}</strong></td></tr>
+            <tr><td class="lbl">Degree Program:</td><td>{profile.program}</td></tr>
+            <tr><td class="lbl">College / Unit:</td><td>{school_str}</td></tr>
+            <tr><td class="lbl">Year Level:</td><td>{year_level_str}</td></tr>
+            <tr><td class="lbl">Status:</td><td>{profile.academic_standing}</td></tr>
+        </table>
+
+        <div class="section-heading">Enrolled Courses &mdash; {term_label}</div>
+        <table class="courses-table">
+            <thead>
+                <tr>
+                    <th style="width: 12%;">Class Code</th>
+                    <th style="width: 14%;">Course</th>
+                    <th>Title</th>
+                    <th style="width: 10%; text-align: center;">Section</th>
+                    <th style="width: 8%; text-align: center;">Units</th>
+                    <th style="width: 26%;">Schedule</th>
+                </tr>
+            </thead>
+            <tbody>
+                {courses_table_body}
+            </tbody>
+            <tfoot>
+                <tr style="font-weight: 700;">
+                    <td colspan="4" style="padding: 6px 8px; text-align: right;">Total Units:</td>
+                    <td style="padding: 6px 8px; text-align: center;">{academic_state.total_credits}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="footer-block">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="vertical-align: top; width: 33%;">
+                        <div style="border: 1px dashed #7B0027; color: #7B0027; padding: 10px; text-align: center; font-size: 10px; font-weight: 700;">
+                            OFFICIAL SEAL<br>Office of the University Registrar
+                        </div>
+                    </td>
+                    <td style="vertical-align: top; text-align: center; width: 34%;">
+                        <div style="margin-top: 15px;">____________________________________</div>
+                        <div style="font-weight: 700; margin-top: 4px;">University Registrar</div>
+                        <div style="margin-top: 4px; font-size: 10.5px;">Date Issued: {issued_date_str}</div>
+                    </td>
+                    <td style="vertical-align: top; text-align: right; width: 33%; font-family: monospace; font-size: 10px; color: #666666;">
+                        Doc Ref: OUR-F5-{print_date.year}-{ref_hash}<br>
+                        Verify: our.upd.edu.ph/verify
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
+"""
+    elif inst.id == "usp":
+        # Universidade de São Paulo — Sistema Janus / Júpiter Atestado de Matrícula
+        school_str = (
+            profile.college_or_school
+            or (inst.schools[0] if inst.schools else "")
+            or "Instituto de Matemática e Estatística (IME)"
+        )
+        emitido_str = _format_date_intl(print_date, "usp")
+        matricula_str = _format_date_intl(profile.enrollment_date, "usp")
+        auth_code = profile.document_seal_hash[:14].lower()
+
+        course_rows = []
+        for c in academic_state.courses:
+            course_rows.append(
+                f"""<tr>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; font-family: monospace; font-weight: 600;">{c.code}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6;">{c.title}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; text-align: center;">{c.credits}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; text-align: center;">Matriculado</td>
+                </tr>"""
+            )
+        courses_table_body = "\n".join(course_rows)
+
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Atestado de Matrícula - {name}</title>
+    <style>
+        body {{
+            font-family: Arial, Helvetica, sans-serif;
+            color: #212529;
+            margin: 0;
+            padding: 24px;
+            background: #ffffff;
+            font-size: 12px;
+        }}
+        .topbar {{
+            background: #003366;
+            color: #ffffff;
+            padding: 8px 18px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+        .topbar-brand {{
+            font-weight: 700;
+            letter-spacing: .02em;
+        }}
+        .letter-content {{
+            padding: 16px 20px;
+        }}
+        .header-block {{
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+        }}
+        .inst-title {{
+            font-size: 14px;
+            font-weight: 700;
+            color: #003366;
+            letter-spacing: .02em;
+        }}
+        .loc-sub {{
+            font-size: 11px;
+            color: #555555;
+            margin-top: 3px;
+        }}
+        .doc-title {{
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 8px;
+            color: #003366;
+            letter-spacing: .02em;
+        }}
+        .cert-statement {{
+            font-size: 11.5px;
+            margin-bottom: 12px;
+            line-height: 1.5;
+            color: #333333;
+        }}
+        .info-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+            margin-bottom: 14px;
+        }}
+        .info-table td {{
+            padding: 3px 0;
+        }}
+        .info-table td.lbl {{
+            width: 180px;
+            color: #555555;
+        }}
+        .section-heading {{
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #003366;
+        }}
+        .courses-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 14px;
+        }}
+        .courses-table th {{
+            background: #003366;
+            color: #ffffff;
+            padding: 6px 8px;
+            font-weight: 700;
+            text-align: left;
+        }}
+        .footer-block {{
+            margin-top: 16px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 12px;
+            font-size: 10.5px;
+            color: #555555;
+            line-height: 1.5;
+        }}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <span class="topbar-brand">UNIVERSIDADE DE SÃO PAULO</span>
+        <span>Pró-Reitoria de Pós-Graduação &bull; Sistema Janus</span>
+    </div>
+    <div class="letter-content">
+        <div class="header-block">
+            <div class="inst-title">UNIVERSIDADE DE SÃO PAULO</div>
+            <div class="loc-sub">Rua da Reitoria, 109 &mdash; Cidade Universitária &mdash; São Paulo, SP 05508-220 &bull; Universidade de São Paulo</div>
+            <div class="doc-title">ATESTADO DE MATRÍCULA</div>
+        </div>
+
+        <div class="cert-statement">
+            Atestamos que o(a) aluno(a) abaixo identificado(a) encontra-se regularmente matriculado(a) na Universidade de São Paulo, conforme dados a seguir:
+        </div>
+
+        <table class="info-table">
+            <tr><td class="lbl">Nome:</td><td><strong>{name}</strong></td></tr>
+            <tr><td class="lbl">Número USP:</td><td><strong>{profile.student_id}</strong></td></tr>
+            <tr><td class="lbl">Programa:</td><td>{profile.program}</td></tr>
+            <tr><td class="lbl">Unidade:</td><td>{school_str}</td></tr>
+            <tr><td class="lbl">Semestre:</td><td>{term_label}</td></tr>
+            <tr><td class="lbl">Data de Matrícula:</td><td>{matricula_str}</td></tr>
+            <tr><td class="lbl">Situação:</td><td><strong>{profile.academic_standing}</strong></td></tr>
+            <tr><td class="lbl">Orientador(a) / Coordenador(a):</td><td>{academic_state.advisor}</td></tr>
+        </table>
+
+        <div class="section-heading">Disciplinas Matriculadas &mdash; {term_label}</div>
+        <table class="courses-table">
+            <thead>
+                <tr>
+                    <th style="width: 16%;">Código</th>
+                    <th>Disciplina</th>
+                    <th style="width: 14%; text-align: center;">Créditos</th>
+                    <th style="width: 16%; text-align: center;">Situação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {courses_table_body}
+            </tbody>
+        </table>
+
+        <div class="footer-block">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                    <div>Emitido em: {emitido_str}</div>
+                    <div style="margin-top: 4px;">Autenticação digital: <span style="font-family: monospace; font-weight: bold;">{auth_code}</span></div>
+                    <div>Verifique em: <span style="color: #003366;">sistemas.usp.br/ateste</span></div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="border: 1px solid #003366; color: #003366; padding: 6px 12px; font-size: 9px; font-weight: bold; background: #f0f4f8;">
+                        [QR Autenticação Digital]
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 10px; font-size: 9.5px; color: #777777;">
+                Este documento é emitido eletronicamente pela Universidade de São Paulo e sua autenticidade pode ser confirmada no endereço acima informado com o código de validação.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+    elif inst.id == "universiti_malaya":
+        # Universiti Malaya — MAYA Academic Portal Verification Letter
+        school_str = (
+            profile.college_or_school
+            or (inst.schools[0] if inst.schools else "")
+            or "Faculty of Computer Science and Information Technology"
+        )
+        issued_date_str = _format_date_intl(print_date, "universiti_malaya")
+
+        course_rows = []
+        for c in academic_state.courses:
+            course_rows.append(
+                f"""<tr>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; font-family: monospace; font-weight: 600;">{c.code}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6;">{c.title}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; text-align: center;">{c.credits}</td>
+                </tr>"""
+            )
+        courses_table_body = "\n".join(course_rows)
+
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Letter of Student Verification - {name}</title>
+    <style>
+        body {{
+            font-family: Arial, Helvetica, sans-serif;
+            color: #212529;
+            margin: 0;
+            padding: 24px;
+            background: #ffffff;
+            font-size: 12px;
+        }}
+        .topbar {{
+            background: #880000;
+            color: #ffffff;
+            padding: 8px 18px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+        .topbar-brand {{
+            font-weight: 700;
+            letter-spacing: .02em;
+        }}
+        .letter-content {{
+            padding: 16px 20px;
+        }}
+        .header-block {{
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+        }}
+        .inst-title {{
+            font-size: 14px;
+            font-weight: 700;
+            color: #880000;
+            letter-spacing: .02em;
+        }}
+        .loc-sub {{
+            font-size: 11px;
+            color: #555555;
+            margin-top: 3px;
+        }}
+        .doc-title {{
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 8px;
+            color: #212529;
+        }}
+        .cert-statement {{
+            font-size: 11.5px;
+            margin-bottom: 10px;
+            color: #333333;
+        }}
+        .info-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+            margin-bottom: 14px;
+        }}
+        .info-table td {{
+            padding: 3px 0;
+        }}
+        .info-table td.lbl {{
+            width: 220px;
+            color: #555555;
+        }}
+        .courses-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 14px;
+        }}
+        .courses-table th {{
+            background: #880000;
+            color: #ffffff;
+            padding: 6px 8px;
+            font-weight: 700;
+            text-align: left;
+        }}
+        .footer-block {{
+            margin-top: 16px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 12px;
+            font-size: 11px;
+            color: #555555;
+        }}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <span class="topbar-brand">UNIVERSITI MALAYA &mdash; MAYA Academic Portal</span>
+        <span>Pejabat Pendaftar / Registrar's Office</span>
+    </div>
+    <div class="letter-content">
+        <div class="header-block">
+            <div class="inst-title">UNIVERSITI MALAYA</div>
+            <div class="loc-sub">50603 Kuala Lumpur, Malaysia &bull; www.um.edu.my &bull; Universiti Malaya</div>
+            <div class="doc-title">SURAT PENGESAHAN PELAJAR / LETTER OF STUDENT VERIFICATION</div>
+        </div>
+
+        <div class="cert-statement">
+            This is to certify that / Ini untuk mengesahkan bahawa the student named below is currently enrolled at Universiti Malaya:
+        </div>
+
+        <table class="info-table">
+            <tr><td class="lbl">Nama / Name:</td><td><strong>{name}</strong></td></tr>
+            <tr><td class="lbl">No. Matrik / Matric No.:</td><td><strong>{profile.student_id}</strong></td></tr>
+            <tr><td class="lbl">Program / Programme:</td><td>{profile.program}</td></tr>
+            <tr><td class="lbl">Fakulti / Faculty:</td><td>{school_str}</td></tr>
+            <tr><td class="lbl">Semester / Session:</td><td>{term_label}</td></tr>
+            <tr><td class="lbl">Status Pelajar / Student Status:</td><td>{profile.academic_standing} / Active</td></tr>
+            <tr><td class="lbl">CGPA:</td><td>{academic_state.cumulative_gpa:.2f}</td></tr>
+            <tr><td class="lbl">Jam Kredit / Credit Hours Enrolled:</td><td>{academic_state.total_credits}</td></tr>
+        </table>
+
+        <table class="courses-table">
+            <thead>
+                <tr>
+                    <th style="width: 22%;">Kod Kursus / Course Code</th>
+                    <th>Nama Kursus / Course Name</th>
+                    <th style="width: 20%; text-align: center;">Jam Kredit / Credit Hours</th>
+                </tr>
+            </thead>
+            <tbody>
+                {courses_table_body}
+            </tbody>
+        </table>
+
+        <div class="footer-block">
+            <div>Tarikh Dikeluarkan / Date Issued: {issued_date_str}</div>
+            <div style="margin-top: 14px;">____________________________________</div>
+            <div style="font-weight: 700;">Pendaftar / Registrar</div>
+            <div>Universiti Malaya</div>
+            <div style="margin-top: 6px; font-size: 10px; color: #777777;">
+                Pengesahan Elektronik / Electronic Verification: maya.um.edu.my/verify &bull; Ref: UM/MAYA/{profile.document_seal_hash[:8].upper()}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+    elif inst.id == "makerere":
+        # Makerere University — ACMIS Letter of Enrollment
+        school_str = (
+            profile.college_or_school
+            or (inst.schools[0] if inst.schools else "")
+            or "College of Computing and Information Sciences (CoCIS)"
+        )
+        diff_years = max(
+            1, min(4, (print_date.year - profile.enrollment_date.year) + 1)
+        )
+        issued_date_str = _format_date_intl(print_date, "makerere")
+
+        # Extract or format academic year: e.g. "2025/2026"
+        year_match = re.search(r"(\d{4})[/-](\d{4})", term_label)
+        if year_match:
+            acad_year = f"{year_match.group(1)}/{year_match.group(2)}"
+        else:
+            acad_year = (
+                f"{print_date.year - 1}/{print_date.year}"
+                if print_date.month < 8
+                else f"{print_date.year}/{print_date.year + 1}"
+            )
+        semester_str = "Semester II" if "Semester II" in term_label else "Semester I"
+
+        course_rows = []
+        for c in academic_state.courses:
+            course_rows.append(
+                f"""<tr>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; font-weight: 600;">{c.code}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6;">{c.title}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; text-align: center;">{c.credits}</td>
+                </tr>"""
+            )
+        courses_table_body = "\n".join(course_rows)
+
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Letter of Enrollment - {name}</title>
+    <style>
+        body {{
+            font-family: Arial, Helvetica, sans-serif;
+            color: #212529;
+            margin: 0;
+            padding: 24px;
+            background: #ffffff;
+            font-size: 12px;
+        }}
+        .topbar {{
+            background: #003087;
+            color: #ffffff;
+            padding: 8px 18px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+        .topbar-brand {{
+            font-weight: 700;
+            letter-spacing: .02em;
+        }}
+        .letter-content {{
+            padding: 16px 20px;
+        }}
+        .header-block {{
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }}
+        .inst-title {{
+            font-size: 14px;
+            font-weight: 700;
+            color: #003087;
+            letter-spacing: .02em;
+        }}
+        .loc-sub {{
+            font-size: 11px;
+            color: #555555;
+            margin-top: 2px;
+        }}
+        .date-line {{
+            text-align: right;
+            font-size: 11.5px;
+            margin-bottom: 10px;
+            color: #333333;
+        }}
+        .doc-title {{
+            font-size: 12.5px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-decoration: underline;
+            color: #003087;
+        }}
+        .cert-statement {{
+            font-size: 11.5px;
+            margin-bottom: 10px;
+            line-height: 1.5;
+            color: #333333;
+        }}
+        .info-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+            margin-bottom: 14px;
+        }}
+        .info-table td {{
+            padding: 3px 0;
+        }}
+        .info-table td.lbl {{
+            width: 200px;
+            color: #555555;
+        }}
+        .courses-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 12px;
+        }}
+        .courses-table th {{
+            background: #003087;
+            color: #ffffff;
+            padding: 6px 8px;
+            font-weight: 700;
+            text-align: left;
+        }}
+        .footer-block {{
+            margin-top: 14px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 12px;
+            font-size: 11px;
+            color: #555555;
+            line-height: 1.5;
+        }}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <span class="topbar-brand">MAKERERE UNIVERSITY</span>
+        <span>Office of the Academic Registrar &bull; ACMIS</span>
+    </div>
+    <div class="letter-content">
+        <div class="header-block">
+            <div class="inst-title">MAKERERE UNIVERSITY</div>
+            <div class="loc-sub">P.O. Box 7062, Kampala, Uganda &bull; www.mak.ac.ug &bull; Makerere University</div>
+            <div class="loc-sub">Tel: +256-414-540628 / 530981</div>
+        </div>
+
+        <div class="date-line">{issued_date_str}</div>
+        <div class="doc-title">LETTER OF ENROLLMENT &mdash; {term_label}</div>
+
+        <div class="cert-statement">
+            This is to certify that the following student is a bonafide registered student of Makerere University for the Academic Year {acad_year}:
+        </div>
+
+        <table class="info-table">
+            <tr><td class="lbl">Full Name:</td><td><strong>{name}</strong></td></tr>
+            <tr><td class="lbl">Student No.:</td><td><strong>{profile.student_id}</strong></td></tr>
+            <tr><td class="lbl">Programme:</td><td>{profile.program}</td></tr>
+            <tr><td class="lbl">College:</td><td>{school_str}</td></tr>
+            <tr><td class="lbl">Year of Study:</td><td>Year {diff_years}</td></tr>
+            <tr><td class="lbl">Academic Year:</td><td>{acad_year}</td></tr>
+            <tr><td class="lbl">Semester:</td><td>{semester_str}</td></tr>
+            <tr><td class="lbl">Academic Term:</td><td>{term_label}</td></tr>
+            <tr><td class="lbl">Sponsorship:</td><td>Private (PS)</td></tr>
+            <tr><td class="lbl">Registration Status:</td><td>{profile.academic_standing}</td></tr>
+        </table>
+
+        <table class="courses-table">
+            <thead>
+                <tr>
+                    <th style="width: 22%;">Course Code</th>
+                    <th>Course Title</th>
+                    <th style="width: 20%; text-align: center;">Credit Units</th>
+                </tr>
+            </thead>
+            <tbody>
+                {courses_table_body}
+            </tbody>
+        </table>
+
+        <div style="font-size: 10.5px; color: #666666; margin-bottom: 8px;">
+            This letter has been issued for the purpose of student verification only and shall not be used for any other purpose.
+        </div>
+
+        <div class="footer-block">
+            <div style="margin-top: 10px;">____________________________________</div>
+            <div style="font-weight: 700; margin-top: 2px;">Prof. Buyinza Mukadasi</div>
+            <div>Academic Registrar</div>
+            <div>Makerere University</div>
+            <div style="margin-top: 4px; color: #777777;">Date: {issued_date_str}</div>
+            <div style="margin-top: 4px; font-size: 10px; color: #888888;">
+                [Official Stamp &bull; ACMIS Verified: MAK/{print_date.year}/{profile.document_seal_hash[:8].upper()}]
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+    elif inst.id == "unilag":
+        # University of Lagos — UNILAG Student Portal Letter of Enrollment
+        school_str = (
+            profile.college_or_school
+            or (inst.schools[0] if inst.schools else "")
+            or "Faculty of Science"
+        )
+        diff_years = max(
+            1, min(4, (print_date.year - profile.enrollment_date.year) + 1)
+        )
+        level_str = f"{diff_years}00 Level"
+        issued_date_str = _format_date_intl(print_date, "unilag")
+
+        year_match = re.search(r"(\d{4})[/-](\d{4})", term_label)
+        if year_match:
+            acad_session = f"{year_match.group(1)}/{year_match.group(2)}"
+        else:
+            acad_session = (
+                f"{print_date.year - 1}/{print_date.year}"
+                if print_date.month < 8
+                else f"{print_date.year}/{print_date.year + 1}"
+            )
+        semester_str = "Second Semester" if "Second" in term_label else "First Semester"
+
+        dept_str = (
+            profile.program.replace("Bachelor of Science (B.Sc.)", "")
+            .replace("B.Sc.", "")
+            .replace("B.A.", "")
+            .replace("Bachelor of", "")
+            .strip()
+            or "Computer Science"
+        )
+
+        course_rows = []
+        for c in academic_state.courses:
+            course_rows.append(
+                f"""<tr>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; font-weight: 600;">{c.code}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6;">{c.title}</td>
+                    <td style="padding: 5px 8px; border-bottom: 1px solid #dee2e6; text-align: center;">{c.credits}</td>
+                </tr>"""
+            )
+        courses_table_body = "\n".join(course_rows)
+
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Letter of Student Enrollment - {name}</title>
+    <style>
+        body {{
+            font-family: Arial, Helvetica, sans-serif;
+            color: #212529;
+            margin: 0;
+            padding: 24px;
+            background: #ffffff;
+            font-size: 12px;
+        }}
+        .topbar {{
+            background: #800020;
+            color: #ffffff;
+            padding: 8px 18px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+        .topbar-brand {{
+            font-weight: 700;
+            letter-spacing: .02em;
+        }}
+        .letter-content {{
+            padding: 16px 20px;
+        }}
+        .header-block {{
+            border-bottom: 2px solid #800020;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }}
+        .inst-title {{
+            font-size: 15px;
+            font-weight: 800;
+            color: #800020;
+            letter-spacing: .03em;
+        }}
+        .tagline {{
+            font-size: 11px;
+            color: #555555;
+            font-style: italic;
+            margin-top: 2px;
+        }}
+        .loc-sub {{
+            font-size: 11px;
+            color: #555555;
+            margin-top: 2px;
+        }}
+        .date-line {{
+            text-align: right;
+            font-size: 11.5px;
+            margin-bottom: 10px;
+            color: #333333;
+        }}
+        .doc-title {{
+            font-size: 12.5px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-decoration: underline;
+            color: #800020;
+            letter-spacing: .02em;
+        }}
+        .cert-statement {{
+            font-size: 11.5px;
+            margin-bottom: 10px;
+            line-height: 1.5;
+            color: #333333;
+        }}
+        .info-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+            margin-bottom: 14px;
+        }}
+        .info-table td {{
+            padding: 3px 0;
+        }}
+        .info-table td.lbl {{
+            width: 200px;
+            color: #555555;
+        }}
+        .courses-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 12px;
+        }}
+        .courses-table th {{
+            background: #800020;
+            color: #ffffff;
+            padding: 6px 8px;
+            font-weight: 700;
+            text-align: left;
+        }}
+        .footer-block {{
+            margin-top: 14px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 12px;
+            font-size: 11px;
+            color: #555555;
+            line-height: 1.5;
+        }}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <span class="topbar-brand">UNIVERSITY OF LAGOS</span>
+        <span>Office of the Registrar &bull; Student Portal</span>
+    </div>
+    <div class="letter-content">
+        <div class="header-block">
+            <div class="inst-title">UNIVERSITY OF LAGOS</div>
+            <div class="tagline">&ldquo;University of First Choice and the Nation's Pride&rdquo;</div>
+            <div class="loc-sub">Akoka, Yaba, Lagos State, Nigeria &bull; unilag.edu.ng &bull; University of Lagos</div>
+        </div>
+
+        <div class="date-line">{issued_date_str}</div>
+        <div class="doc-title">LETTER OF STUDENT ENROLLMENT</div>
+
+        <div class="cert-statement">
+            This is to certify that the following student is duly enrolled in the University of Lagos for the {term_label}:
+        </div>
+
+        <table class="info-table">
+            <tr><td class="lbl">Full Name:</td><td><strong>{name}</strong></td></tr>
+            <tr><td class="lbl">Matriculation Number:</td><td><strong>{profile.student_id}</strong></td></tr>
+            <tr><td class="lbl">Programme:</td><td>{profile.program}</td></tr>
+            <tr><td class="lbl">Faculty:</td><td>{school_str}</td></tr>
+            <tr><td class="lbl">Department:</td><td>{dept_str}</td></tr>
+            <tr><td class="lbl">Level:</td><td>{level_str}</td></tr>
+            <tr><td class="lbl">Academic Session:</td><td>{acad_session}</td></tr>
+            <tr><td class="lbl">Semester:</td><td>{semester_str}</td></tr>
+            <tr><td class="lbl">Mode of Study:</td><td>Full Time</td></tr>
+            <tr><td class="lbl">Enrollment Status:</td><td>{profile.academic_standing}</td></tr>
+        </table>
+
+        <table class="courses-table">
+            <thead>
+                <tr>
+                    <th style="width: 22%;">Course Code</th>
+                    <th>Course Title</th>
+                    <th style="width: 20%; text-align: center;">Units</th>
+                </tr>
+            </thead>
+            <tbody>
+                {courses_table_body}
+            </tbody>
+        </table>
+
+        <div style="font-size: 10.5px; color: #666666; margin-bottom: 8px;">
+            This letter is issued for the purpose of student verification and proof of enrollment. The University of Lagos shall not be held responsible for any misuse of this document.
+        </div>
+
+        <div class="footer-block">
+            <div style="margin-top: 10px;">____________________________________</div>
+            <div style="font-weight: 700; margin-top: 2px;">Mrs. Olakunle E. Makinde, MNIM, fisn</div>
+            <div>Acting Registrar and Secretary to Council</div>
+            <div>University of Lagos</div>
+            <div style="margin-top: 4px; font-size: 10px; color: #888888;">
+                Official Stamp: [UNILAG Crest &amp; Registry Verification Stamp &bull; Ref: UNILAG/REG/{print_date.year}/{profile.document_seal_hash[:8].upper()}]
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
     else:
         # Generic registrar letter
         html = f"""<!DOCTYPE html>
@@ -2705,9 +4443,21 @@ def generate_registrar_letter_document(
         "Document Print Date": print_date_str,
     }
 
+    doc_title = f"Enrollment Verification - {name}"
+    if inst.id == "up_diliman":
+        doc_title = f"Registration Form (Form 5) - {name}"
+    elif inst.id == "usp":
+        doc_title = f"Atestado de Matrícula - {name}"
+    elif inst.id == "universiti_malaya":
+        doc_title = f"Letter of Student Verification - {name}"
+    elif inst.id == "makerere":
+        doc_title = f"Letter of Enrollment - {name}"
+    elif inst.id == "unilag":
+        doc_title = f"Letter of Student Enrollment - {name}"
+
     return Document(
         kind=kind,
-        title=f"Enrollment Verification - {name}",
+        title=doc_title,
         profile=profile,
         fields=fields,
         html_content=html,
@@ -3692,6 +5442,11 @@ def _spoof_pdf_metadata(
       /CreationDate (D:20260915143022-05'00')
       /ModDate      (D:20260915143022-05'00')
     """
+    if isinstance(institution, SyntheticProfile):
+        if profile is None:
+            profile = institution
+        institution = profile.institution
+
     inst = institution or (profile.institution if profile else INSTITUTIONS["psu"])
     is_letter = inst.document_archetype == DocumentArchetype.REGISTRAR_LETTER
     if profile:
@@ -3783,6 +5538,11 @@ def render_pdf(
     term_label: str = "",
 ) -> bytes:
     """Render HTML string to PDF bytes with institutional metadata spoofing."""
+    if isinstance(institution, SyntheticProfile):
+        if profile is None:
+            profile = institution
+        institution = profile.institution
+
     html = _resolve_css_vars(html_content)
     pdf_bytes: bytes | None = None
 
@@ -4390,7 +6150,8 @@ def readback_validate_html(
     preflight_mode: bool = True,
 ) -> ValidationResult:
     base_dir = Path("/tmp/opencode") if Path("/tmp/opencode").exists() else Path("/tmp")
-    tmp = base_dir / f"rb_{profile.student_id}_{uuid.uuid4().hex[:8]}.html"
+    safe_id = re.sub(r"[^a-zA-Z0-9_-]", "_", profile.student_id)
+    tmp = base_dir / f"rb_{safe_id}_{uuid.uuid4().hex[:8]}.html"
     tmp.write_text(html_str, encoding="utf-8")
     try:
         return inspect_readback_artifact(
@@ -4410,7 +6171,8 @@ def readback_validate_pdf(
     preflight_mode: bool = True,
 ) -> ValidationResult:
     base_dir = Path("/tmp/opencode") if Path("/tmp/opencode").exists() else Path("/tmp")
-    tmp = base_dir / f"rb_{profile.student_id}_{uuid.uuid4().hex[:8]}.pdf"
+    safe_id = re.sub(r"[^a-zA-Z0-9_-]", "_", profile.student_id)
+    tmp = base_dir / f"rb_{safe_id}_{uuid.uuid4().hex[:8]}.pdf"
     tmp.write_bytes(pdf_bytes)
     try:
         return inspect_readback_artifact(

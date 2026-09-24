@@ -19,6 +19,7 @@ from generation import (
     INSTITUTIONS,
     DocumentArchetype,
     DocumentKind,
+    SeededNameGenerator,
     SyntheticProfile,
     _current_term,
     _current_term_for_institution,
@@ -27,10 +28,12 @@ from generation import (
     _generate_student_id,
     _html_to_pdf,
     _resolve_css_vars,
+    generate_academic_state,
     generate_batch,
     generate_document,
     generate_fixture_bundle,
     generate_profile,
+    get_temporal_anchor,
     inspect_readback_artifact,
     list_scenarios,
     readback_validate_html,
@@ -669,6 +672,303 @@ class TestGenerationSystem(unittest.TestCase):
             self.assertTrue(
                 val_cert.valid, f"Certificate invalid for {inst_id}: {val_cert.errors}"
             )
+
+    def test_international_institution_profiles(self):
+        intl_targets = {
+            "up_diliman": {
+                "id_regex": r"^202[1-5]-\d{5}$",
+                "email_suffix": "@up.edu.ph",
+                "standing": "Regular",
+            },
+            "usp": {
+                "id_regex": r"^\d{7,8}$",
+                "email_suffix": "@usp.br",
+                "standing": "Ativo",
+            },
+            "universiti_malaya": {
+                "id_regex": r"^S202[1-5]\d{6}$",
+                "email_suffix": "@siswa.um.edu.my",
+                "standing": "Good Standing",
+            },
+            "makerere": {
+                "id_regex": r"^\d{2}/U/\d{5}/PS$",
+                "email_suffix": "@students.mak.ac.ug",
+                "standing": "Good Standing",
+            },
+            "unilag": {
+                "id_regex": r"^202[1-5]/1/\d{5}$",
+                "email_suffix": "@unilag.edu.ng",
+                "standing": "Good Standing",
+            },
+        }
+
+        for inst_id, exp in intl_targets.items():
+            for seed in (42, 101, 2026):
+                prof = generate_profile(
+                    scenario_name="undergraduate",
+                    institution_id=inst_id,
+                    seed=seed,
+                )
+                val = validate_profile(prof)
+                self.assertTrue(
+                    val.valid,
+                    f"Profile validation failed for {inst_id} (seed {seed}): {val.errors}",
+                )
+
+                # Check student ID regex
+                self.assertRegex(
+                    prof.student_id,
+                    exp["id_regex"],
+                    f"Student ID {prof.student_id} did not match {exp['id_regex']} for {inst_id}",
+                )
+
+                # Check email suffix
+                self.assertTrue(
+                    prof.email.endswith(exp["email_suffix"]),
+                    f"Email {prof.email} did not end with {exp['email_suffix']} for {inst_id}",
+                )
+
+                # Check localized names
+                pool_firsts, pool_lasts = SeededNameGenerator.LOCAL_NAMES[inst_id]
+                self.assertIn(
+                    prof.first_name,
+                    pool_firsts,
+                    f"First name {prof.first_name} not in local pool for {inst_id}",
+                )
+                self.assertIn(
+                    prof.last_name,
+                    pool_lasts,
+                    f"Last name {prof.last_name} not in local pool for {inst_id}",
+                )
+
+                # Check standing
+                self.assertEqual(prof.academic_standing, exp["standing"])
+
+                # Check courses generated from pool
+                acad = generate_academic_state(
+                    random.Random(seed),
+                    prof.program,
+                    get_temporal_anchor(random.Random(seed)),
+                    institution_id=inst_id,
+                    profile=prof,
+                )
+                self.assertGreater(len(acad.courses), 0)
+                for c in acad.courses:
+                    self.assertTrue(c.code and c.title)
+
+    def test_international_date_formatting(self):
+        from generation import _format_date_intl
+
+        sample_dt = date(2025, 10, 15)
+        self.assertEqual(_format_date_intl(sample_dt, "usp"), "15/10/2025")
+        self.assertEqual(
+            _format_date_intl(sample_dt, "universiti_malaya"), "15 Oktober 2025"
+        )
+        self.assertEqual(_format_date_intl(sample_dt, "makerere"), "15th October, 2025")
+        self.assertEqual(_format_date_intl(sample_dt, "unilag"), "15th October, 2025")
+        self.assertEqual(_format_date_intl(sample_dt, "up_diliman"), "October 15, 2025")
+
+    def test_international_document_templates(self):
+        """Verify specialized HTML/CSS layouts for each international target institution."""
+        # 1. UP Diliman — Form 5 / CRS
+        up_prof = generate_profile(
+            scenario_name="undergraduate", institution_id="up_diliman", seed=42
+        )
+        up_doc = generate_document(up_prof, doc_kind=DocumentKind.SCHEDULE)
+        self.assertEqual(
+            up_doc.title,
+            f"Registration Form (Form 5) - {up_prof.first_name} {up_prof.last_name}",
+        )
+        self.assertIn("REGISTRATION FORM (FORM 5)", up_doc.html_content)
+        self.assertIn("Office of the University Registrar", up_doc.html_content)
+        self.assertIn("Class Code", up_doc.html_content)
+        self.assertIn("Total Units:", up_doc.html_content)
+        self.assertIn(up_prof.student_id, up_doc.html_content)
+        val_up = validate_document(up_doc)
+        self.assertTrue(
+            val_up.valid, f"UP Diliman validate_document failed: {val_up.errors}"
+        )
+        rb_up = readback_validate_html(up_doc.html_content, up_prof)
+        self.assertTrue(rb_up.valid, f"UP Diliman readback failed: {rb_up.errors}")
+
+        # 2. USP — Atestado de Matrícula / Sistema Janus
+        usp_prof = generate_profile(
+            scenario_name="undergraduate", institution_id="usp", seed=42
+        )
+        usp_doc = generate_document(usp_prof, doc_kind=DocumentKind.SCHEDULE)
+        self.assertEqual(
+            usp_doc.title,
+            f"Atestado de Matrícula - {usp_prof.first_name} {usp_prof.last_name}",
+        )
+        self.assertIn("ATESTADO DE MATRÍCULA", usp_doc.html_content)
+        self.assertIn("Sistema Janus", usp_doc.html_content)
+        self.assertIn("Número USP:", usp_doc.html_content)
+        self.assertIn("Disciplinas Matriculadas", usp_doc.html_content)
+        self.assertIn("Autenticação digital:", usp_doc.html_content)
+        self.assertIn(usp_prof.student_id, usp_doc.html_content)
+        val_usp = validate_document(usp_doc)
+        self.assertTrue(
+            val_usp.valid, f"USP validate_document failed: {val_usp.errors}"
+        )
+        rb_usp = readback_validate_html(usp_doc.html_content, usp_prof)
+        self.assertTrue(rb_usp.valid, f"USP readback failed: {rb_usp.errors}")
+
+        # 3. Universiti Malaya — MAYA Verification Letter
+        um_prof = generate_profile(
+            scenario_name="undergraduate", institution_id="universiti_malaya", seed=42
+        )
+        um_doc = generate_document(um_prof, doc_kind=DocumentKind.SCHEDULE)
+        self.assertEqual(
+            um_doc.title,
+            f"Letter of Student Verification - {um_prof.first_name} {um_prof.last_name}",
+        )
+        self.assertIn("SURAT PENGESAHAN PELAJAR", um_doc.html_content)
+        self.assertIn("LETTER OF STUDENT VERIFICATION", um_doc.html_content)
+        self.assertIn("MAYA Academic Portal", um_doc.html_content)
+        self.assertIn("No. Matrik / Matric No.:", um_doc.html_content)
+        self.assertIn("Pendaftar / Registrar", um_doc.html_content)
+        self.assertIn(um_prof.student_id, um_doc.html_content)
+        val_um = validate_document(um_doc)
+        self.assertTrue(val_um.valid, f"UM validate_document failed: {val_um.errors}")
+        rb_um = readback_validate_html(um_doc.html_content, um_prof)
+        self.assertTrue(rb_um.valid, f"UM readback failed: {rb_um.errors}")
+
+        # 4. Makerere University — ACMIS Letter of Enrollment
+        mak_prof = generate_profile(
+            scenario_name="undergraduate", institution_id="makerere", seed=42
+        )
+        mak_doc = generate_document(mak_prof, doc_kind=DocumentKind.SCHEDULE)
+        self.assertEqual(
+            mak_doc.title,
+            f"Letter of Enrollment - {mak_prof.first_name} {mak_prof.last_name}",
+        )
+        self.assertIn("LETTER OF ENROLLMENT", mak_doc.html_content)
+        self.assertIn("ACMIS", mak_doc.html_content)
+        self.assertIn("Prof. Buyinza Mukadasi", mak_doc.html_content)
+        self.assertIn("Academic Registrar", mak_doc.html_content)
+        self.assertIn(mak_prof.student_id, mak_doc.html_content)
+        val_mak = validate_document(mak_doc)
+        self.assertTrue(
+            val_mak.valid, f"Makerere validate_document failed: {val_mak.errors}"
+        )
+        rb_mak = readback_validate_html(mak_doc.html_content, mak_prof)
+        self.assertTrue(rb_mak.valid, f"Makerere readback failed: {rb_mak.errors}")
+
+        # 5. University of Lagos — UNILAG Student Portal Letter
+        unilag_prof = generate_profile(
+            scenario_name="undergraduate", institution_id="unilag", seed=42
+        )
+        unilag_doc = generate_document(unilag_prof, doc_kind=DocumentKind.SCHEDULE)
+        self.assertEqual(
+            unilag_doc.title,
+            f"Letter of Student Enrollment - {unilag_prof.first_name} {unilag_prof.last_name}",
+        )
+        self.assertIn("LETTER OF STUDENT ENROLLMENT", unilag_doc.html_content)
+        self.assertIn(
+            "University of First Choice and the Nation's Pride", unilag_doc.html_content
+        )
+        self.assertIn("Matriculation Number:", unilag_doc.html_content)
+        self.assertIn("Mrs. Olakunle E. Makinde, MNIM, fisn", unilag_doc.html_content)
+        self.assertIn("Level", unilag_doc.html_content)
+        self.assertIn(unilag_prof.student_id, unilag_doc.html_content)
+        val_unilag = validate_document(unilag_doc)
+        self.assertTrue(
+            val_unilag.valid, f"UNILAG validate_document failed: {val_unilag.errors}"
+        )
+        rb_unilag = readback_validate_html(unilag_doc.html_content, unilag_prof)
+        self.assertTrue(rb_unilag.valid, f"UNILAG readback failed: {rb_unilag.errors}")
+
+    def test_all_document_kinds_international(self):
+        """Verify standard document bundles (tuition, id_card, cert) render properly for international targets."""
+        for inst_id in ("up_diliman", "usp", "universiti_malaya", "makerere", "unilag"):
+            prof = generate_profile("undergraduate", institution_id=inst_id, seed=55)
+            # Tuition receipt
+            t_doc = generate_document(prof, doc_kind=DocumentKind.TUITION_RECEIPT)
+            self.assertEqual(t_doc.kind, DocumentKind.TUITION_RECEIPT)
+            self.assertIn(prof.first_name, t_doc.html_content)
+            self.assertIn(prof.student_id, t_doc.html_content)
+            self.assertTrue(validate_document(t_doc).valid)
+
+            # ID Card
+            id_doc = generate_document(prof, doc_kind=DocumentKind.ID_CARD)
+            self.assertEqual(id_doc.kind, DocumentKind.ID_CARD)
+            self.assertIn(prof.first_name, id_doc.html_content)
+            self.assertIn(prof.student_id, id_doc.html_content)
+            self.assertTrue(validate_document(id_doc).valid)
+
+            # Enrollment Certificate
+            cert_doc = generate_document(
+                prof, doc_kind=DocumentKind.ENROLLMENT_CERTIFICATE
+            )
+            self.assertEqual(cert_doc.kind, DocumentKind.ENROLLMENT_CERTIFICATE)
+            self.assertIn(prof.first_name, cert_doc.html_content)
+            self.assertIn(prof.student_id, cert_doc.html_content)
+            self.assertTrue(validate_document(cert_doc).valid)
+
+    def test_international_pdf_generation_and_readback(self):
+        """Verify PDF rendering and readback extraction across all 5 international targets."""
+        for inst_id in ("up_diliman", "usp", "universiti_malaya", "makerere", "unilag"):
+            with self.subTest(institution=inst_id):
+                prof = generate_profile(
+                    "undergraduate", institution_id=inst_id, seed=888
+                )
+                doc = generate_document(prof, doc_kind=DocumentKind.SCHEDULE, seed=888)
+                pdf_bytes = render_pdf(doc.html_content, profile=prof)
+                self.assertTrue(pdf_bytes.startswith(b"%PDF-"))
+                self.assertGreater(len(pdf_bytes), 3000)
+
+                # Validate readback extraction
+                rb = readback_validate_pdf(pdf_bytes, prof)
+                self.assertTrue(
+                    rb.valid,
+                    f"PDF readback validation failed for {inst_id}: {rb.errors}",
+                )
+
+    def test_cli_international_document_generation(self):
+        """Verify app.py CLI subcommands work for international institutions."""
+        import subprocess
+
+        for inst_id in ("up_diliman", "usp", "universiti_malaya", "makerere", "unilag"):
+            with self.subTest(institution=inst_id):
+                # Identity CLI
+                res_id = subprocess.run(
+                    [
+                        "./venv/bin/python",
+                        "app.py",
+                        "identity",
+                        "--institution",
+                        inst_id,
+                        "--seed",
+                        "42",
+                        "--json",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                id_data = json.loads(res_id.stdout)
+                self.assertTrue(id_data["valid"])
+                self.assertEqual(id_data["profile"]["institution_id"], inst_id)
+
+                # Document CLI
+                res_doc = subprocess.run(
+                    [
+                        "./venv/bin/python",
+                        "app.py",
+                        "document",
+                        "--institution",
+                        inst_id,
+                        "--seed",
+                        "42",
+                        "--json",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                doc_data = json.loads(res_doc.stdout)
+                self.assertTrue(doc_data["valid"])
+                self.assertEqual(doc_data["profile"]["institution_id"], inst_id)
 
 
 if __name__ == "__main__":

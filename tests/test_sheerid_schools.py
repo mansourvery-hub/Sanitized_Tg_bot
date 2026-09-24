@@ -46,6 +46,16 @@ class TestSheerIDSchoolResolution(unittest.TestCase):
             ("utaustin", "3895", "ut_austin", "UTEXAS.EDU"),
             ("texas", "3895", "ut_austin", "UTEXAS.EDU"),
             ("3895", "3895", "ut_austin", "UTEXAS.EDU"),
+            ("up_diliman", "355870", "up_diliman", "UP.EDU.PH"),
+            ("355870", "355870", "up_diliman", "UP.EDU.PH"),
+            ("usp", "10042652", "usp", "USP.BR"),
+            ("10042652", "10042652", "usp", "USP.BR"),
+            ("universiti_malaya", "355254", "universiti_malaya", "UM.EDU.MY"),
+            ("355254", "355254", "universiti_malaya", "UM.EDU.MY"),
+            ("makerere", "662864", "makerere", "MAK.AC.UG"),
+            ("662864", "662864", "makerere", "MAK.AC.UG"),
+            ("unilag", "660895", "unilag", "UNILAG.EDU.NG"),
+            ("660895", "660895", "unilag", "UNILAG.EDU.NG"),
         ]
         for slug, expected_id, expected_inst_id, expected_domain in cases:
             with self.subTest(slug=slug):
@@ -104,7 +114,17 @@ class TestConfigSynchronization(unittest.TestCase):
         for inst_id, meta in TARGET_INSTITUTION_SCHOOLS.items():
             self.assertIn(inst_id, SCHOOLS)
             self.assertEqual(SCHOOLS[inst_id]["domain"], meta["domain"])
-        for alias in ("ucla", "nyu", "umich", "ut_austin"):
+        for alias in (
+            "ucla",
+            "nyu",
+            "umich",
+            "ut_austin",
+            "up_diliman",
+            "usp",
+            "universiti_malaya",
+            "makerere",
+            "unilag",
+        ):
             self.assertIn(alias, SCHOOLS)
 
     def test_spotify_config_contains_target_schools(self):
@@ -112,7 +132,17 @@ class TestConfigSynchronization(unittest.TestCase):
 
         for inst_id in TARGET_INSTITUTION_SCHOOLS:
             self.assertIn(inst_id, SCHOOLS)
-        for alias in ("ucla", "nyu", "umich", "ut_austin"):
+        for alias in (
+            "ucla",
+            "nyu",
+            "umich",
+            "ut_austin",
+            "up_diliman",
+            "usp",
+            "universiti_malaya",
+            "makerere",
+            "unilag",
+        ):
             self.assertIn(alias, SCHOOLS)
 
     def test_youtube_config_contains_target_schools(self):
@@ -120,7 +150,17 @@ class TestConfigSynchronization(unittest.TestCase):
 
         for inst_id in TARGET_INSTITUTION_SCHOOLS:
             self.assertIn(inst_id, SCHOOLS)
-        for alias in ("ucla", "nyu", "umich", "ut_austin"):
+        for alias in (
+            "ucla",
+            "nyu",
+            "umich",
+            "ut_austin",
+            "up_diliman",
+            "usp",
+            "universiti_malaya",
+            "makerere",
+            "unilag",
+        ):
             self.assertIn(alias, SCHOOLS)
 
     def test_boltnew_config_contains_target_schools(self):
@@ -128,7 +168,17 @@ class TestConfigSynchronization(unittest.TestCase):
 
         for inst_id in TARGET_INSTITUTION_SCHOOLS:
             self.assertIn(inst_id, SCHOOLS)
-        for alias in ("ucla", "nyu", "umich", "ut_austin"):
+        for alias in (
+            "ucla",
+            "nyu",
+            "umich",
+            "ut_austin",
+            "up_diliman",
+            "usp",
+            "universiti_malaya",
+            "makerere",
+            "unilag",
+        ):
             self.assertIn(alias, SCHOOLS)
 
 
@@ -136,7 +186,17 @@ class TestMultiInstitutionImageGeneration(unittest.TestCase):
     """Verify multi-institution image generation in verification engines."""
 
     def test_one_generator_multi_institution(self):
-        for target_school in ("ucla", "nyu", "umich", "ut_austin"):
+        for target_school in (
+            "ucla",
+            "nyu",
+            "umich",
+            "ut_austin",
+            "up_diliman",
+            "usp",
+            "universiti_malaya",
+            "makerere",
+            "unilag",
+        ):
             with self.subTest(school=target_school):
                 data = one_generate_image("Alex", "Morgan", school_id=target_school)
                 self.assertIsInstance(data, bytes)
@@ -144,7 +204,17 @@ class TestMultiInstitutionImageGeneration(unittest.TestCase):
                 self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
 
     def test_spotify_generator_multi_institution(self):
-        for target_school in ("ucla", "nyu", "umich", "ut_austin"):
+        for target_school in (
+            "ucla",
+            "nyu",
+            "umich",
+            "ut_austin",
+            "up_diliman",
+            "usp",
+            "universiti_malaya",
+            "makerere",
+            "unilag",
+        ):
             with self.subTest(school=target_school):
                 data = spotify_generate_image("Chris", "Evans", school_id=target_school)
                 self.assertIsInstance(data, bytes)
@@ -152,7 +222,17 @@ class TestMultiInstitutionImageGeneration(unittest.TestCase):
                 self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
 
     def test_youtube_generator_multi_institution(self):
-        for target_school in ("ucla", "nyu", "umich", "ut_austin"):
+        for target_school in (
+            "ucla",
+            "nyu",
+            "umich",
+            "ut_austin",
+            "up_diliman",
+            "usp",
+            "universiti_malaya",
+            "makerere",
+            "unilag",
+        ):
             with self.subTest(school=target_school):
                 data = youtube_generate_image("Dana", "Scully", school_id=target_school)
                 self.assertIsInstance(data, bytes)
@@ -160,7 +240,17 @@ class TestMultiInstitutionImageGeneration(unittest.TestCase):
                 self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
 
     def test_boltnew_generator_multi_institution(self):
-        for target_school in ("ucla", "nyu", "umich", "ut_austin"):
+        for target_school in (
+            "ucla",
+            "nyu",
+            "umich",
+            "ut_austin",
+            "up_diliman",
+            "usp",
+            "universiti_malaya",
+            "makerere",
+            "unilag",
+        ):
             with self.subTest(school=target_school):
                 assets = boltnew_generate_images(
                     "Fox", "Mulder", school_id=target_school

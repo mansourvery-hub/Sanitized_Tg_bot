@@ -134,9 +134,10 @@ SCHOOLS = {
 
 from sheerid_schools import (
     DEFAULT_SCHOOL_ID as CANONICAL_DEFAULT_SCHOOL_ID,
+)
+from sheerid_schools import (
     SCHOOL_ALIASES,
     TARGET_INSTITUTION_SCHOOLS,
-    resolve_sheerid_school,
 )
 
 # Merge canonical target institutions and convenience aliases into SCHOOLS

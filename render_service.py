@@ -168,6 +168,28 @@ class PayloadTransformer:
         "springfield": "springfield_k12",
         "springfield_k12": "springfield_k12",
         "nittany_tech": "nittany_tech",
+        # International institutions
+        "up_diliman": "up_diliman",
+        "355870": "up_diliman",
+        "upd": "up_diliman",
+        "up": "up_diliman",
+        "diliman": "up_diliman",
+        "usp": "usp",
+        "10042652": "usp",
+        "sao_paulo": "usp",
+        "saopaulo": "usp",
+        "universiti_malaya": "universiti_malaya",
+        "355254": "universiti_malaya",
+        "um": "universiti_malaya",
+        "malaya": "universiti_malaya",
+        "makerere": "makerere",
+        "662864": "makerere",
+        "mak": "makerere",
+        "makerere_university": "makerere",
+        "unilag": "unilag",
+        "660895": "unilag",
+        "lagos": "unilag",
+        "university_of_lagos": "unilag",
     }
 
     @classmethod

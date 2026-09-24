@@ -73,6 +73,66 @@ TARGET_INSTITUTION_SCHOOLS: dict[str, dict[str, Any]] = {
         "domain": "UTEXAS.EDU",
         "inst_id": "ut_austin",
     },
+    # University of the Philippines Diliman (UP Diliman)
+    "355870": {
+        "id": 355870,
+        "idExtended": "355870",
+        "name": "University of the Philippines Diliman",
+        "city": "Quezon City",
+        "state": "NCR",
+        "country": "PH",
+        "type": "UNIVERSITY",
+        "domain": "UP.EDU.PH",
+        "inst_id": "up_diliman",
+    },
+    # Universidade de São Paulo (USP)
+    "10042652": {
+        "id": 10042652,
+        "idExtended": "10042652",
+        "name": "Universidade de São Paulo",
+        "city": "São Paulo",
+        "state": "SP",
+        "country": "BR",
+        "type": "UNIVERSITY",
+        "domain": "USP.BR",
+        "inst_id": "usp",
+    },
+    # Universiti Malaya
+    "355254": {
+        "id": 355254,
+        "idExtended": "355254",
+        "name": "Universiti Malaya",
+        "city": "Kuala Lumpur",
+        "state": "KUL",
+        "country": "MY",
+        "type": "UNIVERSITY",
+        "domain": "UM.EDU.MY",
+        "inst_id": "universiti_malaya",
+    },
+    # Makerere University
+    "662864": {
+        "id": 662864,
+        "idExtended": "662864",
+        "name": "Makerere University",
+        "city": "Kampala",
+        "state": "Central",
+        "country": "UG",
+        "type": "UNIVERSITY",
+        "domain": "MAK.AC.UG",
+        "inst_id": "makerere",
+    },
+    # University of Lagos (UNILAG)
+    "660895": {
+        "id": 660895,
+        "idExtended": "660895",
+        "name": "University of Lagos",
+        "city": "Lagos",
+        "state": "Lagos",
+        "country": "NG",
+        "type": "UNIVERSITY",
+        "domain": "UNILAG.EDU.NG",
+        "inst_id": "unilag",
+    },
 }
 
 # Alias resolution mapping to canonical SheerID numeric IDs
@@ -99,6 +159,32 @@ SCHOOL_ALIASES: dict[str, str] = {
     "austin": "3895",
     "texas": "3895",
     "3895": "3895",
+    # UP Diliman Aliases
+    "up_diliman": "355870",
+    "upd": "355870",
+    "up": "355870",
+    "diliman": "355870",
+    "355870": "355870",
+    # USP Aliases
+    "usp": "10042652",
+    "sao_paulo": "10042652",
+    "saopaulo": "10042652",
+    "10042652": "10042652",
+    # Universiti Malaya Aliases
+    "universiti_malaya": "355254",
+    "um": "355254",
+    "malaya": "355254",
+    "355254": "355254",
+    # Makerere Aliases
+    "makerere": "662864",
+    "mak": "662864",
+    "makerere_university": "662864",
+    "662864": "662864",
+    # UNILAG Aliases
+    "unilag": "660895",
+    "lagos": "660895",
+    "university_of_lagos": "660895",
+    "660895": "660895",
 }
 
 DEFAULT_SCHOOL_ID = "2565"
@@ -188,5 +274,35 @@ def get_available_institutions_summary() -> list[dict[str, str]]:
             "name": "Univ. of Texas at Austin",
             "domain": "utexas.edu",
             "sheerid_id": "3895",
+        },
+        {
+            "slug": "up_diliman",
+            "name": "Univ. of the Philippines Diliman",
+            "domain": "up.edu.ph",
+            "sheerid_id": "355870",
+        },
+        {
+            "slug": "usp",
+            "name": "Universidade de São Paulo",
+            "domain": "usp.br",
+            "sheerid_id": "10042652",
+        },
+        {
+            "slug": "universiti_malaya",
+            "name": "Universiti Malaya",
+            "domain": "um.edu.my",
+            "sheerid_id": "355254",
+        },
+        {
+            "slug": "makerere",
+            "name": "Makerere University",
+            "domain": "mak.ac.ug",
+            "sheerid_id": "662864",
+        },
+        {
+            "slug": "unilag",
+            "name": "University of Lagos",
+            "domain": "unilag.edu.ng",
+            "sheerid_id": "660895",
         },
     ]

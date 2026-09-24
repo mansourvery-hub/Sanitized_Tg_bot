@@ -1,5 +1,6 @@
 """全局配置文件"""
 import os
+
 from dotenv import load_dotenv
 
 # 加载 .env 文件

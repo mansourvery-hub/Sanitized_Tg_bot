@@ -1,8 +1,6 @@
 """PNG 学生证生成模块 - Penn State LionPATH"""
 import random
 from datetime import datetime
-from io import BytesIO
-import base64
 
 
 def generate_psu_id():
@@ -385,13 +383,13 @@ def generate_image(first_name, last_name, school_id='2565'):
     except ImportError:
         raise Exception("需要安装 playwright: pip install playwright && playwright install chromium")
     except Exception as e:
-        raise Exception(f"生成图片失败: {str(e)}")
+        raise Exception(f"生成图片失败: {e!s}")
 
 
 if __name__ == '__main__':
     # 测试代码
-    import sys
     import io
+    import sys
 
     # 修复 Windows 控制台编码问题
     if sys.platform == 'win32':

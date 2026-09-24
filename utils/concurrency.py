@@ -8,7 +8,7 @@
 """
 import asyncio
 import logging
-from typing import Dict
+
 import psutil
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ _base_concurrency = _calculate_max_concurrency()
 
 # 为不同类型的验证创建独立的信号量
 # 这样可以避免一个类型的验证阻塞其他类型
-_verification_semaphores: Dict[str, asyncio.Semaphore] = {
+_verification_semaphores: dict[str, asyncio.Semaphore] = {
     "gemini_one_pro": asyncio.Semaphore(_base_concurrency // 5),
     "chatgpt_teacher_k12": asyncio.Semaphore(_base_concurrency // 5),
     "spotify_student": asyncio.Semaphore(_base_concurrency // 5),
@@ -78,7 +78,7 @@ def get_verification_semaphore(verification_type: str) -> asyncio.Semaphore:
     return semaphore
 
 
-def get_concurrency_stats() -> Dict[str, Dict[str, int]]:
+def get_concurrency_stats() -> dict[str, dict[str, int]]:
     """获取并发统计信息
     
     Returns:
@@ -105,7 +105,7 @@ def get_concurrency_stats() -> Dict[str, Dict[str, int]]:
     return stats
 
 
-async def monitor_system_load() -> Dict[str, float]:
+async def monitor_system_load() -> dict[str, float]:
     """监控系统负载
     
     Returns:
@@ -149,7 +149,7 @@ def adjust_concurrency_limits(multiplier: float = 1.0):
     )
     
     # 创建新的信号量
-    for vtype in _verification_semaphores.keys():
+    for vtype in _verification_semaphores:
         _verification_semaphores[vtype] = asyncio.Semaphore(new_limit)
 
 

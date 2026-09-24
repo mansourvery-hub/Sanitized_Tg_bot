@@ -52,6 +52,11 @@ class TestRenderService(unittest.TestCase):
             ("nyu", "tuition_receipt"),
             ("umich", "schedule"),
             ("ut_austin", "enrollment_certificate"),
+            ("up_diliman", "schedule"),
+            ("usp", "schedule"),
+            ("universiti_malaya", "schedule"),
+            ("makerere", "schedule"),
+            ("unilag", "schedule"),
         ]
         for inst_id, doc_kind in cases:
             payload = {
@@ -69,6 +74,26 @@ class TestRenderService(unittest.TestCase):
             self.assertTrue(res.raw_bytes.startswith(b"\x89PNG\r\n\x1a\n"))
             self.assertGreater(len(res.raw_bytes), 1500)
             self.assertEqual(res.metadata["institution_id"], inst_id)
+
+    def test_institution_alias_resolution(self):
+        from render_service import PayloadTransformer
+
+        cases = [
+            ("355870", "up_diliman"),
+            ("upd", "up_diliman"),
+            ("10042652", "usp"),
+            ("sao_paulo", "usp"),
+            ("355254", "universiti_malaya"),
+            ("malaya", "universiti_malaya"),
+            ("662864", "makerere"),
+            ("mak", "makerere"),
+            ("660895", "unilag"),
+            ("lagos", "unilag"),
+        ]
+        for key, expected in cases:
+            with self.subTest(key=key):
+                resolved = PayloadTransformer.resolve_institution_id(key)
+                self.assertEqual(resolved, expected)
 
     def test_payload_validation_errors(self):
         # Missing scenario_id

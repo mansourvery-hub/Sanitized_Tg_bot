@@ -319,6 +319,32 @@ class TestCanonicalBaselinesManifest(unittest.TestCase):
                 f"Baseline PNG '{png_file}' must not be empty.",
             )
 
+    def test_international_baselines_present_and_valid(self) -> None:
+        """Verify international university golden baselines are present in specs and manifest."""
+        manifest_file = DEFAULT_BASELINES_DIR / "manifest.json"
+        manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+        specs_by_name = {spec.name: spec for spec in DEFAULT_BASELINE_SPECS}
+
+        international_keys = (
+            "up_diliman_form5",
+            "usp_atestado_matricula",
+            "universiti_malaya_surat_pengesahan",
+            "makerere_enrollment_letter",
+            "unilag_enrollment_letter",
+        )
+        for key in international_keys:
+            self.assertIn(
+                key, specs_by_name, f"Spec '{key}' must be in DEFAULT_BASELINE_SPECS"
+            )
+            self.assertIn(
+                key, manifest["baselines"], f"Spec '{key}' must be in manifest"
+            )
+            png_file = DEFAULT_BASELINES_DIR / f"{key}.png"
+            self.assertTrue(
+                png_file.exists(), f"Golden baseline PNG '{png_file}' must exist"
+            )
+            self.assertGreater(png_file.stat().st_size, 5000)
+
 
 if __name__ == "__main__":
     unittest.main()

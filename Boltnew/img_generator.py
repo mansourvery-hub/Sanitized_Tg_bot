@@ -77,7 +77,7 @@ def _html_to_png(html_content: str, width: int = 1200, height: int = None) -> by
             page.close()
 
     except Exception as e:
-        raise Exception(f"生成图片失败: {str(e)}")
+        raise Exception(f"生成图片失败: {e!s}")
 
 
 def generate_teacher_card_html(first_name: str, last_name: str, psu_id: str) -> str:
@@ -522,6 +522,7 @@ def _html_to_png_batch(html_list: list[tuple[str, int, int]]) -> list[bytes]:
         list[bytes]: PNG 数据列表
     """
     import asyncio
+
     from playwright.async_api import async_playwright
 
     async def render_single(html_content: str, width: int, height: int):

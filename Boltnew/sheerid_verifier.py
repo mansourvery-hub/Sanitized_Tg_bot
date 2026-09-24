@@ -1,17 +1,18 @@
 """SheerID 教师验证主程序（Bolt.now）"""
-import re
-import random
 import logging
+import random
+import re
+
 import httpx
-from typing import Dict, Optional, Tuple
 
 from sheerid_schools import (
     generate_institutional_student_email,
     resolve_sheerid_school,
 )
+
 from . import config
+from .img_generator import generate_images
 from .name_generator import NameGenerator, generate_birth_date
-from .img_generator import generate_images, generate_psu_email
 
 # 配置日志
 logging.basicConfig(
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 class SheerIDVerifier:
     """SheerID 教师身份验证器"""
 
-    def __init__(self, install_page_url: str, verification_id: Optional[str] = None):
+    def __init__(self, install_page_url: str, verification_id: str | None = None):
         self.install_page_url = self.normalize_url(install_page_url)
         self.verification_id = verification_id
         self.external_user_id = self.parse_external_user_id(self.install_page_url)
@@ -47,14 +48,14 @@ class SheerIDVerifier:
         return url
 
     @staticmethod
-    def parse_verification_id(url: str) -> Optional[str]:
+    def parse_verification_id(url: str) -> str | None:
         match = re.search(r"verificationId=([a-f0-9]+)", url, re.IGNORECASE)
         if match:
             return match.group(1)
         return None
 
     @staticmethod
-    def parse_external_user_id(url: str) -> Optional[str]:
+    def parse_external_user_id(url: str) -> str | None:
         match = re.search(r"externalUserId=([^&]+)", url, re.IGNORECASE)
         if match:
             return match.group(1)
@@ -77,8 +78,8 @@ class SheerIDVerifier:
         return self.verification_id
 
     def _sheerid_request(
-        self, method: str, url: str, body: Optional[Dict] = None
-    ) -> Tuple[Dict, int]:
+        self, method: str, url: str, body: dict | None = None
+    ) -> tuple[dict, int]:
         """发送 SheerID API 请求"""
         headers = {
             "Content-Type": "application/json",
@@ -112,7 +113,7 @@ class SheerIDVerifier:
         email: str = None,
         birth_date: str = None,
         school_id: str = None,
-    ) -> Dict:
+    ) -> dict:
         """执行教师验证流程"""
         try:
             current_step = "initial"
