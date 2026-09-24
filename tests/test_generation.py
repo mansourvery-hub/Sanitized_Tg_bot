@@ -440,6 +440,24 @@ class TestGenerationSystem(unittest.TestCase):
                     self.assertEqual(res.profile.student_id, base.profile.student_id)
                     self.assertTrue((bundle / "document.png").exists())
 
+    def test_logo_embeds_in_every_document_kind(self):
+        """--logo must not be silently ignored by non-schedule templates."""
+        with tempfile.TemporaryDirectory() as tmp:
+            logo = Path(tmp) / "mark.png"
+            logo.write_bytes(b"\x89PNG\r\n\x1a\n" + b"logo" * 32)
+            profile = generate_profile(
+                scenario_name="undergraduate", institution_id="psu", seed=42
+            )
+            for kind in DocumentKind:
+                with self.subTest(kind=kind.value):
+                    doc = generate_document(profile, doc_kind=kind, logo_source=logo)
+                    self.assertIn(
+                        "data:image/png;base64,",
+                        doc.html_content,
+                        f"{kind.value} silently dropped the logo",
+                    )
+                    self.assertIn("<img", doc.html_content)
+
     def test_psu_document_has_standalone_css(self):
         """Saved/generated HTML must have no raw var() and keep brand color."""
         profile = generate_profile(

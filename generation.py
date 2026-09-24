@@ -4791,7 +4791,7 @@ def generate_schedule_document(
     if inst.id == "psu":
         # Hardcoded brand hex: keeps saved HTML standalone (no var() dependency)
         brand_color = "#1E407C"
-        logo_html = _render_logo_img(logo_data_uri, inst.name)
+        logo_html = _render_logo_img(logo_data_uri, inst.name, margin_right=10)
         topbar_html = f"""
         <div class="topbar" style="background: {brand_color}; color: #ffffff; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center;">
@@ -5096,7 +5096,10 @@ def generate_schedule_document(
 
 
 def generate_tuition_receipt_document(
-    profile: SyntheticProfile, academic_state: AcademicState, temporal: TemporalAnchor
+    profile: SyntheticProfile,
+    academic_state: AcademicState,
+    temporal: TemporalAnchor,
+    logo_data_uri: str | None = None,
 ) -> Document:
     name = f"{profile.first_name} {profile.last_name}"
     pay_date_str = temporal.payment_date.strftime("%B %d, %Y")
@@ -5112,6 +5115,7 @@ def generate_tuition_receipt_document(
     brand_color = inst.primary_color or "#1E407C"
     id_label = inst.student_id_label or "Student ID"
     credit_label = inst.credit_label or "Credits"
+    logo_html = _render_logo_img(logo_data_uri, inst.name, height=40)
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -5187,8 +5191,8 @@ def generate_tuition_receipt_document(
 </head>
 <body>
     <div class="header">
-        <div class="brand">{profile.institution_name}</div>
-        <div class="sub-brand">{profile.institution.portal_name} &mdash; Official Bursar Account Statement & Payment Receipt</div>
+        <div class="brand">{logo_html}{profile.institution_name}</div>
+        <div class="sub-brand">{profile.institution.portal_name} &mdash; Official Bursar Account Statement &amp; Payment Receipt</div>
     </div>
 
     <h2>Bursar Statement & Payment Confirmation</h2>
@@ -5290,7 +5294,9 @@ def generate_tuition_receipt_document(
 
 
 def generate_id_card_document(
-    profile: SyntheticProfile, temporal: TemporalAnchor
+    profile: SyntheticProfile,
+    temporal: TemporalAnchor,
+    logo_data_uri: str | None = None,
 ) -> Document:
     name = f"{profile.first_name} {profile.last_name}"
     issue_str = temporal.issue_date.strftime("%m/%d/%Y")
@@ -5298,6 +5304,7 @@ def generate_id_card_document(
     inst = profile.institution
     brand_color = inst.primary_color or "#1E407C"
     id_label = inst.student_id_label or "Student ID"
+    logo_html = _render_logo_img(logo_data_uri, inst.name)
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -5331,6 +5338,13 @@ def generate_id_card_document(
             text-align: center;
             letter-spacing: 0.5px;
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }}
+        .card-header img {{
+            filter: brightness(0) invert(1);
         }}
         .card-body {{
             margin-top: 15px;
@@ -5375,7 +5389,7 @@ def generate_id_card_document(
 <body>
     <div class="card">
         <div class="card-header">
-            {profile.institution_name} &mdash; Official Identification
+            {logo_html}{profile.institution_name} &mdash; Official Identification
         </div>
         <div class="card-body">
             <div class="photo-box">
@@ -5424,13 +5438,16 @@ def generate_id_card_document(
 
 
 def generate_faculty_summary_document(
-    profile: SyntheticProfile, temporal: TemporalAnchor
+    profile: SyntheticProfile,
+    temporal: TemporalAnchor,
+    logo_data_uri: str | None = None,
 ) -> Document:
     name = f"{profile.first_name} {profile.last_name}"
     issue_str = temporal.issue_date.strftime("%B %d, %Y")
     term_label = profile.current_term_label or temporal.term_name
     inst = profile.institution
     brand_color = inst.primary_color or "#1E407C"
+    logo_html = _render_logo_img(logo_data_uri, inst.name, height=44)
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -5448,8 +5465,8 @@ def generate_faculty_summary_document(
 </head>
 <body>
     <div class="header">
-        <div class="brand">{profile.institution_name}</div>
-        <div class="sub-brand">{profile.institution.portal_name} &mdash; Faculty & Academic Staff Record</div>
+        <div class="brand">{logo_html}{profile.institution_name}</div>
+        <div class="sub-brand">{profile.institution.portal_name} &mdash; Faculty &amp; Academic Staff Record</div>
     </div>
     <h2>Employee Verification Certificate</h2>
     <div class="box">
@@ -5490,7 +5507,9 @@ def generate_faculty_summary_document(
 
 
 def generate_enrollment_certificate_document(
-    profile: SyntheticProfile, temporal: TemporalAnchor
+    profile: SyntheticProfile,
+    temporal: TemporalAnchor,
+    logo_data_uri: str | None = None,
 ) -> Document:
     name = f"{profile.first_name} {profile.last_name}"
     issue_str = temporal.issue_date.strftime("%B %d, %Y")
@@ -5508,6 +5527,7 @@ def generate_enrollment_certificate_document(
     inst = profile.institution
     brand_color = inst.primary_color or "#1E407C"
     id_label = inst.student_id_label or "Student ID"
+    logo_html = _render_logo_img(logo_data_uri, inst.name, height=64)
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -5571,6 +5591,7 @@ def generate_enrollment_certificate_document(
 </head>
 <body>
 <div class="certificate">
+    <div style="text-align: center;">{logo_html}</div>
     <h1>{profile.institution_name}</h1>
     <h3>{profile.institution.registrar_title} &mdash; Official Enrollment Verification ({profile.institution.portal_name})</h3>
 
@@ -5680,27 +5701,35 @@ def generate_document(
         profile=profile,
     )
 
+    logo_data_uri = build_logo_data_uri(logo_source) if logo_source else None
+
     if doc_kind == DocumentKind.SCHEDULE:
         doc = generate_schedule_document(
             profile,
             academic_state,
             temporal,
-            logo_data_uri=build_logo_data_uri(logo_source) if logo_source else None,
+            logo_data_uri=logo_data_uri,
         )
     elif doc_kind == DocumentKind.TUITION_RECEIPT:
-        doc = generate_tuition_receipt_document(profile, academic_state, temporal)
+        doc = generate_tuition_receipt_document(
+            profile, academic_state, temporal, logo_data_uri=logo_data_uri
+        )
     elif doc_kind == DocumentKind.ID_CARD:
-        doc = generate_id_card_document(profile, temporal)
+        doc = generate_id_card_document(profile, temporal, logo_data_uri=logo_data_uri)
     elif doc_kind == DocumentKind.FACULTY_SUMMARY:
-        doc = generate_faculty_summary_document(profile, temporal)
+        doc = generate_faculty_summary_document(
+            profile, temporal, logo_data_uri=logo_data_uri
+        )
     elif doc_kind == DocumentKind.ENROLLMENT_CERTIFICATE:
-        doc = generate_enrollment_certificate_document(profile, temporal)
+        doc = generate_enrollment_certificate_document(
+            profile, temporal, logo_data_uri=logo_data_uri
+        )
     else:
         doc = generate_schedule_document(
             profile,
             academic_state,
             temporal,
-            logo_data_uri=build_logo_data_uri(logo_source) if logo_source else None,
+            logo_data_uri=logo_data_uri,
         )
 
     # Resolve CSS var() calls once at generation time so every consumer
@@ -6678,7 +6707,12 @@ def generate_fixture_bundle(
     )
 
 
-def _render_logo_img(logo_data_uri: str | None, alt_text: str) -> str:
+def _render_logo_img(
+    logo_data_uri: str | None,
+    alt_text: str,
+    height: int = 34,
+    margin_right: int = 0,
+) -> str:
     """Render a user-supplied logo <img>, or nothing when no logo was chosen.
 
     No placeholder mark is invented: a document with no logo simply shows the
@@ -6689,8 +6723,8 @@ def _render_logo_img(logo_data_uri: str | None, alt_text: str) -> str:
     safe_alt = _html_escape(alt_text, quote=True)
     return (
         f'<img src="{logo_data_uri}" alt="{safe_alt}" '
-        'height="34" style="vertical-align: middle; margin-right: 10px; '
-        'flex-shrink: 0;" />'
+        f'height="{height}" style="vertical-align: middle; '
+        f'margin-right: {margin_right}px; flex-shrink: 0;" />'
     )
 
 
