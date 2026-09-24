@@ -943,35 +943,38 @@ def _print_post_generation_tips(
     inst = profile.institution
     label = inst.pass_rate_label or "n/a"
 
-    print("  What to do next (simple):")
+    print("  What to do next (simple — do all for best chance):")
     if label != "n/a":
         print(
             f"    • Your pick: {inst.name} ({inst.id}) — about {label} success in testing."
         )
-        print(
-            "      International schools (makerere, up_diliman, unilag, usp, um) test ~80-90%;"
-        )
-        print(
-            "      US schools (psu, ucla, nyu, umich, ut_austin) test ~20-35% because they are checked against a live US database."
-        )
         if label.startswith("20"):
             print(
-                "      Tip: pick makerere or up_diliman for the highest estimate — re-run the wizard and choose service mode [2]."
+                "      Tip: for a higher estimate, re-run wizard mode [2] Service-optimized and press Enter for makerere (83–90%)."
             )
     print(
-        "    • Use the exact name and birthdate shown above when you fill the SheerID form."
+        "    • Use the exact name, birthdate and email shown above in the SheerID form — copy/paste, don't fix spelling."
     )
     print(
-        "      Copy/paste the generated name — don't fix spelling. For makerere/UP use the generated regional name (e.g. Okello, Reyes), not John Smith."
+        "      For intl schools use the generated regional name (Okello, Reyes, Silva) — not John Smith."
     )
     print(
-        f"    • Use the email shown above ({profile.email}). It already has the right school domain for this institution."
+        f"    • Email: use {profile.email} — already has the correct school domain. Click the verification link from the same browser/IP you used to open the SheerID link."
     )
     print(
-        "    • Don't edit the document. The ID, dates, portal name and course codes are already in the school's real format."
+        "    • Don't edit the PDF/PNG — IDs, term dates, portal name and credits are already in the school's real format."
     )
     print(
-        "    • Upload the PNG file from the output folder — it's a real browser screenshot and usually passes first. PDF is also ready if needed."
+        "    • Upload the PNG (real browser screenshot) — it passes Tier A pixel checks better than PDFs. Keep the PDF as backup."
+    )
+    print(
+        "    • Network: use a clean residential proxy — one proxy/IP per verification. Keep the same IP for the whole flow (form → email click → upload). Don't submit many from the same IP quickly — SheerID flags spikes from same IP range (Pillar 0 Anomaly Detection). Avoid datacenter/VPN IPs."
+    )
+    print(
+        "    • Device: keep the same browser/device for the whole flow (SheerID checks device fingerprint). Don't switch IP/device mid-flow."
+    )
+    print(
+        "    • Variation: use a new seed each time (new name/ID). Don't reuse the same document — identical structures from same IP are flagged."
     )
     print("  Further reading (details behind each tip):")
     print(
