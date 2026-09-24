@@ -462,6 +462,36 @@ def cmd_inspect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _prompt_doc_kind(
+    preset: str | None = None, interactive: bool = True
+) -> DocumentKind:
+    """Ask which document type to produce (the code supports all five)."""
+    if preset:
+        return DocumentKind(preset)
+    if not interactive:
+        return DocumentKind.SCHEDULE
+    print("\nDocument type:")
+    labels = [
+        ("schedule", "Class schedule / educational timetable (portal view)"),
+        ("enrollment_certificate", "Enrollment verification certificate (letter)"),
+        ("id_card", "Student ID card (with expiry date)"),
+        ("tuition_receipt", "Tuition receipt / billing statement"),
+        ("faculty_summary", "Faculty / employee verification"),
+    ]
+    for i, (value, desc) in enumerate(labels, start=1):
+        print(f"  [{i}] {desc}")
+    try:
+        choice = input("Choose [1]: ").strip() or "1"
+    except (KeyboardInterrupt, EOFError):
+        print()
+        return DocumentKind.SCHEDULE
+    try:
+        return DocumentKind(labels[int(choice) - 1][0])
+    except (ValueError, IndexError):
+        print(f"[!] Invalid choice '{choice}', using schedule.")
+        return DocumentKind.SCHEDULE
+
+
 def _prompt_logo_source(interactive: bool = True) -> str | None:
     """Ask at runtime which logo (if any) to place on the document.
 
@@ -822,6 +852,11 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         if logo_source is None and not getattr(args, "non_interactive", False):
             logo_source = _prompt_logo_source(interactive=True)
 
+        doc_kind = _prompt_doc_kind(
+            preset=getattr(args, "kind", None),
+            interactive=not getattr(args, "non_interactive", False),
+        )
+
         print(f"\n[+] Generating bundle for: {target_info['name']}")
         actual_seed = (
             seed_val if seed_val is not None else random.randint(10000, 999999)
@@ -834,6 +869,7 @@ def cmd_wizard(args: argparse.Namespace) -> int:
             seed=actual_seed,
             output_dir=target_dir,
             override_institution_id=target_info["institution"],
+            doc_kind=doc_kind,
             logo_source=logo_source,
         )
         print(
@@ -970,6 +1006,11 @@ def cmd_wizard(args: argparse.Namespace) -> int:
     if logo_source is None and not getattr(args, "non_interactive", False):
         logo_source = _prompt_logo_source(interactive=True)
 
+    doc_kind = _prompt_doc_kind(
+        preset=getattr(args, "kind", None),
+        interactive=not getattr(args, "non_interactive", False),
+    )
+
     print(f"\n[+] Generating bundle for: {target_info['name']}")
     actual_seed = seed_val if seed_val is not None else random.randint(10000, 999999)
 
@@ -979,6 +1020,7 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         seed=actual_seed,
         output_dir=target_dir,
         override_institution_id=target_info["institution"],
+        doc_kind=doc_kind,
         logo_source=logo_source,
     )
 
@@ -1112,6 +1154,11 @@ def main() -> int:
     parser.add_argument(
         "--logo",
         help="Optional institutional logo: local image path or http(s) URL",
+    )
+    parser.add_argument(
+        "--kind",
+        choices=[dk.value for dk in DocumentKind],
+        help="Document type to generate (schedule, enrollment_certificate, id_card, ...)",
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
@@ -1363,6 +1410,11 @@ def main() -> int:
     p_wiz.add_argument(
         "--logo",
         help="Optional institutional logo: local image path or http(s) URL",
+    )
+    p_wiz.add_argument(
+        "--kind",
+        choices=[dk.value for dk in DocumentKind],
+        help="Document type to generate (schedule, enrollment_certificate, id_card, ...)",
     )
 
     args = parser.parse_args()

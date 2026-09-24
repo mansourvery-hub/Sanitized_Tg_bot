@@ -5308,12 +5308,14 @@ def generate_id_card_document(
         body {{
             font-family: Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 30px;
+            padding: 24px;
             background: #eaedf1;
+            width: {520 + 48}px;
+            box-sizing: border-box;
         }}
         .card {{
-            width: 480px;
-            height: 300px;
+            width: 520px;
+            height: 320px;
             border: 2px solid {brand_color};
             background: #ffffff;
             position: relative;
@@ -5328,6 +5330,7 @@ def generate_id_card_document(
             font-size: 16px;
             text-align: center;
             letter-spacing: 0.5px;
+            text-transform: uppercase;
         }}
         .card-body {{
             margin-top: 15px;
@@ -5372,7 +5375,7 @@ def generate_id_card_document(
 <body>
     <div class="card">
         <div class="card-header">
-            {profile.institution_name.upper()} &mdash; OFFICIAL IDENTIFICATION
+            {profile.institution_name} &mdash; Official Identification
         </div>
         <div class="card-body">
             <div class="photo-box">

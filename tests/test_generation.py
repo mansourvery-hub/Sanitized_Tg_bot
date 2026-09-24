@@ -397,6 +397,49 @@ class TestGenerationSystem(unittest.TestCase):
                 second = build_logo_data_uri(url)
             self.assertEqual(first, second)
 
+    def test_id_card_contains_all_required_enrolment_fields(self):
+        """ID card must carry name, institution, issue date and unexpired expiry."""
+        profile = generate_profile(
+            scenario_name="undergraduate", institution_id="psu", seed=42
+        )
+        doc = generate_document(profile, doc_kind=DocumentKind.ID_CARD)
+        html = doc.html_content
+        self.assertIn(profile.institution_name, html)
+        self.assertIn(f"{profile.first_name} {profile.last_name}", html)
+        self.assertIn("Issue Date", html)
+        self.assertIn("Expiration Date", html)
+        # institution name must survive verbatim for exact-match readback
+        self.assertNotIn(profile.institution_name.upper(), html)
+        self.assertTrue(validate_document(doc).valid, validate_document(doc).errors)
+        rb = readback_validate_html(html, profile)
+        self.assertTrue(rb.valid, rb.errors)
+
+    def test_refresh_bundle_all_other_document_kinds(self):
+        """Every non-schedule kind can be refreshed for an existing profile."""
+        from generation import refresh_bundle
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = Path(tmp) / "bundle"
+            base = generate_fixture_bundle(
+                "undergraduate",
+                seed=321,
+                output_dir=bundle,
+                override_institution_id="psu",
+            )
+            for kind in (
+                DocumentKind.ID_CARD,
+                DocumentKind.TUITION_RECEIPT,
+                DocumentKind.ENROLLMENT_CERTIFICATE,
+            ):
+                with self.subTest(kind=kind.value):
+                    res = refresh_bundle(bundle, doc_kind=kind)
+                    self.assertEqual(res.document.kind, kind)
+                    self.assertTrue(
+                        res.validation.valid, f"{kind.value}: {res.validation.errors}"
+                    )
+                    self.assertEqual(res.profile.student_id, base.profile.student_id)
+                    self.assertTrue((bundle / "document.png").exists())
+
     def test_psu_document_has_standalone_css(self):
         """Saved/generated HTML must have no raw var() and keep brand color."""
         profile = generate_profile(
