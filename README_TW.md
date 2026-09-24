@@ -113,6 +113,68 @@ docker run -d --name tgbot-verify --env-file .env -v $(pwd)/logs:/app/logs tgbot
 
 ---
 
+## 🏫 支援的院校 & SheerID 組織
+
+本倉庫透過 `sheerid_schools.py` 維護權威院校目錄（SheerID 生產組織 ID），並透過 `generation.py` / `render_service.py` 提供確定性檔案與文件產生。
+
+| 院校 ID | 院校名稱 | 國家/地區 | 網域 | SheerID ID | 別名範例 |
+|---------|----------|-----------|------|------------|----------|
+| `psu` | Penn State University | US | `psu.edu` | `2565` | `psu`, `penn_state` |
+| `ucla` | Univ. of California, Los Angeles | US | `ucla.edu` | `285` | `ucla`, `285` |
+| `nyu` | New York University | US | `nyu.edu` | `2678` | `nyu`, `2678` |
+| `umich` | University of Michigan | US | `umich.edu` | `2027` | `umich`, `michigan` |
+| `ut_austin` | Univ. of Texas at Austin | US | `utexas.edu` | `3895` | `ut_austin`, `ut`, `3895` |
+| `up_diliman` | University of the Philippines Diliman | PH | `up.edu.ph` | `355870` | `up_diliman`, `upd`, `355870` |
+| `usp` | Universidade de São Paulo | BR | `usp.br` | `10042652` | `usp`, `sao_paulo` |
+| `universiti_malaya` | Universiti Malaya | MY | `um.edu.my` | `355254` | `universiti_malaya`, `um`, `malaya` |
+| `makerere` | Makerere University | UG | `mak.ac.ug` | `662864` | `makerere`, `mak`, `662864` |
+| `unilag` | University of Lagos | NG | `unilag.edu.ng` | `660895` | `unilag`, `lagos`, `660895` |
+| `springfield_k12` | Springfield School District (K-12) | US | `springfieldsd.org` | — | `k12`, `springfield` |
+| `nittany_tech` | Nittany Technical College | US | `nittanytech.edu` | — | `nittany_tech` |
+
+> 國際院校均採用 SheerID 生產環境真實組織 ID（經 `orgsearch.sheerid.net` 校驗），並配備本地化姓名池、學號格式、學期日曆與文件模板。
+
+國際文件模板（`generation.py` → `DocumentKind.SCHEDULE` / `REGISTRAR_LETTER`）：
+- **UP Diliman** — Form 5 / CRS 註冊表（Class Code、Units、OUR 抬頭）
+- **USP** — Atestado de Matrícula / Sistema Janus（Número USP、Disciplinas Matriculadas、數位認證）
+- **Universiti Malaya** — Surat Pengesahan Pelajar / MAYA Portal（雙語抬頭、Matric No.）
+- **Makerere** — Letter of Enrollment / ACMIS（Academic Registrar 簽章）
+- **UNILAG** — Letter of Student Enrollment（Matriculation Number、Faculty/Level 資訊）
+
+---
+
+## 🛠️ 統一本地身分與文件產生工具 CLI (`app.py` / `generation.py`)
+
+零網路依賴的本地確定性產生引擎，聚合 `one/` `k12/` `spotify/` `youtube/` `Boltnew/` 邏輯於單一入口。
+
+### 互動式精靈
+
+```bash
+./venv/bin/python app.py
+./venv/bin/python app.py --target 1 --seed 42
+```
+
+### 常用子指令
+
+```bash
+./venv/bin/python app.py list
+./venv/bin/python app.py identity --institution up_diliman --seed 42 --json
+./venv/bin/python app.py document --institution usp --seed 42 --kind schedule --json
+./venv/bin/python app.py render --institution makerere --seed 42 --format pdf --output output/
+./venv/bin/python app.py fixture --institution unilag --seed 12345
+./venv/bin/python app.py batch --count 10 --institution universiti_malaya
+./venv/bin/python app.py validate output/
+./venv/bin/python app.py visual-regression
+./venv/bin/python app.py visual-regression --update-baselines
+```
+
+- `--institution` 支援院校 ID、數字 SheerID ID 與別名（見上表），由 `render_service.PayloadTransformer` 統一歸一。
+- `--seed` 保證跨運行確定性。
+- SheerID 信箱透過 `sheerid_schools.generate_institutional_student_email()` 按院校網域產生。
+- 視覺回歸基線位於 `tests/visual_baselines/`（含 `up_diliman_form5.png` 等 12 份金標），清單見 `manifest.json`。
+
+---
+
 ## 📖 使用說明
 
 ### 使用者指令
@@ -157,6 +219,11 @@ docker run -d --name tgbot-verify --env-file .env -v $(pwd)/logs:/app/logs tgbot
 
 ```
 tgbot-verify/
+├── app.py                  # 統一 CLI 入口與互動精靈
+├── generation.py           # 確定性身分/文件/渲染引擎（12 院校 × 5 文件類型）
+├── render_service.py       # JSON 驅動的機構化渲染服務與別名解析
+├── sheerid_schools.py      # SheerID 權威院校目錄與信箱解析
+├── visual_regression.py    # 視覺回歸引擎與基線管理
 ├── bot.py                  # 機器人主程式
 ├── config.py               # 全域設定
 ├── database_mysql.py       # MySQL 資料庫管理
@@ -173,6 +240,12 @@ tgbot-verify/
 ├── spotify/                # Spotify Student 模組
 ├── youtube/                # YouTube Premium 模組
 ├── Boltnew/                # Bolt.new 模組
+├── tests/
+│   ├── test_generation.py
+│   ├── test_sheerid_schools.py
+│   ├── test_render_service.py
+│   ├── test_visual_regression.py
+│   └── visual_baselines/   # 12 份金標 PNG + manifest.json
 └── utils/                  # 工具函式
     ├── messages.py
     ├── concurrency.py

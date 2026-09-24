@@ -120,6 +120,36 @@ docker run -d --name tgbot-verify --env-file .env -v $(pwd)/logs:/app/logs tgbot
 
 ---
 
+## 🏫 Supported Institutions & SheerID Organizations
+
+The repository maintains a canonical institution directory in `sheerid_schools.py` (verified SheerID production IDs) and a deterministic generation/rendering engine in `generation.py` / `render_service.py`.
+
+| Institution ID | Institution | Country | Domain | SheerID ID | Alias Examples |
+|----------------|-------------|---------|--------|------------|----------------|
+| `psu` | Penn State University | US | `psu.edu` | `2565` | `psu`, `penn_state` |
+| `ucla` | Univ. of California, Los Angeles | US | `ucla.edu` | `285` | `ucla`, `285` |
+| `nyu` | New York University | US | `nyu.edu` | `2678` | `nyu`, `2678` |
+| `umich` | University of Michigan | US | `umich.edu` | `2027` | `umich`, `michigan` |
+| `ut_austin` | Univ. of Texas at Austin | US | `utexas.edu` | `3895` | `ut_austin`, `ut`, `3895` |
+| `up_diliman` | University of the Philippines Diliman | PH | `up.edu.ph` | `355870` | `up_diliman`, `upd`, `355870` |
+| `usp` | Universidade de São Paulo | BR | `usp.br` | `10042652` | `usp`, `sao_paulo` |
+| `universiti_malaya` | Universiti Malaya | MY | `um.edu.my` | `355254` | `universiti_malaya`, `um`, `malaya` |
+| `makerere` | Makerere University | UG | `mak.ac.ug` | `662864` | `makerere`, `mak`, `662864` |
+| `unilag` | University of Lagos | NG | `unilag.edu.ng` | `660895` | `unilag`, `lagos`, `660895` |
+| `springfield_k12` | Springfield School District (K-12) | US | `springfieldsd.org` | — | `k12`, `springfield` |
+| `nittany_tech` | Nittany Technical College | US | `nittanytech.edu` | — | `nittany_tech` |
+
+> All international institutions use verified SheerID production organization IDs (via `orgsearch.sheerid.net`) and ship with localized name pools, ID formats, term calendars and registrar-letter templates.
+
+International document templates (`generation.py` → `DocumentKind.SCHEDULE` / `REGISTRAR_LETTER`):
+- **UP Diliman** — Form 5 / CRS Registration Form (Class Code, Units, OUR letterhead)
+- **USP** — Atestado de Matrícula / Sistema Janus (Número USP, Disciplinas Matriculadas, digital authentication)
+- **Universiti Malaya** — Surat Pengesahan Pelajar / MAYA Portal (bilingual header, Matric No.)
+- **Makerere** — Letter of Enrollment / ACMIS (Academic Registrar seal)
+- **UNILAG** — Letter of Student Enrollment (Matriculation Number, Faculty/Level block)
+
+---
+
 ## 🛠️ Unified Local Identity & Document Generator CLI (`app.py`)
 
 This repository includes a unified, self-contained local inspection & generation framework (`app.py` & `generation.py`) with zero network dependencies. It consolidates all previous provider logic (`one/`, `k12/`, `spotify/`, `youtube/`, `Boltnew/`) into a single deterministic engine.
@@ -144,6 +174,10 @@ Or non-interactively specify a target and seed:
 - **Fixture Bundle**: `./venv/bin/python app.py fixture --seed 12345`
 - **Batch Generation**: `./venv/bin/python app.py batch --count 10`
 - **Validate & Inspect**: `./venv/bin/python app.py validate output/`
+- **Institution Examples**: `./venv/bin/python app.py identity --institution up_diliman --seed 42 --json` · `./venv/bin/python app.py document --institution usp --seed 42 --json` · `./venv/bin/python app.py render --institution makerere --format pdf`
+- **Visual Regression**: `./venv/bin/python app.py visual-regression` · `./venv/bin/python app.py visual-regression --update-baselines`
+
+`--institution` accepts canonical IDs, numeric SheerID IDs and aliases (see table above) via `render_service.PayloadTransformer`. `--seed` guarantees cross-run determinism. Institutional emails are resolved via `sheerid_schools.generate_institutional_student_email()`. Golden visual baselines live in `tests/visual_baselines/` (12 PNGs + `manifest.json`).
 
 
 ### User Commands
@@ -188,6 +222,11 @@ Or non-interactively specify a target and seed:
 
 ```
 tgbot-verify/
+├── app.py                  # Unified CLI entry & interactive wizard
+├── generation.py           # Deterministic identity/document/render engine (12 institutions × 5 kinds)
+├── render_service.py       # JSON-driven institutional render service & alias resolution
+├── sheerid_schools.py      # Canonical SheerID institution directory & email resolver
+├── visual_regression.py    # Visual regression engine & baseline manager
 ├── bot.py                  # Main bot program
 ├── config.py               # Global configuration
 ├── database_mysql.py       # MySQL database management
@@ -204,6 +243,12 @@ tgbot-verify/
 ├── spotify/                # Spotify Student module
 ├── youtube/                # YouTube Premium module
 ├── Boltnew/                # Bolt.new module
+├── tests/
+│   ├── test_generation.py
+│   ├── test_sheerid_schools.py
+│   ├── test_render_service.py
+│   ├── test_visual_regression.py
+│   └── visual_baselines/   # 12 golden PNGs + manifest.json
 └── utils/                  # Utility functions
     ├── messages.py
     ├── concurrency.py
